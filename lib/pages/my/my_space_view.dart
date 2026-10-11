@@ -20,39 +20,37 @@ enum MyDestination {
 const _tileRadius = BorderRadius.all(Radius.circular(28));
 
 class MySpaceView extends StatelessWidget {
-  const MySpaceView({
-    super.key,
-    required this.stats,
-    required this.onOpen,
-  });
+  const MySpaceView({super.key, required this.stats, required this.onOpen});
 
   final WatchStats stats;
   final ValueChanged<MyDestination> onOpen;
 
   @override
   Widget build(BuildContext context) {
-    return LayoutBuilder(builder: (context, constraints) {
-      final inset = constraints.maxWidth < 600 ? 16.0 : 32.0;
-      final width = constraints.maxWidth - inset * 2;
-      final largeText = MediaQuery.textScalerOf(context).scale(16) > 24;
-      final wide = width >= 840 && !largeText;
-      return SingleChildScrollView(
-        key: const PageStorageKey('my-space'),
-        padding: EdgeInsets.fromLTRB(inset, 12, inset, 32),
-        child: Center(
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 1120),
-            child: wide
-                ? _WideSpaceLayout(stats: stats, onOpen: onOpen)
-                : _CompactSpaceLayout(
-                    stats: stats,
-                    onOpen: onOpen,
-                    stackTools: width < 280 || largeText,
-                  ),
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final inset = constraints.maxWidth < 600 ? 16.0 : 32.0;
+        final width = constraints.maxWidth - inset * 2;
+        final largeText = MediaQuery.textScalerOf(context).scale(16) > 24;
+        final wide = width >= 840 && !largeText;
+        return SingleChildScrollView(
+          key: const PageStorageKey('my-space'),
+          padding: EdgeInsets.fromLTRB(inset, 12, inset, 32),
+          child: Center(
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 1120),
+              child: wide
+                  ? _WideSpaceLayout(stats: stats, onOpen: onOpen)
+                  : _CompactSpaceLayout(
+                      stats: stats,
+                      onOpen: onOpen,
+                      stackTools: width < 280 || largeText,
+                    ),
+            ),
           ),
-        ),
-      );
-    });
+        );
+      },
+    );
   }
 }
 
@@ -93,7 +91,7 @@ class _WideSpaceLayout extends StatelessWidget {
               title: '离线下载',
               caption: stats.downloadTaskCount == 0
                   ? '管理离线内容'
-                  : '${stats.downloadTaskCount} 集下载任务',
+                  : '完成 ${stats.completedCount} · 下载中 ${stats.downloadingCount} · 暂停 ${stats.pausedCount} · 失败 ${stats.failedCount}',
               color: colors.tertiaryContainer,
               foreground: colors.onTertiaryContainer,
               onTap: () => onOpen(MyDestination.downloads),
@@ -186,7 +184,7 @@ class _CompactSpaceLayout extends StatelessWidget {
             title: '离线下载',
             caption: stats.downloadTaskCount == 0
                 ? '管理离线内容'
-                : '${stats.downloadTaskCount} 集下载任务',
+                : '完成 ${stats.completedCount} · 下载中 ${stats.downloadingCount} · 暂停 ${stats.pausedCount} · 失败 ${stats.failedCount}',
             color: colors.secondaryContainer,
             foreground: colors.onSecondaryContainer,
             compact: true,
@@ -209,9 +207,15 @@ class _CompactSpaceLayout extends StatelessWidget {
           children: [
             _entry('同步备份', Icons.cloud_sync_rounded, MyDestination.sync),
             _entry(
-                '存储管理', Icons.cleaning_services_rounded, MyDestination.storage),
+              '存储管理',
+              Icons.cleaning_services_rounded,
+              MyDestination.storage,
+            ),
             _entry(
-                '关于 Kazumi', Icons.info_outline_rounded, MyDestination.about),
+              '关于 Kazumi',
+              Icons.info_outline_rounded,
+              MyDestination.about,
+            ),
           ],
         ),
       ],
@@ -263,23 +267,24 @@ class _WatchStatsPanel extends StatelessWidget {
                   Expanded(
                     child: Semantics(
                       header: true,
-                      child: Text('观看足迹',
-                          style: Theme.of(context)
-                              .textTheme
-                              .titleSmall
-                              ?.copyWith(
-                                  color: colors.onPrimaryContainer,
-                                  fontWeight: FontWeight.w700)),
+                      child: Text(
+                        '观看足迹',
+                        style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                          color: colors.onPrimaryContainer,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
                     ),
                   ),
                 ],
               )
             else
-              Text('观看统计',
-                  style: Theme.of(context)
-                      .textTheme
-                      .labelMedium
-                      ?.copyWith(color: colors.onSurfaceVariant)),
+              Text(
+                '观看统计',
+                style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                  color: colors.onSurfaceVariant,
+                ),
+              ),
             const SizedBox(height: 8),
             Row(
               children: [
@@ -301,8 +306,11 @@ class _WatchStatsPanel extends StatelessWidget {
                 else
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 12),
-                    child: Icon(Icons.auto_awesome_rounded,
-                        color: colors.primary, size: 20),
+                    child: Icon(
+                      Icons.auto_awesome_rounded,
+                      color: colors.primary,
+                      size: 20,
+                    ),
                   ),
                 Expanded(
                   child: _StatCount(
@@ -335,17 +343,23 @@ class _StatCount extends StatelessWidget {
         // Scale large totals without shrinking their labels.
         FittedBox(
           fit: BoxFit.scaleDown,
-          child: Text('$value',
-              style: theme.textTheme.displaySmall?.copyWith(
-                  color: foreground ?? theme.colorScheme.onSurface,
-                  fontWeight: FontWeight.w800,
-                  fontFeatures: const [FontFeature.tabularFigures()])),
+          child: Text(
+            '$value',
+            style: theme.textTheme.displaySmall?.copyWith(
+              color: foreground ?? theme.colorScheme.onSurface,
+              fontWeight: FontWeight.w800,
+              fontFeatures: const [FontFeature.tabularFigures()],
+            ),
+          ),
         ),
         const SizedBox(height: 2),
-        Text(label,
-            textAlign: TextAlign.center,
-            style: theme.textTheme.labelMedium?.copyWith(
-                color: foreground ?? theme.colorScheme.onSurfaceVariant)),
+        Text(
+          label,
+          textAlign: TextAlign.center,
+          style: theme.textTheme.labelMedium?.copyWith(
+            color: foreground ?? theme.colorScheme.onSurfaceVariant,
+          ),
+        ),
       ],
     );
   }
@@ -363,10 +377,10 @@ class _SpaceHeading extends StatelessWidget {
           child: Text(
             '个人中心',
             style: Theme.of(context).textTheme.displaySmall?.copyWith(
-                  fontWeight: FontWeight.w800,
-                  color: colors.onSurface,
-                  height: 1.2,
-                ),
+              fontWeight: FontWeight.w800,
+              color: colors.onSurface,
+              height: 1.2,
+            ),
           ),
         ),
         const SizedBox(width: 12),
@@ -410,17 +424,23 @@ class _RulesTile extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Text('规则设置',
-                      style: text.headlineSmall?.copyWith(
-                          fontWeight: FontWeight.w700,
-                          color: colors.onPrimary)),
+                  Text(
+                    '规则设置',
+                    style: text.headlineSmall?.copyWith(
+                      fontWeight: FontWeight.w700,
+                      color: colors.onPrimary,
+                    ),
+                  ),
                   const SizedBox(height: 6),
-                  Text('管理番剧来源',
-                      style:
-                          text.bodyMedium?.copyWith(color: colors.onPrimary)),
+                  Text(
+                    '管理番剧来源',
+                    style: text.bodyMedium?.copyWith(color: colors.onPrimary),
+                  ),
                   const SizedBox(height: 20),
                   _ArrowCue(
-                      color: colors.onPrimary, foreground: colors.primary),
+                    color: colors.onPrimary,
+                    foreground: colors.primary,
+                  ),
                 ],
               ),
             ),
@@ -479,13 +499,18 @@ class _ToolTile extends StatelessWidget {
               ],
             ),
             SizedBox(height: compact ? 12 : 26),
-            Text(title,
-                style: text.titleMedium
-                    ?.copyWith(fontWeight: FontWeight.w700, color: foreground)),
+            Text(
+              title,
+              style: text.titleMedium?.copyWith(
+                fontWeight: FontWeight.w700,
+                color: foreground,
+              ),
+            ),
             SizedBox(height: compact ? 4 : 6),
-            Text(caption,
-                style:
-                    text.bodySmall?.copyWith(color: foreground, height: 1.4)),
+            Text(
+              caption,
+              style: text.bodySmall?.copyWith(color: foreground, height: 1.4),
+            ),
           ],
         ),
       ),
@@ -518,9 +543,13 @@ class _PreferencesPanel extends StatelessWidget {
           children: [
             Semantics(
               header: true,
-              child: Text('偏好设置',
-                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.w700, color: colors.onSurface)),
+              child: Text(
+                '偏好设置',
+                style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                  fontWeight: FontWeight.w700,
+                  color: colors.onSurface,
+                ),
+              ),
             ),
             const SizedBox(height: 16),
             IntrinsicHeight(
@@ -585,11 +614,14 @@ class _PreferenceAction extends StatelessWidget {
           children: [
             Icon(icon, size: 28),
             const SizedBox(height: 10),
-            Text(label,
-                textAlign: TextAlign.center,
-                style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                    fontWeight: FontWeight.w700,
-                    color: colors.onSecondaryContainer)),
+            Text(
+              label,
+              textAlign: TextAlign.center,
+              style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                fontWeight: FontWeight.w700,
+                color: colors.onSecondaryContainer,
+              ),
+            ),
           ],
         ),
       ),
@@ -631,14 +663,16 @@ class _ArrowCue extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => ExcludeSemantics(
-        child: Container(
-          width: 52,
-          height: 32,
-          decoration: BoxDecoration(
-              color: color, borderRadius: BorderRadius.circular(20)),
-          child: Icon(Icons.arrow_forward_rounded, color: foreground, size: 20),
-        ),
-      );
+    child: Container(
+      width: 52,
+      height: 32,
+      decoration: BoxDecoration(
+        color: color,
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: Icon(Icons.arrow_forward_rounded, color: foreground, size: 20),
+    ),
+  );
 }
 
 enum _SpaceShape { sun, clover }
@@ -660,17 +694,17 @@ class _ShapeIcon extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => ExcludeSemantics(
-        child: ClipPath(
-          clipper: _SpaceShapeClipper(shape),
-          child: ColoredBox(
-            color: color,
-            child: SizedBox.square(
-              dimension: size,
-              child: Icon(icon, color: foreground, size: size * .44),
-            ),
-          ),
+    child: ClipPath(
+      clipper: _SpaceShapeClipper(shape),
+      child: ColoredBox(
+        color: color,
+        child: SizedBox.square(
+          dimension: size,
+          child: Icon(icon, color: foreground, size: size * .44),
         ),
-      );
+      ),
+    ),
+  );
 }
 
 class _SpaceShapeClipper extends CustomClipper<Path> {
@@ -683,8 +717,9 @@ class _SpaceShapeClipper extends CustomClipper<Path> {
   };
 
   @override
-  Path getClip(Size size) => _paths[shape]!
-      .transform(Matrix4.diagonal3Values(size.width, size.height, 1).storage);
+  Path getClip(Size size) => _paths[shape]!.transform(
+    Matrix4.diagonal3Values(size.width, size.height, 1).storage,
+  );
 
   @override
   bool shouldReclip(_SpaceShapeClipper oldClipper) => oldClipper.shape != shape;
@@ -752,9 +787,9 @@ class _ExpressiveActionState extends State<_ExpressiveAction> {
               child: IconTheme.merge(
                 data: IconThemeData(color: widget.foreground),
                 child: DefaultTextStyle.merge(
-                  style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                        color: widget.foreground,
-                      ),
+                  style: Theme.of(
+                    context,
+                  ).textTheme.labelLarge?.copyWith(color: widget.foreground),
                   child: widget.child,
                 ),
               ),
@@ -784,7 +819,11 @@ class _AdaptivePair extends StatelessWidget {
     if (stack) {
       return Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [first, SizedBox(height: gap), second],
+        children: [
+          first,
+          SizedBox(height: gap),
+          second,
+        ],
       );
     }
     return IntrinsicHeight(

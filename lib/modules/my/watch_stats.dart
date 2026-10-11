@@ -6,25 +6,41 @@ final class WatchStats {
     this.watchedEpisodeCount = 0,
     this.watchedBangumiCount = 0,
     this.downloadTaskCount = 0,
+    this.completedCount = 0,
+    this.downloadingCount = 0,
+    this.pausedCount = 0,
+    this.failedCount = 0,
   });
 
   final int watchedEpisodeCount;
   final int watchedBangumiCount;
   final int downloadTaskCount;
+  final int completedCount;
+  final int downloadingCount;
+  final int pausedCount;
+  final int failedCount;
 
   @override
   bool operator ==(Object other) =>
       other is WatchStats &&
       other.watchedEpisodeCount == watchedEpisodeCount &&
       other.watchedBangumiCount == watchedBangumiCount &&
-      other.downloadTaskCount == downloadTaskCount;
+      other.downloadTaskCount == downloadTaskCount &&
+      other.completedCount == completedCount &&
+      other.downloadingCount == downloadingCount &&
+      other.pausedCount == pausedCount &&
+      other.failedCount == failedCount;
 
   @override
   int get hashCode => Object.hash(
-        watchedEpisodeCount,
-        watchedBangumiCount,
-        downloadTaskCount,
-      );
+    watchedEpisodeCount,
+    watchedBangumiCount,
+    downloadTaskCount,
+    completedCount,
+    downloadingCount,
+    pausedCount,
+    failedCount,
+  );
 
   factory WatchStats.from({
     required List<History> histories,
@@ -42,6 +58,27 @@ final class WatchStats {
       }
     }
 
+    var completed = 0;
+    var downloading = 0;
+    var paused = 0;
+    var failed = 0;
+    for (final record in downloadRecords) {
+      for (final episode in record.episodes.values) {
+        switch (episode.status) {
+          case DownloadStatus.completed:
+            completed++;
+          case DownloadStatus.downloading:
+          case DownloadStatus.resolving:
+          case DownloadStatus.pending:
+            downloading++;
+          case DownloadStatus.paused:
+            paused++;
+          case DownloadStatus.failed:
+            failed++;
+        }
+      }
+    }
+
     return WatchStats(
       watchedEpisodeCount: watchedEpisodes.length,
       watchedBangumiCount: watchedBangumiIds.length,
@@ -50,6 +87,10 @@ final class WatchStats {
         0,
         (count, record) => count + record.episodes.length,
       ),
+      completedCount: completed,
+      downloadingCount: downloading,
+      pausedCount: paused,
+      failedCount: failed,
     );
   }
 }
