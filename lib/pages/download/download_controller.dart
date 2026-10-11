@@ -10,7 +10,8 @@ import 'package:kazumi/repositories/download_repository.dart';
 import 'package:kazumi/services/download/background_download_service.dart';
 import 'package:kazumi/services/download/download_directory_service.dart';
 import 'package:kazumi/services/download/download_manager.dart';
-import 'package:kazumi/request/clients/download_http_client.dart';
+import 'package:kazumi/services/network/proxy_aware_image_cache_manager.dart';
+import 'package:kazumi/services/sync/bangumi_offline_cover_cache.dart';
 import 'package:kazumi/utils/format.dart';
 import 'package:kazumi/services/logging/logger.dart';
 import 'package:kazumi/services/storage/storage.dart';
@@ -388,8 +389,32 @@ abstract class _DownloadController with Store {
       final coverPath = path.join(directory, 'cover$extension');
       final coverFile = File(coverPath);
       if (!await coverFile.exists()) {
+        // Prefer downloading through the shared image pipeline (ECH / mirror
+        // acceleration); fall back to the offline cover cache when that fails.
+        File? fetched;
+        try {
+          fetched = await ProxyAwareImageCacheManager.instance.getSingleFile(
+            coverUrl,
+          );
+        } catch (error) {
+          KazumiLogger().w(
+            'DownloadController: cover download failed, using offline cache',
+            error: error,
+          );
+          fetched = null;
+        }
+
+        if (fetched == null) {
+          final cachedUri = await BangumiOfflineCoverCache.instance.store(
+            bangumiId,
+            coverUrl,
+          );
+          if (cachedUri == null) return;
+          fetched = File.fromUri(Uri.parse(cachedUri));
+        }
+
         temporaryPath = '$coverPath.tmp';
-        await DownloadHttpClient.instance.download(coverUrl, temporaryPath);
+        await fetched.copy(temporaryPath);
         final temporaryFile = File(temporaryPath);
         if (!await temporaryFile.exists() ||
             await temporaryFile.length() == 0) {
@@ -1012,6 +1037,33 @@ abstract class _DownloadController with Store {
     await _backgroundService.stopService();
   }
 
+  /// Pauses every active episode of a single show, leaving other shows running.
+  Future<void> pauseDownloads(int bangumiId, String pluginName) async {
+    final recordKey = '${pluginName}_$bangumiId';
+    final record = _repository.getRecord(recordKey);
+    if (record == null) return;
+
+    _cancelResolveRecord(recordKey);
+
+    var paused = false;
+    for (final entry in record.episodes.entries) {
+      final episode = entry.value;
+      if (episode.status == DownloadStatus.downloading ||
+          episode.status == DownloadStatus.resolving ||
+          episode.status == DownloadStatus.pending) {
+        _downloadManager.pause(recordKey, entry.key);
+        episode.status = DownloadStatus.paused;
+        await _repository.updateEpisode(recordKey, entry.key, episode);
+        paused = true;
+      }
+    }
+
+    if (paused) {
+      _refreshRecord(recordKey);
+      _queueBackgroundNotificationUpdate();
+    }
+  }
+
   Future<void> retryDownload({
     required int bangumiId,
     required String pluginName,
@@ -1121,6 +1173,49 @@ abstract class _DownloadController with Store {
     } finally {
       _refreshRecord(recordKey);
       _queueBackgroundNotificationUpdate();
+    }
+  }
+
+  /// Deletes only the non-completed episodes of a show, keeping the finished
+  /// ones. Used by the "downloading" filter where a show can mix active and
+  /// completed episodes.
+  Future<void> deleteIncompleteEpisodes(
+    int bangumiId,
+    String pluginName,
+  ) async {
+    final recordKey = '${pluginName}_$bangumiId';
+    final record = _repository.getRecord(recordKey);
+    if (record == null) return;
+
+    final incompleteNumbers =
+        record.episodes.entries
+            .where((entry) => entry.value.status != DownloadStatus.completed)
+            .map((entry) => entry.key)
+            .toList()
+          ..sort();
+
+    for (final episodeNumber in incompleteNumbers) {
+      await deleteEpisode(bangumiId, pluginName, episodeNumber);
+    }
+  }
+
+  /// Deletes only the completed episodes of a show, keeping any active ones.
+  /// Used by the "completed" filter so removing finished files never touches
+  /// downloads still in progress.
+  Future<void> deleteCompletedEpisodes(int bangumiId, String pluginName) async {
+    final recordKey = '${pluginName}_$bangumiId';
+    final record = _repository.getRecord(recordKey);
+    if (record == null) return;
+
+    final completedNumbers =
+        record.episodes.entries
+            .where((entry) => entry.value.status == DownloadStatus.completed)
+            .map((entry) => entry.key)
+            .toList()
+          ..sort();
+
+    for (final episodeNumber in completedNumbers) {
+      await deleteEpisode(bangumiId, pluginName, episodeNumber);
     }
   }
 

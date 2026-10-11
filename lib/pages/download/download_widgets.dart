@@ -13,19 +13,31 @@ const Curve _kExpandCurve = Curves.easeInOutCubic;
 class DownloadRecordCard extends StatelessWidget {
   const DownloadRecordCard({
     super.key,
-    required this.record,
+    required this.bangumiName,
+    required this.coverSource,
+    required this.completedCount,
+    required this.totalCount,
+    required this.activeCount,
+    required this.aggregateProgress,
     required this.expanded,
     required this.onToggle,
     required this.onResumeAll,
+    required this.onPauseAll,
     required this.onDeleteAll,
     required this.totalSpeed,
     required this.episodeTileBuilder,
   });
 
-  final DownloadRecord record;
+  final String bangumiName;
+  final String coverSource;
+  final int completedCount;
+  final int totalCount;
+  final int activeCount;
+  final double aggregateProgress;
   final bool expanded;
   final VoidCallback onToggle;
-  final VoidCallback onResumeAll;
+  final VoidCallback? onResumeAll;
+  final VoidCallback? onPauseAll;
   final VoidCallback onDeleteAll;
   final double totalSpeed;
 
@@ -35,30 +47,6 @@ class DownloadRecordCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
     final textTheme = Theme.of(context).textTheme;
-    final episodes = record.episodes.values;
-    final totalCount = episodes.length;
-    final completedCount = episodes
-        .where((e) => e.status == DownloadStatus.completed)
-        .length;
-    final activeCount = episodes
-        .where(
-          (e) =>
-              e.status == DownloadStatus.downloading ||
-              e.status == DownloadStatus.resolving ||
-              e.status == DownloadStatus.pending,
-        )
-        .length;
-    final aggregateProgress = totalCount == 0
-        ? 0.0
-        : episodes.fold<double>(
-                0,
-                (sum, e) =>
-                    sum +
-                    (e.status == DownloadStatus.completed
-                        ? 1.0
-                        : e.progressPercent),
-              ) /
-              totalCount;
     final allCompleted = completedCount >= totalCount;
 
     var meta = '$completedCount/$totalCount 已完成';
@@ -85,18 +73,14 @@ class DownloadRecordCard extends StatelessWidget {
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  NetworkImgLayer(
-                    src: record.coverSource,
-                    width: 56,
-                    height: 75,
-                  ),
+                  NetworkImgLayer(src: coverSource, width: 56, height: 75),
                   const SizedBox(width: 16),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          record.bangumiName,
+                          bangumiName,
                           style: textTheme.titleMedium?.copyWith(
                             fontWeight: FontWeight.w700,
                           ),
@@ -104,23 +88,11 @@ class DownloadRecordCard extends StatelessWidget {
                           overflow: TextOverflow.ellipsis,
                         ),
                         const SizedBox(height: 6),
-                        Wrap(
-                          spacing: 6,
-                          runSpacing: 4,
-                          crossAxisAlignment: WrapCrossAlignment.center,
-                          children: [
-                            RuleTag(
-                              label: record.pluginName,
-                              background: colorScheme.secondaryContainer,
-                              foreground: colorScheme.onSecondaryContainer,
-                            ),
-                            Text(
-                              meta,
-                              style: textTheme.bodySmall?.copyWith(
-                                color: colorScheme.onSurfaceVariant,
-                              ),
-                            ),
-                          ],
+                        Text(
+                          meta,
+                          style: textTheme.bodySmall?.copyWith(
+                            color: colorScheme.onSurfaceVariant,
+                          ),
                         ),
                       ],
                     ),
@@ -136,7 +108,10 @@ class DownloadRecordCard extends StatelessWidget {
                       onPressed: toggle,
                     ),
                     menuChildren: [
-                      KazumiMenuItem(label: '全部开始', onPressed: onResumeAll),
+                      if (onResumeAll != null)
+                        KazumiMenuItem(label: '全部开始', onPressed: onResumeAll!),
+                      if (onPauseAll != null)
+                        KazumiMenuItem(label: '全部暂停', onPressed: onPauseAll!),
                       KazumiMenuItem(
                         label: '全部删除',
                         destructive: true,
@@ -187,12 +162,14 @@ class DownloadEpisodeTile extends StatelessWidget {
     super.key,
     required this.episode,
     required this.statusText,
+    this.sourceLabel,
     this.actions = const [],
     this.onPlay,
   });
 
   final DownloadEpisode episode;
   final String statusText;
+  final String? sourceLabel;
   final List<Widget> actions;
 
   final VoidCallback? onPlay;
@@ -246,6 +223,14 @@ class DownloadEpisodeTile extends StatelessWidget {
                 ],
               ),
             ),
+            if (sourceLabel != null) ...[
+              const SizedBox(width: 8),
+              RuleTag(
+                label: sourceLabel!,
+                background: colorScheme.surfaceContainerHighest,
+                foreground: colorScheme.onSurfaceVariant,
+              ),
+            ],
             const SizedBox(width: 8),
             ...actions,
           ],

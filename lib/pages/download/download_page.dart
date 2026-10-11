@@ -12,6 +12,35 @@ import 'package:kazumi/pages/video/video_playback_args.dart';
 import 'package:kazumi/services/logging/logger.dart';
 import 'package:kazumi/utils/format.dart';
 
+enum _DownloadFilter { downloading, completed }
+
+/// A show aggregated across sources: one card per bangumi, with each episode
+/// keeping its own source label.
+class _ShowGroup {
+  _ShowGroup({
+    required this.bangumiId,
+    required this.bangumiName,
+    required this.coverSource,
+    required this.records,
+    required this.entries,
+  });
+
+  final int bangumiId;
+  final String bangumiName;
+  final String coverSource;
+  final List<DownloadRecord> records;
+  final List<_EpisodeEntry> entries;
+
+  String get key => '$bangumiId';
+}
+
+class _EpisodeEntry {
+  _EpisodeEntry({required this.record, required this.episode});
+
+  final DownloadRecord record;
+  final DownloadEpisode episode;
+}
+
 class DownloadPage extends StatefulWidget {
   const DownloadPage({super.key, required this.controller});
 
@@ -27,101 +56,244 @@ class _DownloadPageState extends State<DownloadPage> {
   // Keep expansion state across controller snapshot replacements.
   final Map<String, bool> _expanded = {};
 
+  _DownloadFilter _filter = _DownloadFilter.downloading;
+
   @override
   void initState() {
     super.initState();
     downloadController.refreshRecords();
   }
 
-  bool _isExpanded(String recordKey, DownloadRecord record) {
+  bool _isExpanded(_ShowGroup group) {
     return _expanded.putIfAbsent(
-      recordKey,
-      () => record.episodes.values.any(
-        (e) => e.status != DownloadStatus.completed,
+      group.key,
+      () => group.entries.any(
+        (e) => e.episode.status != DownloadStatus.completed,
       ),
     );
+  }
+
+  /// Episodes that belong to the currently selected filter, so a single show
+  /// can appear in both tabs while each tab only lists its own episodes.
+  List<_EpisodeEntry> _filteredEntries(_ShowGroup group) {
+    return switch (_filter) {
+      _DownloadFilter.downloading =>
+        group.entries
+            .where((e) => e.episode.status != DownloadStatus.completed)
+            .toList(),
+      _DownloadFilter.completed =>
+        group.entries
+            .where((e) => e.episode.status == DownloadStatus.completed)
+            .toList(),
+    };
+  }
+
+  bool _matchesFilter(_ShowGroup group) => _filteredEntries(group).isNotEmpty;
+
+  List<_ShowGroup> _buildGroups() {
+    final byBangumi = <int, List<DownloadRecord>>{};
+    for (final record in downloadController.records) {
+      byBangumi.putIfAbsent(record.bangumiId, () => []).add(record);
+    }
+
+    final groups = <_ShowGroup>[];
+    byBangumi.forEach((bangumiId, records) {
+      final entries = <_EpisodeEntry>[];
+      for (final record in records) {
+        for (final episode in record.episodes.values) {
+          entries.add(_EpisodeEntry(record: record, episode: episode));
+        }
+      }
+      entries.sort((a, b) {
+        final byEpisode = a.episode.episodeNumber.compareTo(
+          b.episode.episodeNumber,
+        );
+        if (byEpisode != 0) return byEpisode;
+        return a.record.pluginName.compareTo(b.record.pluginName);
+      });
+
+      final first = records.first;
+      groups.add(
+        _ShowGroup(
+          bangumiId: bangumiId,
+          bangumiName: first.bangumiName,
+          coverSource: first.coverSource,
+          records: records,
+          entries: entries,
+        ),
+      );
+    });
+
+    groups.sort((a, b) {
+      final aActive = a.entries.any(
+        (e) => e.episode.status != DownloadStatus.completed,
+      );
+      final bActive = b.entries.any(
+        (e) => e.episode.status != DownloadStatus.completed,
+      );
+      if (aActive != bActive) return aActive ? -1 : 1;
+      return a.bangumiName.compareTo(b.bangumiName);
+    });
+    return groups;
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: const SysAppBar(title: Text('下载管理')),
-      body: Observer(
-        builder: (context) {
-          final recordKeys = downloadController.recordKeys.toList();
-          _expanded.removeWhere((key, _) => !recordKeys.contains(key));
-          if (recordKeys.isEmpty) {
-            return const GeneralEmptyState(
-              icon: Icons.download_rounded,
-              title: '还没有下载记录',
-            );
-          }
-          return ListView.builder(
-            padding: const EdgeInsets.all(16),
-            itemCount: recordKeys.length,
-            itemBuilder: (context, index) {
-              return Center(
-                child: ConstrainedBox(
-                  constraints: const BoxConstraints(maxWidth: 1000),
-                  child: _buildRecordCard(recordKeys[index]),
+      body: Column(
+        children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
+            child: SegmentedButton<_DownloadFilter>(
+              segments: const [
+                ButtonSegment(
+                  value: _DownloadFilter.downloading,
+                  label: Text('下载中'),
+                  icon: Icon(Icons.downloading_rounded),
                 ),
-              );
-            },
-          );
-        },
+                ButtonSegment(
+                  value: _DownloadFilter.completed,
+                  label: Text('已下载'),
+                  icon: Icon(Icons.check_circle_outline_rounded),
+                ),
+              ],
+              selected: {_filter},
+              onSelectionChanged: (selection) {
+                setState(() => _filter = selection.first);
+              },
+            ),
+          ),
+          Expanded(
+            child: Observer(
+              builder: (context) {
+                final groups = _buildGroups().where(_matchesFilter).toList();
+                _expanded.removeWhere(
+                  (key, _) => !groups.any((group) => group.key == key),
+                );
+                if (groups.isEmpty) {
+                  return GeneralEmptyState(
+                    icon: _filter == _DownloadFilter.downloading
+                        ? Icons.download_rounded
+                        : Icons.check_circle_outline_rounded,
+                    title: _filter == _DownloadFilter.downloading
+                        ? '没有进行中的下载'
+                        : '还没有已下载的内容',
+                  );
+                }
+                return ListView.builder(
+                  padding: const EdgeInsets.all(16),
+                  itemCount: groups.length,
+                  itemBuilder: (context, index) {
+                    return Center(
+                      child: ConstrainedBox(
+                        constraints: const BoxConstraints(maxWidth: 1000),
+                        child: _buildShowCard(groups[index]),
+                      ),
+                    );
+                  },
+                );
+              },
+            ),
+          ),
+        ],
       ),
     );
   }
 
-  Widget _buildRecordCard(String recordKey) {
+  Widget _buildShowCard(_ShowGroup group) {
     return Observer(
       builder: (context) {
-        final record = downloadController.getRecordSnapshot(recordKey);
-        if (record == null) {
-          return const SizedBox.shrink();
-        }
+        final entries = _filteredEntries(group);
+        final totalCount = entries.length;
+        final completedCount = entries
+            .where((e) => e.episode.status == DownloadStatus.completed)
+            .length;
+        final activeCount = entries
+            .where(
+              (e) =>
+                  e.episode.status == DownloadStatus.downloading ||
+                  e.episode.status == DownloadStatus.resolving ||
+                  e.episode.status == DownloadStatus.pending,
+            )
+            .length;
+        final aggregateProgress = totalCount == 0
+            ? 0.0
+            : entries.fold<double>(
+                    0,
+                    (sum, e) =>
+                        sum +
+                        (e.episode.status == DownloadStatus.completed
+                            ? 1.0
+                            : e.episode.progressPercent),
+                  ) /
+                  totalCount;
 
         var totalSpeed = 0.0;
-        for (final e in record.episodes.values) {
-          if (e.status == DownloadStatus.downloading) {
+        for (final e in entries) {
+          if (e.episode.status == DownloadStatus.downloading) {
             totalSpeed += downloadController.getSpeed(
-              record.bangumiId,
-              record.pluginName,
-              e.episodeNumber,
+              e.record.bangumiId,
+              e.record.pluginName,
+              e.episode.episodeNumber,
             );
           }
         }
-        final expanded = _isExpanded(recordKey, record);
+        final expanded = _isExpanded(group);
 
         return DownloadRecordCard(
-          record: record,
+          bangumiName: group.bangumiName,
+          coverSource: group.coverSource,
+          completedCount: completedCount,
+          totalCount: totalCount,
+          activeCount: activeCount,
+          aggregateProgress: aggregateProgress,
           expanded: expanded,
           onToggle: () {
-            setState(() => _expanded[recordKey] = !expanded);
+            setState(() => _expanded[group.key] = !expanded);
           },
-          onResumeAll: () {
-            downloadController.resumeAllDownloads(
-              record.bangumiId,
-              record.pluginName,
-            );
-            KazumiDialog.showToast(message: '已开始恢复下载');
-          },
-          onDeleteAll: () => _confirmDeleteRecord(record),
+          onResumeAll: _filter == _DownloadFilter.downloading
+              ? () => _resumeAll(group)
+              : null,
+          onPauseAll: _filter == _DownloadFilter.downloading
+              ? () => _pauseAll(group)
+              : null,
+          onDeleteAll: () => _filter == _DownloadFilter.downloading
+              ? _confirmDeleteIncomplete(group)
+              : _confirmDeleteCompleted(group),
           totalSpeed: totalSpeed,
           episodeTileBuilder: () {
-            final episodes = record.episodes.values.toList()
-              ..sort((a, b) => a.episodeNumber.compareTo(b.episodeNumber));
-            return episodes.map((ep) => _buildEpisodeTile(record, ep)).toList();
+            return entries.map(_buildEpisodeTile).toList();
           },
         );
       },
     );
   }
 
-  Widget _buildEpisodeTile(DownloadRecord record, DownloadEpisode episode) {
+  void _resumeAll(_ShowGroup group) {
+    for (final record in group.records) {
+      downloadController.resumeAllDownloads(
+        record.bangumiId,
+        record.pluginName,
+      );
+    }
+    KazumiDialog.showToast(message: '已开始恢复下载');
+  }
+
+  void _pauseAll(_ShowGroup group) {
+    for (final record in group.records) {
+      downloadController.pauseDownloads(record.bangumiId, record.pluginName);
+    }
+    KazumiDialog.showToast(message: '已暂停下载');
+  }
+
+  Widget _buildEpisodeTile(_EpisodeEntry entry) {
+    final record = entry.record;
+    final episode = entry.episode;
     return DownloadEpisodeTile(
       episode: episode,
       statusText: _getStatusText(record, episode),
+      sourceLabel: record.pluginName,
       actions: _getActionButtons(record, episode),
       onPlay: episode.status == DownloadStatus.completed
           ? () => _playEpisode(record, episode)
@@ -342,11 +514,11 @@ class _DownloadPageState extends State<DownloadPage> {
     );
   }
 
-  void _confirmDeleteRecord(DownloadRecord record) {
+  void _confirmDeleteCompleted(_ShowGroup group) {
     KazumiDialog.show(
       builder: (context) => AlertDialog(
-        title: const Text('删除全部下载'),
-        content: Text('确定要删除「${record.bangumiName}」的所有下载文件吗？'),
+        title: const Text('删除已下载的内容'),
+        content: Text('确定要删除「${group.bangumiName}」中已下载完成的内容吗？'),
         actions: [
           TextButton(
             onPressed: () => KazumiDialog.dismiss(),
@@ -358,12 +530,49 @@ class _DownloadPageState extends State<DownloadPage> {
           TextButton(
             onPressed: () async {
               KazumiDialog.dismiss();
-              await _deleteDownload(
-                () => downloadController.deleteRecord(
-                  record.bangumiId,
-                  record.pluginName,
-                ),
-              );
+              await _deleteDownload(() async {
+                for (final record in group.records) {
+                  await downloadController.deleteCompletedEpisodes(
+                    record.bangumiId,
+                    record.pluginName,
+                  );
+                }
+              });
+            },
+            child: Text(
+              '删除',
+              style: TextStyle(color: Theme.of(context).colorScheme.error),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _confirmDeleteIncomplete(_ShowGroup group) {
+    KazumiDialog.show(
+      builder: (context) => AlertDialog(
+        title: const Text('删除未完成的下载'),
+        content: Text('确定要删除「${group.bangumiName}」中未完成的下载吗？已下载完成的内容会保留。'),
+        actions: [
+          TextButton(
+            onPressed: () => KazumiDialog.dismiss(),
+            child: Text(
+              '取消',
+              style: TextStyle(color: Theme.of(context).colorScheme.outline),
+            ),
+          ),
+          TextButton(
+            onPressed: () async {
+              KazumiDialog.dismiss();
+              await _deleteDownload(() async {
+                for (final record in group.records) {
+                  await downloadController.deleteIncompleteEpisodes(
+                    record.bangumiId,
+                    record.pluginName,
+                  );
+                }
+              });
             },
             child: Text(
               '删除',
