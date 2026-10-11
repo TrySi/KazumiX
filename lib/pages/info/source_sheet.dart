@@ -537,14 +537,15 @@ class _SourceSheetState extends State<SourceSheet> {
         useLegacyParser: source.plugin.useLegacyParser,
       );
       final url = resolved.url.toLowerCase();
+      final headers = source.plugin.buildHttpHeaders();
       String? format;
       String? quality;
       if (url.contains('.mp4')) {
         format = 'MP4';
-        quality = await _detectMp4Quality(resolved.url);
+        quality = await _detectMp4Quality(resolved.url, headers: headers);
       } else if (url.contains('.m3u8')) {
         format = 'HLS';
-        quality = await _detectM3u8Quality(resolved.url);
+        quality = await _detectM3u8Quality(resolved.url, headers: headers);
       }
       if (mounted) {
         setState(() {
@@ -566,10 +567,21 @@ class _SourceSheetState extends State<SourceSheet> {
   /// Fetches an m3u8 and, when it is a master playlist, returns a short
   /// quality label like `1080p · 5.0Mbps`. Returns null when the playlist is
   /// media-only or the fetch fails.
-  Future<String?> _detectM3u8Quality(String url) async {
+  Future<String?> _detectM3u8Quality(
+    String url, {
+    Map<String, dynamic> headers = const {},
+  }) async {
     try {
-      final content = await DownloadHttpClient.instance.getPlain(url);
-      if (M3u8Parser.detectType(content) != M3u8Type.master) return null;
+      final content = await DownloadHttpClient.instance.getPlain(
+        url,
+        headers: headers,
+      );
+      final type = M3u8Parser.detectType(content);
+      if (type != M3u8Type.master) {
+        // Media playlist carries no resolution metadata; probe the first
+        // segment's H.264 SPS instead.
+        return await _detectMediaM3u8Resolution(content, url, headers);
+      }
       final master = M3u8Parser.parseMasterPlaylist(content, url);
       if (master.variants.isEmpty) return null;
       final best = master.bestVariant;
@@ -591,41 +603,275 @@ class _SourceSheetState extends State<SourceSheet> {
     }
   }
 
-  /// Probes the first megabytes of an MP4, parsing the `moov` box to read
-  /// resolution (`tkhd`) and, when the total size is known, the bitrate
-  /// (`mvhd` duration + `Content-Range` total). Returns null when the `moov`
-  /// box is not at the front (non-faststart) or parsing fails.
-  Future<String?> _detectMp4Quality(String url) async {
+  /// Probes the first segment of a media playlist and parses its H.264 SPS to
+  /// read the actual resolution. Returns null when no SPS is found in the
+  /// first bytes or parsing fails.
+  Future<String?> _detectMediaM3u8Resolution(
+    String content,
+    String baseUrl,
+    Map<String, dynamic> headers,
+  ) async {
     try {
-      final range = await DownloadHttpClient.instance.getRangeBytes(url);
+      final playlist = M3u8Parser.parseMediaPlaylist(content, baseUrl);
+      if (playlist.segments.isEmpty) return null;
+      final firstSegment = playlist.segments.first.uri;
+      final range = await DownloadHttpClient.instance.getRangeBytes(
+        firstSegment,
+        headers: headers,
+      );
       if (range == null) return null;
-      final moov = _findBox(range.bytes, 'moov', maxDepth: 0);
-      if (moov == null) return null;
+      final sps = _findSpsRbsp(range.bytes);
+      if (sps == null) return null;
+      final resolution = _parseSpsResolution(sps);
+      if (resolution == null) return null;
+      return _shortResolution('${resolution.$1}x${resolution.$2}');
+    } catch (error) {
+      KazumiLogger().w(
+        'SourceSheet: failed to probe media playlist resolution',
+        error: error,
+      );
+      return null;
+    }
+  }
 
-      final parts = <String>[];
-      final tkhd = _findBox(moov, 'tkhd');
-      if (tkhd != null) {
-        final dimensions = _parseTkhdDimensions(tkhd);
-        if (dimensions != null) {
-          parts.add('${dimensions.$1}x${dimensions.$2}');
-          parts.add(_shortResolution('${dimensions.$1}x${dimensions.$2}'));
+  /// Scans for the first SPS NAL unit (type 7) in a byte stream and returns
+  /// its RBSP with emulation-prevention bytes removed.
+  Uint8List? _findSpsRbsp(Uint8List bytes) {
+    final len = bytes.length;
+    var i = 0;
+    while (i + 3 < len) {
+      if (bytes[i] == 0 && bytes[i + 1] == 0 && bytes[i + 2] == 1) {
+        final header = i + 3;
+        if (header < len && (bytes[header] & 0x1F) == 7) {
+          return _extractRbsp(bytes, header + 1);
+        }
+        i += 3;
+      } else if (i + 4 < len &&
+          bytes[i] == 0 &&
+          bytes[i + 1] == 0 &&
+          bytes[i + 2] == 0 &&
+          bytes[i + 3] == 1) {
+        final header = i + 4;
+        if (header < len && (bytes[header] & 0x1F) == 7) {
+          return _extractRbsp(bytes, header + 1);
+        }
+        i += 4;
+      } else {
+        i++;
+      }
+    }
+    return null;
+  }
+
+  /// Removes H.264 emulation-prevention bytes (0x03 following two zero bytes)
+  /// starting from [start] (right after the NAL header).
+  Uint8List _extractRbsp(Uint8List bytes, int start) {
+    final out = <int>[];
+    var zeroCount = 0;
+    for (var i = start; i < bytes.length; i++) {
+      final b = bytes[i];
+      if (b == 0x03 && zeroCount >= 2) {
+        zeroCount = 0;
+        continue;
+      }
+      out.add(b);
+      if (b == 0) {
+        zeroCount++;
+      } else {
+        zeroCount = 0;
+      }
+    }
+    return Uint8List.fromList(out);
+  }
+
+  /// Parses an H.264 SPS RBSP into (width, height). Returns null for uncommon
+  /// streams (custom scaling matrices) or malformed data.
+  (int, int)? _parseSpsResolution(Uint8List rbsp) {
+    final reader = _H264BitReader(rbsp);
+    final profileIdc = reader.readBits(8);
+    reader.readBits(8); // constraint flags + reserved
+    reader.readBits(8); // level_idc
+    reader.readUe(); // seq_parameter_set_id
+
+    var chromaFormatIdc = 1; // default 4:2:0 for non-high profiles
+    const highProfiles = {
+      100, 110, 122, 244, 44, 83, 86, 118, 128, 138, 139, 134, 135,
+    };
+    if (highProfiles.contains(profileIdc)) {
+      chromaFormatIdc = reader.readUe();
+      if (chromaFormatIdc == 3) {
+        reader.readBits(1); // separate_colour_plane_flag
+      }
+      reader.readUe(); // bit_depth_luma_minus8
+      reader.readUe(); // bit_depth_chroma_minus8
+      reader.readBits(1); // qpprime_y_zero_transform_bypass_flag
+      if (reader.readBits(1) == 1) {
+        // seq_scaling_matrix_present_flag: scaling lists are rare; bail out.
+        return null;
+      }
+    }
+
+    reader.readUe(); // log2_max_frame_num_minus4
+    final picOrderCntType = reader.readUe();
+    if (picOrderCntType == 0) {
+      reader.readUe(); // log2_max_pic_order_cnt_lsb_minus4
+    } else if (picOrderCntType == 1) {
+      reader.readBits(1); // delta_pic_order_always_zero_flag
+      reader.readSe(); // offset_for_non_ref_pic
+      reader.readSe(); // offset_for_top_to_bottom_field
+      final numRefFrames = reader.readUe();
+      for (var i = 0; i < numRefFrames; i++) {
+        reader.readSe(); // offset_for_ref_frame[i]
+      }
+    }
+
+    reader.readUe(); // max_num_ref_frames
+    reader.readBits(1); // gaps_in_frame_num_value_allowed_flag
+    final picWidthInMbsMinus1 = reader.readUe();
+    final picHeightInMapUnitsMinus1 = reader.readUe();
+    final frameMbsOnlyFlag = reader.readBits(1);
+    if (frameMbsOnlyFlag == 0) {
+      reader.readBits(1); // mb_adaptive_frame_field_flag
+    }
+    reader.readBits(1); // direct_8x8_inference_flag
+    final croppingFlag = reader.readBits(1);
+    var cropLeft = 0;
+    var cropRight = 0;
+    var cropTop = 0;
+    var cropBottom = 0;
+    if (croppingFlag == 1) {
+      cropLeft = reader.readUe();
+      cropRight = reader.readUe();
+      cropTop = reader.readUe();
+      cropBottom = reader.readUe();
+    }
+
+    // SubWidthC / SubHeightC by chroma format.
+    final subWidthC = switch (chromaFormatIdc) {
+      1 || 2 => 2,
+      _ => 1,
+    };
+    final subHeightC = switch (chromaFormatIdc) {
+      1 => 2,
+      _ => 1,
+    };
+    final width =
+        (picWidthInMbsMinus1 + 1) * 16 - (cropLeft + cropRight) * subWidthC;
+    final height = (2 - frameMbsOnlyFlag) *
+            (picHeightInMapUnitsMinus1 + 1) *
+            16 -
+        (cropTop + cropBottom) * subHeightC * (2 - frameMbsOnlyFlag);
+    if (width <= 0 || height <= 0) return null;
+    return (width, height);
+  }
+
+  /// Probes an MP4 for quality in three passes:
+  /// 1. front `moov` (faststart) — resolution via `tkhd`, bitrate via `mvhd`;
+  /// 2. tail `moov` (non-faststart) — same parsing on the file tail;
+  /// 3. first-frame H.264 SPS — for Annex-B streams with no usable `moov`.
+  Future<String?> _detectMp4Quality(
+    String url, {
+    Map<String, dynamic> headers = const {},
+  }) async {
+    try {
+      final head = await DownloadHttpClient.instance.getRangeBytes(
+        url,
+        headers: headers,
+      );
+      if (head == null) return null;
+
+      // Pass 1: faststart moov at the front.
+      var moov = _findBox(head.bytes, 'moov', maxDepth: 0);
+
+      // Pass 2: non-faststart moov at the tail.
+      if (moov == null &&
+          head.totalSize != null &&
+          head.totalSize! > _mp4TailProbeSize) {
+        final tailStart = head.totalSize! - _mp4TailProbeSize;
+        final tail = await DownloadHttpClient.instance.getRangeBytes(
+          url,
+          start: tailStart,
+          end: head.totalSize! - 1,
+          headers: headers,
+        );
+        if (tail != null) {
+          moov = _findMoovAtTail(tail.bytes);
         }
       }
 
-      final mvhd = _findBox(moov, 'mvhd');
-      final totalSize = range.totalSize;
-      if (mvhd != null && totalSize != null) {
-        final duration = _parseMvhdDurationSeconds(mvhd);
-        if (duration != null && duration > 0) {
-          final bitrate = (totalSize * 8 / duration).round();
-          parts.add(_shortBandwidth(bitrate));
+      if (moov != null) {
+        final label = _moovQualityLabel(moov, head.totalSize);
+        if (label != null) return label;
+      }
+
+      // Pass 3: first-frame H.264 SPS (Annex-B mdat payload).
+      final sps = _findSpsRbsp(head.bytes);
+      if (sps != null) {
+        final resolution = _parseSpsResolution(sps);
+        if (resolution != null) {
+          return _shortResolution('${resolution.$1}x${resolution.$2}');
         }
       }
-      return parts.isEmpty ? null : parts.join(' · ');
+
+      return null;
     } catch (error) {
       KazumiLogger().w('SourceSheet: failed to read mp4 quality', error: error);
       return null;
     }
+  }
+
+  static const int _mp4TailProbeSize = 1024 * 1024; // 1MB
+
+  /// Builds the quality label from a `moov` payload (resolution + bitrate).
+  String? _moovQualityLabel(Uint8List moov, int? totalSize) {
+    final parts = <String>[];
+    final tkhd = _findBox(moov, 'tkhd');
+    if (tkhd != null) {
+      final dimensions = _parseTkhdDimensions(tkhd);
+      if (dimensions != null) {
+        parts.add(_shortResolution('${dimensions.$1}x${dimensions.$2}'));
+      }
+    }
+    final mvhd = _findBox(moov, 'mvhd');
+    if (mvhd != null && totalSize != null) {
+      final duration = _parseMvhdDurationSeconds(mvhd);
+      if (duration != null && duration > 0) {
+        final bitrate = (totalSize * 8 / duration).round();
+        parts.add(_shortBandwidth(bitrate));
+      }
+    }
+    return parts.isEmpty ? null : parts.join(' · ');
+  }
+
+  /// Locates a `moov` box near the end of a tail probe by scanning backwards
+  /// for the "moov" magic. Returns its payload (children).
+  Uint8List? _findMoovAtTail(Uint8List tail) {
+    const m = 0x6D; // 'm'
+    const o = 0x6F; // 'o'
+    const v = 0x76; // 'v'
+    for (var i = tail.length - 8; i >= 0; i--) {
+      if (tail[i] == m && tail[i + 1] == o && tail[i + 2] == o && tail[i + 3] == v) {
+        // Standard 32-bit size header.
+        if (i - 4 >= 0) {
+          final size = _readUint32(tail, i - 4);
+          final payloadStart = i + 4;
+          final payloadEnd = payloadStart + size - 8;
+          if (size >= 8 && payloadEnd <= tail.length) {
+            return tail.sublist(payloadStart, payloadEnd);
+          }
+        }
+        // 64-bit large size header (size field == 1).
+        if (i - 12 >= 0 && _readUint32(tail, i - 12) == 1) {
+          final largeSize = _readUint64(tail, i - 8);
+          final payloadStart = i + 4;
+          final payloadEnd = payloadStart + largeSize - 16;
+          if (largeSize >= 16 && payloadEnd <= tail.length) {
+            return tail.sublist(payloadStart, payloadEnd);
+          }
+        }
+      }
+    }
+    return null;
   }
 
   /// Walks MP4 boxes looking for [type]; [maxDepth] limits container recursion.
@@ -1034,5 +1280,46 @@ extension _FirstWhereOrNull<T> on Iterable<T> {
       }
     }
     return null;
+  }
+}
+
+/// Minimal H.264 bitstream reader for SPS parsing (Exp-Golomb + raw bits).
+class _H264BitReader {
+  _H264BitReader(this._data);
+
+  final Uint8List _data;
+  int _bytePos = 0;
+  int _bitPos = 0;
+
+  int readBits(int n) {
+    var result = 0;
+    for (var i = 0; i < n; i++) {
+      if (_bytePos >= _data.length) return result;
+      final bit = (_data[_bytePos] >> (7 - _bitPos)) & 1;
+      result = (result << 1) | bit;
+      _bitPos++;
+      if (_bitPos == 8) {
+        _bitPos = 0;
+        _bytePos++;
+      }
+    }
+    return result;
+  }
+
+  int readUe() {
+    var leadingZeroBits = 0;
+    while (readBits(1) == 0) {
+      leadingZeroBits++;
+      if (leadingZeroBits > 31) return 0;
+    }
+    if (leadingZeroBits == 0) return 0;
+    final suffix = readBits(leadingZeroBits);
+    return (1 << leadingZeroBits) - 1 + suffix;
+  }
+
+  int readSe() {
+    final codeNum = readUe();
+    if (codeNum % 2 == 0) return -(codeNum ~/ 2);
+    return (codeNum + 1) ~/ 2;
   }
 }

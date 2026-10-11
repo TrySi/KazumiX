@@ -62,12 +62,16 @@ class DownloadHttpClient {
     int start = 0,
     int end = 256 * 1024 - 1,
     Duration receiveTimeout = const Duration(seconds: 15),
+    Map<String, dynamic> headers = const {},
   }) async {
     try {
       final response = await DioFactory.downloadDio.get<ResponseBody>(
         url,
         options: Options(
-          headers: {'Range': 'bytes=$start-$end'},
+          headers: {
+            ...headers,
+            'Range': 'bytes=$start-$end',
+          },
           responseType: ResponseType.stream,
           receiveTimeout: receiveTimeout,
         ),

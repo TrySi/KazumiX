@@ -10,10 +10,12 @@ import 'package:kazumi/bean/dialog/material_bottom_sheet.dart';
 import 'package:kazumi/bean/widget/empty_state_widget.dart';
 import 'package:kazumi/bean/widget/kazumi_menu.dart';
 import 'package:kazumi/modules/bangumi/bangumi_item.dart';
+import 'package:kazumi/modules/bangumi/episode_item.dart';
 import 'package:kazumi/modules/download/download_module.dart';
 import 'package:kazumi/pages/download/download_controller.dart';
 import 'package:kazumi/pages/video/video_playback_args.dart';
 import 'package:kazumi/repositories/bangumi_offline_cache_repository.dart';
+import 'package:kazumi/services/logging/logger.dart';
 
 enum _OfflineLayout { cards, list }
 
@@ -167,6 +169,11 @@ class _OfflinePageState extends State<OfflinePage> {
       episode.episodeNumber,
     );
     if (localPath == null) {
+      KazumiLogger().e(
+        'OfflinePage: 本地文件不存在 '
+        'bangumiId=${record.bangumiId} plugin=${record.pluginName} '
+        'episode=${episode.episodeNumber}',
+      );
       KazumiDialog.showToast(message: '本地文件不存在');
       return;
     }
@@ -620,7 +627,7 @@ class _OfflineEpisodeSheet extends StatelessWidget {
   final _OfflineShow show;
   final ValueChanged<_OfflineEpisode> onPlay;
 
-  List<_OfflineEpisodeChoice> _buildChoices() {
+  List<_OfflineEpisodeChoice> _buildChoices(List<EpisodeInfo>? cached) {
     final downloadedByNumber = <int, _OfflineEpisode>{};
     final downloadedByName = <String, _OfflineEpisode>{};
     for (final e in show.episodes) {
@@ -632,7 +639,12 @@ class _OfflineEpisodeSheet extends StatelessWidget {
 
     // Prefer the offline-cached episode list so the full episode range is
     // shown even before every episode has been downloaded.
-    final cached = BangumiOfflineCacheRepository().readEpisodes(show.bangumiId);
+    if (cached == null || cached.isEmpty) {
+      KazumiLogger().w(
+        'OfflinePage: 离线缓存无集数 bangumiId=${show.bangumiId}，'
+        '降级为仅显示已下载集',
+      );
+    }
     if (cached != null && cached.isNotEmpty) {
       final choices = <_OfflineEpisodeChoice>[];
       final counters = <int, int>{};
@@ -708,18 +720,18 @@ class _OfflineEpisodeSheet extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final choices = _buildChoices();
-    final downloadedCount = choices.where((c) => c.downloaded).length;
-    final fromCache = BangumiOfflineCacheRepository().readEpisodes(
+    final cached = BangumiOfflineCacheRepository().readEpisodes(
       show.bangumiId,
     );
+    final choices = _buildChoices(cached);
+    final downloadedCount = choices.where((c) => c.downloaded).length;
 
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
         MaterialBottomSheetHeader(
           title: show.bangumiName,
-          description: fromCache != null && fromCache.isNotEmpty
+          description: cached != null && cached.isNotEmpty
               ? '共 ${choices.length} 集 · 已下载 $downloadedCount 集'
               : '已下载 $downloadedCount 集',
           onClose: () => Navigator.of(context).pop(),
