@@ -1,3 +1,5 @@
+import 'dart:typed_data';
+
 import 'package:dio/dio.dart';
 import 'package:kazumi/request/core/dio_factory.dart';
 import 'package:kazumi/request/core/network_error_mapper.dart';
@@ -47,6 +49,39 @@ class DownloadHttpClient {
         onReceiveProgress: onReceiveProgress,
       );
       return response.data ?? '';
+    } on DioException catch (e) {
+      throw await NetworkErrorMapper.mapException(e);
+    }
+  }
+
+  /// Reads a byte range of a URL, returning the bytes and the total file size
+  /// parsed from `Content-Range`. Returns null when the server ignores the
+  /// Range header (it replies with the whole body or a 200).
+  Future<({Uint8List bytes, int? totalSize})?> getRangeBytes(
+    String url, {
+    int start = 0,
+    int end = 256 * 1024 - 1,
+    Duration receiveTimeout = const Duration(seconds: 15),
+  }) async {
+    try {
+      final response = await DioFactory.downloadDio.get<ResponseBody>(
+        url,
+        options: Options(
+          headers: {'Range': 'bytes=$start-$end'},
+          responseType: ResponseType.stream,
+          receiveTimeout: receiveTimeout,
+        ),
+      );
+      if (response.statusCode != 206) return null;
+      final builder = BytesBuilder(copy: false);
+      await for (final chunk in response.data!.stream) {
+        builder.add(chunk);
+      }
+      final contentRange = response.headers.value('content-range');
+      final totalSize = contentRange == null
+          ? null
+          : int.tryParse(contentRange.split('/').last.trim());
+      return (bytes: builder.takeBytes(), totalSize: totalSize);
     } on DioException catch (e) {
       throw await NetworkErrorMapper.mapException(e);
     }

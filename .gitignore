@@ -57,3 +57,6 @@ android/build/reports/problems/
 **/macos/Podfile.lock
 # Widget Preview related
 .widget_preview/
+
+# reference
+Anich
