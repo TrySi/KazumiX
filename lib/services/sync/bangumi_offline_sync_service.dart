@@ -5,6 +5,7 @@ import 'dart:math' as math;
 
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:kazumi/modules/bangumi/bangumi_item.dart';
+import 'package:kazumi/modules/download/download_module.dart';
 import 'package:kazumi/repositories/bangumi_offline_cache_repository.dart';
 import 'package:kazumi/request/apis/bangumi_api.dart';
 import 'package:kazumi/request/core/network_exception.dart';
@@ -94,9 +95,23 @@ class BangumiOfflineSyncService {
 
       final now = DateTime.now();
       final subjects = <int, BangumiItem>{};
+      final downloadedIds = <int>{};
+      final collectedIds = <int>{};
       final retainedCalendarKeys = <String>{'calendar:current-week'};
+
+      // 1. Downloaded shows take precedence and are always kept in scope.
+      for (final record in GStorage.downloads.values) {
+        downloadedIds.add(record.bangumiId);
+        subjects.putIfAbsent(
+          record.bangumiId,
+          () => _itemFromDownloadRecord(record),
+        );
+      }
+
+      // 2. Collected shows.
       for (final collectible in GStorage.collectibles.values) {
         final item = collectible.bangumiItem;
+        collectedIds.add(item.id);
         subjects.putIfAbsent(item.id, () => item);
         if (_cache.readSubject(item.id) == null) {
           await _cache.writeSubject(item);
@@ -131,7 +146,13 @@ class BangumiOfflineSyncService {
         }
       }
 
-      await _syncSubjects(subjects.values.toList(), currentSeasonIds);
+      final ordered = _orderSubjects(
+        subjects.values.toList(),
+        downloadedIds: downloadedIds,
+        collectedIds: collectedIds,
+        currentSeasonIds: currentSeasonIds,
+      );
+      await _syncSubjects(ordered, currentSeasonIds);
       await _cache.retainOfflineScope(
         subjectIds: subjects.keys.toSet(),
         calendarKeys: retainedCalendarKeys,
@@ -151,6 +172,50 @@ class BangumiOfflineSyncService {
   DateTime _quarterStart(DateTime date) {
     final firstMonth = ((date.month - 1) ~/ 3) * 3 + 1;
     return DateTime(date.year, firstMonth);
+  }
+
+  BangumiItem _itemFromDownloadRecord(DownloadRecord record) {
+    return BangumiItem(
+      id: record.bangumiId,
+      type: 2,
+      name: record.bangumiName,
+      nameCn: record.bangumiName,
+      summary: '',
+      airDate: '',
+      airWeekday: 0,
+      rank: 0,
+      images: {'large': record.bangumiCover},
+      tags: [],
+      alias: [],
+      ratingScore: 0.0,
+      votes: 0,
+      votesCount: [],
+      info: '',
+    );
+  }
+
+  /// Orders subjects so the most relevant are synced first: downloaded shows,
+  /// then collected shows, then current-season shows, then older seasons.
+  List<BangumiItem> _orderSubjects(
+    List<BangumiItem> subjects, {
+    required Set<int> downloadedIds,
+    required Set<int> collectedIds,
+    required Set<int> currentSeasonIds,
+  }) {
+    int rank(int id) {
+      if (downloadedIds.contains(id)) return 0;
+      if (collectedIds.contains(id)) return 1;
+      if (currentSeasonIds.contains(id)) return 2;
+      return 3;
+    }
+
+    final ordered = subjects.toList();
+    ordered.sort((a, b) {
+      final byRank = rank(a.id).compareTo(rank(b.id));
+      if (byRank != 0) return byRank;
+      return a.id.compareTo(b.id);
+    });
+    return ordered;
   }
 
   void _loadCircuitState() {
