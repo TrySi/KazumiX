@@ -22,6 +22,9 @@ class DownloadRecord {
   @HiveField(5)
   DateTime createdAt;
 
+  @HiveField(6, defaultValue: '')
+  String localCoverPath;
+
   String get key => '${pluginName}_$bangumiId';
 
   DownloadRecord(
@@ -30,8 +33,13 @@ class DownloadRecord {
     this.bangumiCover,
     this.pluginName,
     this.episodes,
-    this.createdAt,
-  );
+    this.createdAt, {
+    this.localCoverPath = '',
+  });
+
+  String get coverSource => localCoverPath.isEmpty
+      ? bangumiCover
+      : Uri.file(localCoverPath).toString();
 }
 
 @HiveType(typeId: 8)

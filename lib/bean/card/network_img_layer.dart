@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:kazumi/services/logging/logger.dart';
@@ -46,15 +48,13 @@ class NetworkImgLayer extends StatelessWidget {
     final heroContext = flightDirection == HeroFlightDirection.push
         ? fromHeroContext
         : toHeroContext;
-    final hero =
-        flightDirection == HeroFlightDirection.push ? fromHero : toHero;
+    final hero = flightDirection == HeroFlightDirection.push
+        ? fromHero
+        : toHero;
 
     return InheritedTheme.captureAll(
       heroContext,
-      Material(
-        type: MaterialType.transparency,
-        child: hero.child,
-      ),
+      Material(type: MaterialType.transparency, child: hero.child),
     );
   }
 
@@ -66,6 +66,25 @@ class NetworkImgLayer extends StatelessWidget {
     }
 
     final (memCacheWidth, memCacheHeight) = _cacheSize(context);
+    final uri = Uri.tryParse(imageUrl);
+    if (uri?.scheme == 'file') {
+      return ClipRRect(
+        clipBehavior: Clip.antiAlias,
+        borderRadius: _borderRadius,
+        child: Image.file(
+          File.fromUri(uri!),
+          width: width,
+          height: height,
+          cacheWidth: memCacheWidth,
+          cacheHeight: memCacheHeight,
+          fit: fit,
+          filterQuality: filterQuality,
+          color: color,
+          colorBlendMode: colorBlendMode,
+          errorBuilder: (context, error, stackTrace) => _placeholder(context),
+        ),
+      );
+    }
     return ClipRRect(
       clipBehavior: Clip.antiAlias,
       borderRadius: _borderRadius,
@@ -139,10 +158,9 @@ class NetworkImgLayer extends StatelessWidget {
       height: height,
       clipBehavior: Clip.antiAlias,
       decoration: BoxDecoration(
-        color: Theme.of(context)
-            .colorScheme
-            .onInverseSurface
-            .withValues(alpha: 0.4),
+        color: Theme.of(
+          context,
+        ).colorScheme.onInverseSurface.withValues(alpha: 0.4),
         borderRadius: _borderRadius,
       ),
       child: type == 'bg'

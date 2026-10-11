@@ -1,12 +1,28 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:hive_ce/hive.dart';
 import 'package:kazumi/modules/download/download_module.dart';
+import 'package:kazumi/services/download/download_directory_service.dart';
 import 'package:kazumi/services/download/download_path_migration.dart';
 import 'package:logger/logger.dart';
 import 'package:path/path.dart' as path;
 
 void main() {
   setUpAll(() => Logger.level = Level.off);
+
+  test('builds a safe show, plugin, and episode directory path', () {
+    final service = DownloadDirectoryService();
+
+    expect(
+      service.episodeDownloadDirectoryPath(
+        downloadBase: 'root',
+        bangumiId: 42,
+        bangumiName: 'A/B',
+        pluginName: 'source/one',
+        episodeNumber: 13,
+      ),
+      path.join('root', '42_A_B', 'source_one', '13'),
+    );
+  });
 
   test('rebases recorded paths under the current download root', () async {
     String oldDirectory(int episode) =>
@@ -58,6 +74,57 @@ void main() {
       directory,
     );
   });
+
+  test(
+    'rebases the new show and plugin directory layout with its cover',
+    () async {
+      final oldEpisodeDirectory = path.join(
+        'old',
+        'downloads',
+        '123_anime',
+        'source',
+        '1',
+      );
+      final record = DownloadRecord(
+        123,
+        'anime',
+        '',
+        'source',
+        {
+          1: _episode(
+            oldEpisodeDirectory,
+            path.join(oldEpisodeDirectory, 'video.mp4'),
+          ),
+        },
+        DateTime(2026),
+        localCoverPath: path.join('old', 'downloads', '123_anime', 'cover.jpg'),
+      );
+      final downloads = _MemoryDownloads({record.key: record});
+
+      await rebaseIosDownloadPaths(
+        downloads,
+        downloadDirectory: () async => path.join('new', 'downloads'),
+      );
+
+      final episode = downloads.get(record.key)!.episodes[1]!;
+      final newEpisodeDirectory = path.join(
+        'new',
+        'downloads',
+        '123_anime',
+        'source',
+        '1',
+      );
+      expect(episode.downloadDirectory, newEpisodeDirectory);
+      expect(
+        episode.localM3u8Path,
+        path.join(newEpisodeDirectory, 'video.mp4'),
+      );
+      expect(
+        downloads.get(record.key)!.localCoverPath,
+        path.join('new', 'downloads', '123_anime', 'cover.jpg'),
+      );
+    },
+  );
 }
 
 DownloadRecord _record(Map<int, DownloadEpisode> episodes) =>

@@ -50,8 +50,9 @@ class DownloadDirectoryService {
         GStorage.getSetting(SettingsKeys.downloadDirectoryBookmark),
         isDirectory: true,
       );
-      _accessLost =
-          !await _bookmarks.startAccessingSecurityScopedResource(restored);
+      _accessLost = !await _bookmarks.startAccessingSecurityScopedResource(
+        restored,
+      );
       // The bookmark follows the directory when the user moves it.
       if (!_accessLost && !path.equals(restored.path, directory)) {
         await GStorage.putSetting(
@@ -79,6 +80,43 @@ class DownloadDirectoryService {
     return directory;
   }
 
+  String sanitizeDownloadPathSegment(
+    String value, {
+    String fallback = 'unknown',
+  }) {
+    var sanitized = value
+        .trim()
+        .replaceAll(RegExp(r'[<>:"/\\|?*\x00-\x1f]'), '_')
+        .replaceAll(RegExp(r'[. ]+$'), '');
+    if (sanitized.isEmpty) sanitized = fallback;
+    final runes = sanitized.runes.toList();
+    if (runes.length > 100) {
+      sanitized = String.fromCharCodes(runes.take(100));
+    }
+    return sanitized;
+  }
+
+  String bangumiDownloadDirectoryName(int bangumiId, String bangumiName) =>
+      '${bangumiId}_${sanitizeDownloadPathSegment(bangumiName, fallback: '番剧')}';
+
+  String pluginDownloadDirectoryName(String pluginName) =>
+      sanitizeDownloadPathSegment(pluginName, fallback: 'source');
+
+  String episodeDownloadDirectoryPath({
+    required String downloadBase,
+    required int bangumiId,
+    required String bangumiName,
+    required String pluginName,
+    required int episodeNumber,
+  }) {
+    return path.join(
+      downloadBase,
+      bangumiDownloadDirectoryName(bangumiId, bangumiName),
+      pluginDownloadDirectoryName(pluginName),
+      '$episodeNumber',
+    );
+  }
+
   /// Returns null when the user cancels. The directory is saved only after
   /// it proves writable and its access is persisted.
   Future<String?> selectDirectory() async {
@@ -98,6 +136,13 @@ class DownloadDirectoryService {
     // The picker grant covers the rest of this session.
     _accessLost = false;
     return selected;
+  }
+
+  Future<String> getBangumiDirectory(int bangumiId, String bangumiName) async {
+    return path.join(
+      await getDownloadDirectory(),
+      bangumiDownloadDirectoryName(bangumiId, bangumiName),
+    );
   }
 
   Future<void> resetDirectory() async {

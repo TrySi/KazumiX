@@ -1,5 +1,6 @@
 import 'package:hive_ce/hive.dart';
 import 'package:kazumi/modules/download/download_module.dart';
+import 'package:kazumi/services/download/download_directory_service.dart';
 import 'package:kazumi/services/logging/logger.dart';
 import 'package:kazumi/utils/file_system.dart';
 import 'package:path/path.dart' as path;
@@ -34,6 +35,14 @@ Future<void> _rebaseDownloadPaths(
     final record = downloads.get(key);
     if (record == null) continue;
 
+    final directoryService = DownloadDirectoryService();
+    final bangumiDirectory = directoryService.bangumiDownloadDirectoryName(
+      record.bangumiId,
+      record.bangumiName,
+    );
+    final pluginDirectory = directoryService.pluginDownloadDirectoryName(
+      record.pluginName,
+    );
     var recordChanged = false;
     for (final entry in record.episodes.entries) {
       final episode = entry.value;
@@ -41,11 +50,26 @@ Future<void> _rebaseDownloadPaths(
         continue;
       }
 
-      final directory = path.join(
-        downloadBase,
-        '${record.bangumiId}_${record.pluginName}',
-        '${entry.key}',
-      );
+      final previousEpisodeDirectory = episode.downloadDirectory.isNotEmpty
+          ? episode.downloadDirectory
+          : path.dirname(episode.localM3u8Path);
+      final wasInNewLayout =
+          path.basename(path.dirname(previousEpisodeDirectory)) ==
+              pluginDirectory &&
+          path.basename(path.dirname(path.dirname(previousEpisodeDirectory))) ==
+              bangumiDirectory;
+      final directory = wasInNewLayout
+          ? path.join(
+              downloadBase,
+              bangumiDirectory,
+              pluginDirectory,
+              '${entry.key}',
+            )
+          : path.join(
+              downloadBase,
+              '${record.bangumiId}_${record.pluginName}',
+              '${entry.key}',
+            );
       final videoPath = episode.localM3u8Path.isEmpty
           ? ''
           : path.join(directory, path.basename(episode.localM3u8Path));
@@ -57,6 +81,18 @@ Future<void> _rebaseDownloadPaths(
       episode.downloadDirectory = directory;
       episode.localM3u8Path = videoPath;
       recordChanged = true;
+    }
+
+    if (record.localCoverPath.isNotEmpty) {
+      final coverPath = path.join(
+        downloadBase,
+        bangumiDirectory,
+        path.basename(record.localCoverPath),
+      );
+      if (record.localCoverPath != coverPath) {
+        record.localCoverPath = coverPath;
+        recordChanged = true;
+      }
     }
 
     if (recordChanged) {
