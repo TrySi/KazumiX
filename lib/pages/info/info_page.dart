@@ -19,7 +19,6 @@ import 'package:kazumi/pages/info/info_controller.dart';
 import 'package:kazumi/pages/info/info_tabview.dart';
 import 'package:kazumi/pages/info/rating_review_dialog.dart';
 import 'package:kazumi/pages/info/source_sheet.dart';
-import 'package:kazumi/pages/download/download_episode_sheet.dart';
 import 'package:kazumi/services/logging/logger.dart';
 import 'package:kazumi/services/platform/desktop_window_config.dart';
 import 'package:kazumi/services/storage/storage.dart';
@@ -210,29 +209,11 @@ class _InfoPageState extends State<InfoPage>
   }
 
   Future<void> _openDownload() async {
-    final source = await showAdaptiveBottomSheet<DownloadSourceSelection>(
+    await showAdaptiveBottomSheet<void>(
       context: context,
       maxHeightFactor: 0.88,
       builder: (_) =>
           SourceSheet(infoController: infoController, downloadMode: true),
-    );
-    if (!mounted || source == null) return;
-
-    final road = await showAdaptiveBottomSheet<int>(
-      context: context,
-      builder: (_) => DownloadRoadSheet(roads: source.roads),
-    );
-    if (!mounted || road == null) return;
-
-    await showAdaptiveBottomSheet<void>(
-      context: context,
-      maxHeightFactor: 0.88,
-      builder: (_) => DownloadEpisodeSheet(
-        road: road,
-        bangumiItem: infoController.bangumiItem,
-        plugin: source.plugin,
-        roads: source.roads,
-      ),
     );
   }
 

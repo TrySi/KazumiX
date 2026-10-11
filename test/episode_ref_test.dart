@@ -1,40 +1,47 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:kazumi/modules/bangumi/episode_item.dart';
 import 'package:kazumi/modules/download/download_module.dart';
+import 'package:kazumi/modules/roads/road_episode_availability.dart';
+import 'package:kazumi/modules/roads/road_module.dart';
 import 'package:kazumi/pages/player/controller/player_models.dart';
 import 'package:kazumi/pages/video/video_controller.dart';
 
 void main() {
   group('EpisodeRef', () {
-    test('online keeps list index for history and parses title for danmaku',
-        () {
-      final episode = EpisodeRef.online(
-        listIndex: 1,
-        roadIndex: 0,
-        displayTitle: '第13话',
-        pageUrl: '/episode/13',
-      );
+    test(
+      'online keeps list index for history and parses title for danmaku',
+      () {
+        final episode = EpisodeRef.online(
+          listIndex: 1,
+          roadIndex: 0,
+          displayTitle: '第13话',
+          pageUrl: '/episode/13',
+        );
 
-      expect(episode.historyEpisodeNumber, 1);
-      expect(episode.danmakuEpisodeNumber, 13);
-      expect(episode.sortNumber, 13);
-      expect(episode.originalRoadIndex, 0);
-      expect(episode.pageUrl, '/episode/13');
-    });
+        expect(episode.historyEpisodeNumber, 1);
+        expect(episode.danmakuEpisodeNumber, 13);
+        expect(episode.sortNumber, 13);
+        expect(episode.originalRoadIndex, 0);
+        expect(episode.pageUrl, '/episode/13');
+      },
+    );
 
-    test('online falls back to list index when title has no episode number',
-        () {
-      final episode = EpisodeRef.online(
-        listIndex: 2,
-        roadIndex: 1,
-        displayTitle: 'OVA',
-        pageUrl: '/ova',
-      );
+    test(
+      'online falls back to list index when title has no episode number',
+      () {
+        final episode = EpisodeRef.online(
+          listIndex: 2,
+          roadIndex: 1,
+          displayTitle: 'OVA',
+          pageUrl: '/ova',
+        );
 
-      expect(episode.historyEpisodeNumber, 2);
-      expect(episode.danmakuEpisodeNumber, 2);
-      expect(episode.sortNumber, isNull);
-      expect(episode.originalRoadIndex, 1);
-    });
+        expect(episode.historyEpisodeNumber, 2);
+        expect(episode.danmakuEpisodeNumber, 2);
+        expect(episode.sortNumber, isNull);
+        expect(episode.originalRoadIndex, 1);
+      },
+    );
 
     test('offline uses downloaded episode number for history and danmaku', () {
       const episode = EpisodeRef.offline(
@@ -94,6 +101,52 @@ void main() {
       expect(snapshot.originalRoadToDisplayRoad, {0: 0, 2: 1});
     });
   });
+
+  group('Road episode availability', () {
+    test('filters unreleased and non-main episodes', () {
+      final episodes = releasedMainEpisodes([
+        _bangumiEpisode(1, airDate: DateTime(2026, 10, 1)),
+        _bangumiEpisode(2, airDate: DateTime(2026, 11, 1)),
+        _bangumiEpisode(3, type: 1, airDate: DateTime(2026, 9, 1)),
+      ], now: DateTime(2026, 10, 11));
+
+      expect(episodes.map((episode) => episode.episode), [1]);
+    });
+
+    test('maps only matching aired episodes from a road', () {
+      final matches = matchRoadEpisodes(
+        [
+          _bangumiEpisode(1, airDate: DateTime(2026, 10, 1)),
+          _bangumiEpisode(2, airDate: DateTime(2026, 10, 8)),
+          _bangumiEpisode(3, airDate: DateTime(2026, 10, 15)),
+        ],
+        road: Road(
+          name: '线路 1',
+          data: ['/episode/1', '/episode/3'],
+          identifier: ['第1话', '第3话'],
+        ),
+      );
+
+      expect(matches.keys, [1, 3]);
+      expect(matches[3]?.episodeIndex, 2);
+      expect(matches[3]?.pageUrl, '/episode/3');
+    });
+  });
+}
+
+EpisodeInfo _bangumiEpisode(
+  int episode, {
+  int type = 0,
+  required DateTime airDate,
+}) {
+  return EpisodeInfo(
+    id: episode,
+    episode: episode,
+    type: type,
+    name: 'Episode $episode',
+    nameCn: '第$episode话',
+    airDate: airDate,
+  );
 }
 
 DownloadEpisode _episode(int episodeNumber, String name, int road) {

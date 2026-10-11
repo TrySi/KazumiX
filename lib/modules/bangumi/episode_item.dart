@@ -4,6 +4,7 @@ class EpisodeInfo {
   int type;
   String name;
   String nameCn;
+  DateTime? airDate;
 
   EpisodeInfo({
     required this.id,
@@ -11,15 +12,19 @@ class EpisodeInfo {
     required this.type,
     required this.name,
     required this.nameCn,
+    this.airDate,
   });
 
   factory EpisodeInfo.fromJson(Map<String, dynamic> json) {
+    final airDateText = json['airdate']?.toString().trim() ?? '';
     return EpisodeInfo(
-        id: json['id'] ?? 0,
-        episode: json['sort'] ?? 0,
-        type: json['type'] ?? 0,
-        name: json['name'] ?? '',
-        nameCn: json['name_cn'] ?? '');
+      id: json['id'] ?? 0,
+      episode: json['sort'] ?? 0,
+      type: json['type'] ?? 0,
+      name: json['name'] ?? '',
+      nameCn: json['name_cn'] ?? '',
+      airDate: airDateText.isEmpty ? null : DateTime.tryParse(airDateText),
+    );
   }
 
   factory EpisodeInfo.fromTemplate() {
