@@ -6,7 +6,6 @@ import 'package:scrollview_observer/scrollview_observer.dart';
 
 import 'package:kazumi/bean/dialog/dialog_helper.dart';
 import 'package:kazumi/bean/dialog/material_bottom_sheet.dart';
-import 'package:kazumi/modules/download/download_module.dart';
 import 'package:kazumi/modules/bangumi/bangumi_item.dart';
 import 'package:kazumi/modules/roads/road_module.dart';
 import 'package:kazumi/plugins/plugins.dart';
@@ -42,32 +41,14 @@ class _DownloadEpisodeSheetState extends State<DownloadEpisodeSheet> {
   Road get currentRoadData => widget.roads[widget.road];
   int get episodeCount => currentRoadData.data.length;
 
-  Set<String> _collectDownloadedUrls() {
-    final record = downloadController.getRecord(
-      widget.bangumiItem.id,
-      widget.plugin.name,
-    );
-    final downloadedUrls = <String>{};
-    if (record != null) {
-      for (final entry in record.episodes.entries) {
-        if (entry.value.status == DownloadStatus.completed ||
-            entry.value.status == DownloadStatus.downloading ||
-            entry.value.status == DownloadStatus.pending) {
-          if (entry.value.episodePageUrl.isNotEmpty) {
-            downloadedUrls.add(entry.value.episodePageUrl);
-          }
-        }
-      }
-    }
-    return downloadedUrls;
-  }
-
   @override
   Widget build(BuildContext context) {
-    final downloadedUrls = _collectDownloadedUrls();
+    // 跨线路/跨来源按集号识别已下载，避免其他线路下载后本线路仍显示未下载。
+    final downloadedEpisodes = downloadController
+        .activeOrCompletedEpisodeNumbers(widget.bangumiItem.id);
     final selectableEpisodes = <int>[
       for (int i = 1; i <= episodeCount; i++)
-        if (!downloadedUrls.contains(currentRoadData.data[i - 1])) i,
+        if (!downloadedEpisodes.contains(i)) i,
     ];
     final downloadedCount = episodeCount - selectableEpisodes.length;
     final allSelected =
@@ -132,9 +113,8 @@ class _DownloadEpisodeSheetState extends State<DownloadEpisodeSheet> {
                       itemCount: episodeCount,
                       itemBuilder: (context, index) {
                         final episodeNumber = index + 1;
-                        final episodeUrl = currentRoadData.data[index];
-                        final isDownloaded = downloadedUrls.contains(
-                          episodeUrl,
+                        final isDownloaded = downloadedEpisodes.contains(
+                          episodeNumber,
                         );
                         final isSelected = _selectedEpisodes.contains(
                           episodeNumber,
