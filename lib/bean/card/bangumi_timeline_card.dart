@@ -166,7 +166,7 @@ class BangumiTimelineCard extends StatelessWidget {
 
   Widget _buildCover(BuildContext context) {
     final colors = Theme.of(context).colorScheme;
-    final imageUrl = bangumiItem.images['large'] ?? '';
+    final imageUrl = bangumiItem.displayCover;
     return ExcludeSemantics(
       child: SizedBox(
         width: compact ? 80 : 88,

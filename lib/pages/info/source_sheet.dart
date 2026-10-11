@@ -19,6 +19,7 @@ import 'package:kazumi/modules/bangumi/episode_item.dart';
 import 'package:kazumi/pages/collect/collect_controller.dart';
 import 'package:kazumi/pages/download/download_controller.dart';
 import 'package:kazumi/pages/info/info_controller.dart';
+import 'package:kazumi/repositories/bangumi_offline_cache_repository.dart';
 import 'package:kazumi/modules/roads/road_module.dart';
 import 'package:kazumi/modules/roads/road_episode_availability.dart';
 import 'package:kazumi/pages/video/video_playback_args.dart';
@@ -121,15 +122,41 @@ class _SourceSheetState extends State<SourceSheet> {
   void _retry(String name) => _querySource(_keywordFor(name), name);
 
   Future<void> _loadReleasedEpisodes() async {
-    try {
-      final episodes = await BangumiApi.getBangumiEpisodesByID(
-        widget.infoController.bangumiItem.id,
-      );
-      if (!mounted) return;
+    final cache = BangumiOfflineCacheRepository();
+    final bangumiId = widget.infoController.bangumiItem.id;
+    final cachedEpisodes = cache.readEpisodes(bangumiId);
+    if (cachedEpisodes != null) {
       setState(() {
-        _releasedEpisodes = releasedMainEpisodes(episodes);
+        _releasedEpisodes = releasedMainEpisodes(cachedEpisodes);
         _episodesLoading = false;
       });
+      if (!cache.isFresh('episodes:$bangumiId', const Duration(hours: 12))) {
+        unawaited(_refreshReleasedEpisodes(cache, bangumiId));
+      }
+      return;
+    }
+
+    await _refreshReleasedEpisodes(cache, bangumiId);
+  }
+
+  Future<void> _refreshReleasedEpisodes(
+    BangumiOfflineCacheRepository cache,
+    int bangumiId,
+  ) async {
+    try {
+      final episodes = await BangumiApi.getBangumiEpisodesByID(bangumiId);
+      if (!mounted) return;
+      if (episodes.isNotEmpty) {
+        await cache.writeEpisodes(bangumiId, episodes);
+      }
+      final releasedEpisodes = releasedMainEpisodes(episodes);
+      setState(() {
+        if (releasedEpisodes.isNotEmpty || _releasedEpisodes.isEmpty) {
+          _releasedEpisodes = releasedEpisodes;
+        }
+        _episodesLoading = false;
+      });
+      if (releasedEpisodes.isNotEmpty) _refreshCachedRoadMatches();
     } catch (error) {
       KazumiLogger().w(
         'SourceSheet: failed to load released episodes',
@@ -137,6 +164,28 @@ class _SourceSheetState extends State<SourceSheet> {
       );
       if (mounted) setState(() => _episodesLoading = false);
     }
+  }
+
+  void _refreshCachedRoadMatches() {
+    for (final key in _roadCache.keys.toList()) {
+      final cached = _roadCache[key]!;
+      final refreshed = _buildRoadCache(cached.roads);
+      if (refreshed == null) {
+        _roadCache.remove(key);
+        continue;
+      }
+      _roadCache[key] = refreshed;
+    }
+    final selectedKey = _selectedSourceKey;
+    final refreshed = selectedKey == null ? null : _roadCache[selectedKey];
+    setState(() {
+      if (refreshed == null) return;
+      _selectedSourceRoads = refreshed.roads;
+      _roadOptions = refreshed.options;
+      if (!_roadOptions.any((option) => option.index == _selectedRoadIndex)) {
+        _selectedRoadIndex = _roadOptions.first.index;
+      }
+    });
   }
 
   _SourceRoadCache? _buildRoadCache(List<Road> roads) {

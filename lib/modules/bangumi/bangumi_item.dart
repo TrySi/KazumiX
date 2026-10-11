@@ -39,6 +39,10 @@ class BangumiItem {
   String info;
   // Calendar metadata is separate from counted user tags and is not persisted.
   final List<String> metaTags;
+  // The offline sync keeps a local copy of the cover and records it here. It is
+  // left out of the Hive fields on purpose: collected and favorite items keep
+  // the remote URL, only the offline snapshot carries the local file.
+  String? offlineCover;
   BangumiInterest? interest;
 
   BangumiItem({
@@ -58,8 +62,38 @@ class BangumiItem {
     required this.votesCount,
     required this.info,
     this.metaTags = const [],
+    this.offlineCover,
     this.interest,
   });
+
+  /// Cover to render: the offline copy when one was cached, otherwise the
+  /// remote URL.
+  String get displayCover => offlineCover ?? images['large'] ?? '';
+
+  /// Returns a copy that renders [cover] instead of the remote cover. Used by
+  /// the offline cache to keep a local cover across metadata refreshes.
+  BangumiItem withOfflineCover(String? cover) {
+    return BangumiItem(
+      id: id,
+      type: type,
+      name: name,
+      nameCn: nameCn,
+      summary: summary,
+      airDate: airDate,
+      airWeekday: airWeekday,
+      rank: rank,
+      images: Map<String, String>.from(images),
+      tags: List<BangumiTag>.from(tags),
+      alias: List<String>.from(alias),
+      ratingScore: ratingScore,
+      votes: votes,
+      votesCount: List<int>.from(votesCount),
+      info: info,
+      metaTags: List<String>.from(metaTags),
+      offlineCover: cover,
+      interest: interest,
+    );
+  }
 
   factory BangumiItem.fromJson(Map<String, dynamic> json) {
     List<String> parseBangumiAliases(Map<String, dynamic> jsonData) {
@@ -132,9 +166,14 @@ class BangumiItem {
     if (interestRaw is Map<String, dynamic>) {
       interest = BangumiInterest.fromJson(interestRaw);
     } else if (interestRaw is Map) {
-      interest =
-          BangumiInterest.fromJson(Map<String, dynamic>.from(interestRaw));
+      interest = BangumiInterest.fromJson(
+        Map<String, dynamic>.from(interestRaw),
+      );
     }
+    final rawOfflineCover = json['offlineCover'];
+    final offlineCover = rawOfflineCover is String && rawOfflineCover.isNotEmpty
+        ? rawOfflineCover
+        : null;
     return BangumiItem(
       id: json['id'],
       type: json['type'] ?? 2,
@@ -144,8 +183,9 @@ class BangumiItem {
           : json['name_cn'],
       summary: json['summary'] ?? '',
       airDate: airDateStr,
-      airWeekday:
-          dateStringToWeekday(airDateStr.isEmpty ? '2000-11-11' : airDateStr),
+      airWeekday: dateStringToWeekday(
+        airDateStr.isEmpty ? '2000-11-11' : airDateStr,
+      ),
       rank: json['rating']['rank'] ?? 0,
       images: Map<String, String>.from(
         json['images'] ??
@@ -154,25 +194,57 @@ class BangumiItem {
               "common": "",
               "medium": "",
               "small": "",
-              "grid": ""
+              "grid": "",
             },
       ),
       tags: tagList,
       alias: parseBangumiAliases(json),
       ratingScore: double.parse(
-          (json['rating']['score'] ?? 0.0).toDouble().toStringAsFixed(1)),
+        (json['rating']['score'] ?? 0.0).toDouble().toStringAsFixed(1),
+      ),
       votes: json['rating']['total'] ?? 0,
       votesCount: parseBangumiVoteCount(json),
       info: json['info'] ?? '',
       metaTags: rawMetaTags is List
           ? rawMetaTags
-              .whereType<String>()
-              .map((name) => name.trim())
-              .where((name) => name.isNotEmpty)
-              .toSet()
-              .toList()
+                .whereType<String>()
+                .map((name) => name.trim())
+                .where((name) => name.isNotEmpty)
+                .toSet()
+                .toList()
           : const [],
+      offlineCover: offlineCover,
       interest: interest,
     );
+  }
+
+  Map<String, dynamic> toCacheJson() {
+    final voteCounts = <String, int>{
+      for (var index = 0; index < 10; index++)
+        '${index + 1}': index < votesCount.length ? votesCount[index] : 0,
+    };
+    return {
+      'id': id,
+      'type': type,
+      'name': name,
+      'name_cn': nameCn,
+      'summary': summary,
+      'date': airDate,
+      'rating': {
+        'rank': rank,
+        'score': ratingScore,
+        'total': votes,
+        'count': voteCounts,
+      },
+      'images': Map<String, String>.from(images),
+      'tags': tags.map((tag) => tag.toJson()).toList(),
+      'infobox': [
+        {'key': '别名', 'value': List<String>.from(alias)},
+      ],
+      'metaTags': List<String>.from(metaTags),
+      'info': info,
+      // Only set when the offline sync stored the cover next to the app data.
+      if (offlineCover != null) 'offlineCover': offlineCover,
+    };
   }
 }

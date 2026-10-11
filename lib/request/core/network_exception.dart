@@ -25,6 +25,15 @@ class NetworkException implements Exception {
     this.stackTrace,
   });
 
+  /// Whether the request never reached the server (or never got a response) due
+  /// to connectivity, DNS, or a timeout. These can be treated as a circuit
+  /// break signal instead of retrying endlessly.
+  bool get isConnectivityFailure =>
+      type == NetworkExceptionType.connectionError ||
+      type == NetworkExceptionType.connectionTimeout ||
+      type == NetworkExceptionType.receiveTimeout ||
+      type == NetworkExceptionType.sendTimeout;
+
   @override
   String toString() {
     final status = statusCode == null ? '' : ' ($statusCode)';

@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_modular/flutter_modular.dart';
@@ -7,6 +8,7 @@ import 'package:flutter_displaymode/flutter_displaymode.dart';
 import 'package:kazumi/services/storage/storage.dart';
 import 'package:tray_manager/tray_manager.dart';
 import 'package:kazumi/services/logging/logger.dart';
+import 'package:kazumi/services/sync/bangumi_offline_sync_service.dart';
 import 'package:kazumi/services/network/metered_network_service.dart';
 import 'package:window_manager/window_manager.dart';
 import 'package:kazumi/bean/dialog/dialog_helper.dart';
@@ -37,6 +39,7 @@ class _AppWidgetState extends State<AppWidget>
     trayManager.addListener(this);
     windowManager.addListener(this);
     WidgetsBinding.instance.addObserver(this);
+    BangumiOfflineSyncService.instance.start();
     _initializePlatformIntegrations();
   }
 
@@ -76,6 +79,7 @@ class _AppWidgetState extends State<AppWidget>
     trayManager.removeListener(this);
     windowManager.removeListener(this);
     WidgetsBinding.instance.removeObserver(this);
+    unawaited(BangumiOfflineSyncService.instance.stop());
     super.dispose();
   }
 
@@ -156,8 +160,9 @@ class _AppWidgetState extends State<AppWidget>
   void _syncWindowsTitleBarBrightness(ThemeProvider themeProvider) {
     if (!Platform.isWindows) return;
 
-    final brightness =
-        themeProvider.isEffectiveDark() ? Brightness.dark : Brightness.light;
+    final brightness = themeProvider.isEffectiveDark()
+        ? Brightness.dark
+        : Brightness.light;
     if (_lastTitleBarBrightness == brightness) return;
 
     _lastTitleBarBrightness = brightness;
@@ -205,13 +210,10 @@ class _AppWidgetState extends State<AppWidget>
 
         action = result.action;
         if (result.rememberChoice) {
-          await GStorage.putSetting(
-            SettingsKeys.exitBehavior,
-            switch (action) {
-              ExitDialogAction.exit => 0,
-              ExitDialogAction.minimizeToTray => 1,
-            },
-          );
+          await GStorage.putSetting(SettingsKeys.exitBehavior, switch (action) {
+            ExitDialogAction.exit => 0,
+            ExitDialogAction.minimizeToTray => 1,
+          });
         }
       }
 
@@ -231,12 +233,15 @@ class _AppWidgetState extends State<AppWidget>
   void didChangeAppLifecycleState(AppLifecycleState state) async {
     super.didChangeAppLifecycleState(state);
     if (state == AppLifecycleState.paused) {
-      KazumiLogger()
-          .i("AppLifecycleState.paused: Application moved to background");
+      KazumiLogger().i(
+        "AppLifecycleState.paused: Application moved to background",
+      );
     } else if (state == AppLifecycleState.resumed) {
-      KazumiLogger()
-          .i("AppLifecycleState.resumed: Application moved to foreground");
+      KazumiLogger().i(
+        "AppLifecycleState.resumed: Application moved to foreground",
+      );
       await MeteredNetworkService.refresh();
+      unawaited(BangumiOfflineSyncService.instance.syncIfOnline());
     } else if (state == AppLifecycleState.inactive) {
       KazumiLogger().i("AppLifecycleState.inactive: Application is inactive");
     }
@@ -247,7 +252,8 @@ class _AppWidgetState extends State<AppWidget>
     super.didChangePlatformBrightness();
     final ThemeProvider themeProvider = context.read<ThemeProvider>();
     KazumiLogger().i(
-        "Platform brightness changed, themeMode: ${themeProvider.themeMode}");
+      "Platform brightness changed, themeMode: ${themeProvider.themeMode}",
+    );
 
     _syncWindowsTitleBarBrightness(themeProvider);
   }
@@ -266,11 +272,13 @@ class _AppWidgetState extends State<AppWidget>
       await trayManager.setToolTip('Kazumi');
     }
 
-    Menu trayMenu = Menu(items: [
-      MenuItem(key: 'show_window', label: '显示窗口'),
-      MenuItem.separator(),
-      MenuItem(key: 'exit', label: '退出 Kazumi')
-    ]);
+    Menu trayMenu = Menu(
+      items: [
+        MenuItem(key: 'show_window', label: '显示窗口'),
+        MenuItem.separator(),
+        MenuItem(key: 'exit', label: '退出 Kazumi'),
+      ],
+    );
     await trayManager.setContextMenu(trayMenu);
   }
 
@@ -306,10 +314,16 @@ class _AppWidgetState extends State<AppWidget>
           localizationsDelegates: GlobalMaterialLocalizations.delegates,
           supportedLocales: const [
             Locale.fromSubtags(
-                languageCode: 'zh', scriptCode: 'Hans', countryCode: "CN")
+              languageCode: 'zh',
+              scriptCode: 'Hans',
+              countryCode: "CN",
+            ),
           ],
           locale: const Locale.fromSubtags(
-              languageCode: 'zh', scriptCode: 'Hans', countryCode: "CN"),
+            languageCode: 'zh',
+            scriptCode: 'Hans',
+            countryCode: "CN",
+          ),
           theme: lightTheme,
           darkTheme: effectiveDarkTheme,
           themeMode: themeProvider.themeMode,

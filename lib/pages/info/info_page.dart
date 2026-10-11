@@ -226,9 +226,12 @@ class _InfoPageState extends State<InfoPage>
     infoController.staffList.clear();
     infoController.clearRelations();
     infoController.pluginSearchResponseList.clear();
+    final restoredFromCache = infoController.restoreCachedBangumiInfo(
+      widget.inputBangumiItem.id,
+    );
     if (_needsBangumiInfoRefresh(infoController.bangumiItem)) {
-      _showBangumiInfoSkeleton = true;
-      _loadBangumiInfo();
+      _showBangumiInfoSkeleton = !restoredFromCache;
+      _loadBangumiInfo(showSkeleton: !restoredFromCache);
     }
     infoTabController = TabController(length: _infoTabs.length, vsync: this);
     showRating = GStorage.getSetting(SettingsKeys.showRating);
@@ -291,21 +294,27 @@ class _InfoPageState extends State<InfoPage>
     super.dispose();
   }
 
-  Future<void> _loadBangumiInfo() async {
+  Future<void> _loadBangumiInfo({bool showSkeleton = true}) async {
     final loadingStartedAt = DateTime.now();
     try {
       // Attach metadata without replacing rendered image URLs.
-      await infoController.queryBangumiInfoByID(
-        infoController.bangumiItem.id,
-        type: 'attach',
-      );
+      if (showSkeleton) {
+        await infoController.queryBangumiInfoByID(
+          infoController.bangumiItem.id,
+          type: 'attach',
+        );
+      } else {
+        await infoController.refreshBangumiInfoByID(
+          infoController.bangumiItem.id,
+        );
+      }
     } catch (e) {
       KazumiLogger().e(
         'InfoPage: failed to query bangumi info by ID',
         error: e,
       );
     } finally {
-      if (mounted) {
+      if (mounted && showSkeleton) {
         await _waitForMinimumBangumiInfoLoadingDuration(loadingStartedAt);
       }
       if (mounted) {
@@ -400,11 +409,9 @@ class _InfoPageState extends State<InfoPage>
                               bottom: kTextTabBarHeight,
                               child: IgnorePointer(
                                 child: _InfoHeaderBackground(
-                                  imageUrl:
-                                      infoController
-                                          .bangumiItem
-                                          .images['large'] ??
-                                      '',
+                                  imageUrl: infoController
+                                      .bangumiItem
+                                      .displayCover,
                                 ),
                               ),
                             ),

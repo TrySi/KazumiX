@@ -149,7 +149,7 @@ class _BangumiInfoCardVState extends State<BangumiInfoCardV> {
                             NetworkImgLayer.heroFlightShuttleBuilder,
                         tag: widget.bangumiItem.id,
                         child: NetworkImgLayer(
-                          src: widget.bangumiItem.images['large'] ?? '',
+                          src: widget.bangumiItem.displayCover,
                           width: maxWidth,
                           height: maxHeight,
                           fadeInDuration: const Duration(milliseconds: 0),

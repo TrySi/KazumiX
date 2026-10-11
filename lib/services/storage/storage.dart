@@ -27,6 +27,7 @@ class GStorage {
   static late final Box<dynamic> _setting;
   static late Box<SearchHistory> searchHistory;
   static late Box<DownloadRecord> downloads;
+  static late Box<String> bangumiCache;
 
   /// Hive directory path, initialized during init()
   static String? _hivePath;
@@ -154,11 +155,13 @@ class GStorage {
     collectibles = await _openBoxSafe<CollectedBangumi>('collectibles');
     histories = await _openBoxSafe<History>('histories');
     _setting = await _openBoxSafe<dynamic>('setting');
-    collectChanges =
-        await _openBoxSafe<CollectedBangumiChange>('collectchanges');
+    collectChanges = await _openBoxSafe<CollectedBangumiChange>(
+      'collectchanges',
+    );
     shieldList = await _openBoxSafe<String>('shieldList');
     searchHistory = await _openBoxSafe<SearchHistory>('searchHistory');
     downloads = await _openBoxSafe<DownloadRecord>('downloads');
+    bangumiCache = await _openBoxSafe<String>('bangumiCache');
     if (Platform.isIOS) {
       await rebaseIosDownloadPaths(downloads);
     }
@@ -171,8 +174,9 @@ class GStorage {
       return await Hive.openBox<T>(boxName);
     } catch (e) {
       KazumiLogger().e(
-          'GStorage: Box "$boxName" corrupted, attempting recovery',
-          error: e);
+        'GStorage: Box "$boxName" corrupted, attempting recovery',
+        error: e,
+      );
 
       // Delete the corrupted box files
       await _deleteBoxFiles(boxName);
@@ -180,12 +184,15 @@ class GStorage {
       // Try to open again (will create a new empty box)
       try {
         final box = await Hive.openBox<T>(boxName);
-        KazumiLogger()
-            .i('GStorage: Box "$boxName" recovered successfully (data lost)');
+        KazumiLogger().i(
+          'GStorage: Box "$boxName" recovered successfully (data lost)',
+        );
         return box;
       } catch (e2) {
-        KazumiLogger()
-            .e('GStorage: Failed to recover box "$boxName"', error: e2);
+        KazumiLogger().e(
+          'GStorage: Failed to recover box "$boxName"',
+          error: e2,
+        );
         rethrow;
       }
     }
@@ -208,8 +215,10 @@ class GStorage {
         KazumiLogger().i('GStorage: Deleted lock file: $boxName.lock');
       }
     } catch (e) {
-      KazumiLogger()
-          .e('GStorage: Failed to delete box files for "$boxName"', error: e);
+      KazumiLogger().e(
+        'GStorage: Failed to delete box files for "$boxName"',
+        error: e,
+      );
     }
   }
 
@@ -233,8 +242,9 @@ class GStorage {
       await HistoryStorageCoordinator().run(() async {
         for (final tempBoxItem in tempBoxItems) {
           final tempHistory = tempBoxItem.value as History;
-          tempHistory.entryKind =
-              HistoryEntryKind.normalize(tempHistory.entryKind);
+          tempHistory.entryKind = HistoryEntryKind.normalize(
+            tempHistory.entryKind,
+          );
           final targetKey = tempHistory.key;
           final existing = histories.get(targetKey);
           if (existing == null ||
@@ -251,11 +261,14 @@ class GStorage {
   static Future<void> restoreCollectibles(String backupFilePath) async {
     final backupFile = File(backupFilePath);
     final backupContent = await backupFile.readAsBytes();
-    final tempBox =
-        await Hive.openBox('tempCollectiblesBox', bytes: backupContent);
+    final tempBox = await Hive.openBox(
+      'tempCollectiblesBox',
+      bytes: backupContent,
+    );
     final tempBoxItems = tempBox.toMap().entries;
     KazumiLogger().i(
-        'WebDav: restoring collectibles. tempCollectiblesBox length ${tempBoxItems.length}');
+      'WebDav: restoring collectibles. tempCollectiblesBox length ${tempBoxItems.length}',
+    );
 
     await collectibles.clear();
     for (var tempBoxItem in tempBoxItems) {
@@ -265,14 +278,18 @@ class GStorage {
   }
 
   static Future<List<CollectedBangumi>> getCollectiblesFromFile(
-      String backupFilePath) async {
+    String backupFilePath,
+  ) async {
     final backupFile = File(backupFilePath);
     final backupContent = await backupFile.readAsBytes();
-    final tempBox =
-        await Hive.openBox('tempCollectiblesBox', bytes: backupContent);
+    final tempBox = await Hive.openBox(
+      'tempCollectiblesBox',
+      bytes: backupContent,
+    );
     final tempBoxItems = tempBox.toMap().entries;
     KazumiLogger().i(
-        'WebDav: get collectibles from file. tempCollectiblesBox length ${tempBoxItems.length}');
+      'WebDav: get collectibles from file. tempCollectiblesBox length ${tempBoxItems.length}',
+    );
 
     final List<CollectedBangumi> collectibles = [];
     for (var tempBoxItem in tempBoxItems) {
@@ -283,14 +300,18 @@ class GStorage {
   }
 
   static Future<List<CollectedBangumiChange>> getCollectChangesFromFile(
-      String backupFilePath) async {
+    String backupFilePath,
+  ) async {
     final backupFile = File(backupFilePath);
     final backupContent = await backupFile.readAsBytes();
-    final tempBox =
-        await Hive.openBox('tempCollectChangesBox', bytes: backupContent);
+    final tempBox = await Hive.openBox(
+      'tempCollectChangesBox',
+      bytes: backupContent,
+    );
     final tempBoxItems = tempBox.toMap().entries;
     KazumiLogger().i(
-        'WebDav: get collectChanges from file. tempCollectChangesBox length ${tempBoxItems.length}');
+      'WebDav: get collectChanges from file. tempCollectChangesBox length ${tempBoxItems.length}',
+    );
 
     final List<CollectedBangumiChange> collectChanges = [];
     for (var tempBoxItem in tempBoxItems) {
@@ -301,8 +322,9 @@ class GStorage {
   }
 
   static Future<void> patchCollectibles(
-      List<CollectedBangumi> remoteCollectibles,
-      List<CollectedBangumiChange> remoteChanges) async {
+    List<CollectedBangumi> remoteCollectibles,
+    List<CollectedBangumiChange> remoteChanges,
+  ) async {
     await _runCollectChangesWriteExclusive(() async {
       final mergeResult = CollectSyncMerger.mergeWebDav(
         localCollectibles: collectibles.values.toList(),
@@ -347,7 +369,10 @@ class GStorage {
 
   static Stream<void> watchSettings(Iterable<SettingKey<Object?>> keys) {
     final names = keys.map((key) => key.name).toSet();
-    return _setting.watch().where((event) => names.contains(event.key)).map((_) {});
+    return _setting
+        .watch()
+        .where((event) => names.contains(event.key))
+        .map((_) {});
   }
 
   static List<String> getStringListSettingByName(
