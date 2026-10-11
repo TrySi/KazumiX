@@ -53,23 +53,31 @@ Future<void> _rebaseDownloadPaths(
       final previousEpisodeDirectory = episode.downloadDirectory.isNotEmpty
           ? episode.downloadDirectory
           : path.dirname(episode.localM3u8Path);
-      final wasInNewLayout =
-          path.basename(path.dirname(previousEpisodeDirectory)) ==
-              pluginDirectory &&
-          path.basename(path.dirname(path.dirname(previousEpisodeDirectory))) ==
-              bangumiDirectory;
-      final directory = wasInNewLayout
-          ? path.join(
-              downloadBase,
-              bangumiDirectory,
-              pluginDirectory,
-              '${entry.key}',
-            )
-          : path.join(
-              downloadBase,
-              '${record.bangumiId}_${record.pluginName}',
-              '${entry.key}',
-            );
+      final episodeParent = path.dirname(previousEpisodeDirectory);
+      final episodeGrandParent = path.dirname(episodeParent);
+
+      // Keep each layout's relative structure intact and only rebase the root,
+      // so legacy files already on disk keep resolving.
+      final String relativeEpisodeDir;
+      if (path.basename(episodeParent) == bangumiDirectory) {
+        // Current layout: <show>/<episode>.
+        relativeEpisodeDir = path.join(bangumiDirectory, '${entry.key}');
+      } else if (path.basename(episodeParent) == pluginDirectory &&
+          path.basename(episodeGrandParent) == bangumiDirectory) {
+        // Intermediate layout: <show>/<plugin>/<episode>.
+        relativeEpisodeDir = path.join(
+          bangumiDirectory,
+          pluginDirectory,
+          '${entry.key}',
+        );
+      } else {
+        // Original layout: <id>_<plugin>/<episode>.
+        relativeEpisodeDir = path.join(
+          '${record.bangumiId}_${record.pluginName}',
+          '${entry.key}',
+        );
+      }
+      final directory = path.join(downloadBase, relativeEpisodeDir);
       final videoPath = episode.localM3u8Path.isEmpty
           ? ''
           : path.join(directory, path.basename(episode.localM3u8Path));

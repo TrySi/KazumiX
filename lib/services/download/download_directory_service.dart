@@ -99,6 +99,9 @@ class DownloadDirectoryService {
   String bangumiDownloadDirectoryName(int bangumiId, String bangumiName) =>
       '${bangumiId}_${sanitizeDownloadPathSegment(bangumiName, fallback: '番剧')}';
 
+  /// The legacy plugin subdirectory name, still used to recognise older layouts
+  /// during deletion and iOS path migration. New downloads no longer nest a
+  /// plugin folder under the show.
   String pluginDownloadDirectoryName(String pluginName) =>
       sanitizeDownloadPathSegment(pluginName, fallback: 'source');
 
@@ -106,13 +109,11 @@ class DownloadDirectoryService {
     required String downloadBase,
     required int bangumiId,
     required String bangumiName,
-    required String pluginName,
     required int episodeNumber,
   }) {
     return path.join(
       downloadBase,
       bangumiDownloadDirectoryName(bangumiId, bangumiName),
-      pluginDownloadDirectoryName(pluginName),
       '$episodeNumber',
     );
   }

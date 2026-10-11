@@ -9,7 +9,7 @@ import 'package:path/path.dart' as path;
 void main() {
   setUpAll(() => Logger.level = Level.off);
 
-  test('builds a safe show, plugin, and episode directory path', () {
+  test('builds a safe show and episode directory path', () {
     final service = DownloadDirectoryService();
 
     expect(
@@ -17,10 +17,9 @@ void main() {
         downloadBase: 'root',
         bangumiId: 42,
         bangumiName: 'A/B',
-        pluginName: 'source/one',
         episodeNumber: 13,
       ),
-      path.join('root', '42_A_B', 'source_one', '13'),
+      path.join('root', '42_A_B', '13'),
     );
   });
 
@@ -125,6 +124,39 @@ void main() {
       );
     },
   );
+
+  test('rebases the plugin-less show layout', () async {
+    final oldEpisodeDirectory = path.join('old', 'downloads', '123_anime', '1');
+    final record = DownloadRecord(
+      123,
+      'anime',
+      '',
+      'source',
+      {
+        1: _episode(
+          oldEpisodeDirectory,
+          path.join(oldEpisodeDirectory, 'video.mp4'),
+        ),
+      },
+      DateTime(2026),
+      localCoverPath: path.join('old', 'downloads', '123_anime', 'cover.jpg'),
+    );
+    final downloads = _MemoryDownloads({record.key: record});
+
+    await rebaseIosDownloadPaths(
+      downloads,
+      downloadDirectory: () async => path.join('new', 'downloads'),
+    );
+
+    final episode = downloads.get(record.key)!.episodes[1]!;
+    final newEpisodeDirectory = path.join('new', 'downloads', '123_anime', '1');
+    expect(episode.downloadDirectory, newEpisodeDirectory);
+    expect(episode.localM3u8Path, path.join(newEpisodeDirectory, 'video.mp4'));
+    expect(
+      downloads.get(record.key)!.localCoverPath,
+      path.join('new', 'downloads', '123_anime', 'cover.jpg'),
+    );
+  });
 }
 
 DownloadRecord _record(Map<int, DownloadEpisode> episodes) =>

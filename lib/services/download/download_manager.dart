@@ -237,13 +237,11 @@ class DownloadManager implements IDownloadManager {
     String downloadBase,
     int bangumiId,
     String bangumiName,
-    String pluginName,
     int episodeNumber,
   ) => _directoryService.episodeDownloadDirectoryPath(
     downloadBase: downloadBase,
     bangumiId: bangumiId,
     bangumiName: bangumiName,
-    pluginName: pluginName,
     episodeNumber: episodeNumber,
   );
 
@@ -253,7 +251,6 @@ class DownloadManager implements IDownloadManager {
     DownloadEpisode episode,
     int bangumiId,
     String bangumiName,
-    String pluginName,
     int episodeNumber,
   ) async {
     final storedDir = episode.downloadDirectory.trim();
@@ -263,7 +260,6 @@ class DownloadManager implements IDownloadManager {
             await _directoryService.getDownloadDirectory(),
             bangumiId,
             bangumiName,
-            pluginName,
             episodeNumber,
           );
     await ensureDirectoryWritable(episodeDir);
@@ -306,7 +302,6 @@ class DownloadManager implements IDownloadManager {
         task: task,
         bangumiId: request.bangumiId,
         bangumiName: request.bangumiName,
-        pluginName: request.pluginName,
         m3u8Url: request.m3u8Url,
         httpHeaders: request.httpHeaders,
         adBlockerEnabled: request.adBlockerEnabled,
@@ -342,7 +337,6 @@ class DownloadManager implements IDownloadManager {
       task: task,
       bangumiId: request.bangumiId,
       bangumiName: request.bangumiName,
-      pluginName: request.pluginName,
       m3u8Url: request.m3u8Url,
       httpHeaders: request.httpHeaders,
       adBlockerEnabled: request.adBlockerEnabled,
@@ -377,7 +371,6 @@ class DownloadManager implements IDownloadManager {
         task: task,
         bangumiId: request.bangumiId,
         bangumiName: request.bangumiName,
-        pluginName: request.pluginName,
         m3u8Url: request.m3u8Url,
         httpHeaders: request.httpHeaders,
         adBlockerEnabled: request.adBlockerEnabled,
@@ -420,7 +413,6 @@ class DownloadManager implements IDownloadManager {
         task: existingTask,
         bangumiId: request.bangumiId,
         bangumiName: request.bangumiName,
-        pluginName: request.pluginName,
         m3u8Url: request.m3u8Url,
         httpHeaders: request.httpHeaders,
         adBlockerEnabled: request.adBlockerEnabled,
@@ -433,7 +425,6 @@ class DownloadManager implements IDownloadManager {
     required DownloadTask task,
     required int bangumiId,
     required String bangumiName,
-    required String pluginName,
     required String m3u8Url,
     required Map<String, String> httpHeaders,
     required bool adBlockerEnabled,
@@ -445,7 +436,6 @@ class DownloadManager implements IDownloadManager {
         episode,
         bangumiId,
         bangumiName,
-        pluginName,
         task.episodeNumber,
       );
 
@@ -465,7 +455,6 @@ class DownloadManager implements IDownloadManager {
           task: task,
           bangumiId: bangumiId,
           bangumiName: bangumiName,
-          pluginName: pluginName,
           videoUrl: m3u8Url,
           httpHeaders: httpHeaders,
           episode: episode,
@@ -717,7 +706,6 @@ class DownloadManager implements IDownloadManager {
     required DownloadTask task,
     required int bangumiId,
     required String bangumiName,
-    required String pluginName,
     required String videoUrl,
     required Map<String, String> httpHeaders,
     required DownloadEpisode episode,
@@ -728,7 +716,6 @@ class DownloadManager implements IDownloadManager {
         episode,
         bangumiId,
         bangumiName,
-        pluginName,
         task.episodeNumber,
       );
 
@@ -997,16 +984,16 @@ class DownloadManager implements IDownloadManager {
     if (await dir.exists()) {
       await dir.delete(recursive: true);
     }
-    final pluginDir = Directory(path.dirname(episodePath));
+    final parentDir = Directory(path.dirname(episodePath));
     try {
-      await pluginDir.delete();
+      await parentDir.delete();
     } on FileSystemException {
       // Other downloaded episodes still use this directory.
     }
-    if (path.basename(pluginDir.path) ==
+    if (path.basename(parentDir.path) ==
         _directoryService.pluginDownloadDirectoryName(pluginName)) {
       try {
-        await Directory(path.dirname(pluginDir.path)).delete();
+        await Directory(path.dirname(parentDir.path)).delete();
       } on FileSystemException {
         // Another plugin or the shared cover still uses this directory.
       }
@@ -1036,6 +1023,10 @@ class DownloadManager implements IDownloadManager {
     // episode directory individually.
     final parentDirs = <String>{};
     final bangumiDirs = <String>{};
+    final showDirName = _directoryService.bangumiDownloadDirectoryName(
+      record.bangumiId,
+      record.bangumiName,
+    );
     for (final entry in record.episodes.entries) {
       final episodeDir = await _episodeDirForDeletion(
         entry.value,
@@ -1047,17 +1038,18 @@ class DownloadManager implements IDownloadManager {
       if (await dir.exists()) {
         await dir.delete(recursive: true);
       }
-      final pluginDir = path.dirname(episodeDir);
-      parentDirs.add(pluginDir);
-      final bangumiDir = path.dirname(pluginDir);
-      if (path.basename(pluginDir) ==
-              _directoryService.pluginDownloadDirectoryName(pluginName) &&
-          path.basename(bangumiDir) ==
-              _directoryService.bangumiDownloadDirectoryName(
-                record.bangumiId,
-                record.bangumiName,
-              )) {
-        bangumiDirs.add(bangumiDir);
+      final episodeParent = path.dirname(episodeDir);
+      parentDirs.add(episodeParent);
+      if (path.basename(episodeParent) == showDirName) {
+        // New layout: episodes sit directly under the show directory.
+        bangumiDirs.add(episodeParent);
+      } else if (path.basename(episodeParent) ==
+          _directoryService.pluginDownloadDirectoryName(pluginName)) {
+        final grandParent = path.dirname(episodeParent);
+        if (path.basename(grandParent) == showDirName) {
+          // Legacy layout: episodes live under a plugin subdirectory.
+          bangumiDirs.add(grandParent);
+        }
       }
     }
 
