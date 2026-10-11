@@ -22,6 +22,9 @@ class OnlineVideoPlaybackArgs extends VideoPlaybackArgs {
     this.initialEpisode = 1,
     this.initialRoad = 0,
     this.resumeHistory = true,
+    this.roadFormats = const {},
+    this.roadQuality = const {},
+    this.sourceLatency,
   });
 
   final Plugin plugin;
@@ -31,6 +34,15 @@ class OnlineVideoPlaybackArgs extends VideoPlaybackArgs {
   final int initialEpisode;
   final int initialRoad;
   final bool resumeHistory;
+
+  /// Per-road media format (MP4/HLS) detected in the source sheet.
+  final Map<int, String?> roadFormats;
+
+  /// Per-road quality label (resolution / bitrate) detected in the source sheet.
+  final Map<int, String?> roadQuality;
+
+  /// Latency of resolving the source's chapter list.
+  final Duration? sourceLatency;
 }
 
 class OfflineVideoPlaybackArgs extends VideoPlaybackArgs {

@@ -549,6 +549,12 @@ class _VideoPageState extends State<VideoPage>
             !playerController.playback.loading &&
             !videoPageController.loading,
         disableAnimations: disableAnimations,
+        pluginName: videoPageController.isOfflineMode
+            ? ''
+            : videoPageController.currentPlugin.name,
+        roadFormats: videoPageController.roadFormats,
+        roadQuality: videoPageController.roadQuality,
+        sourceLatency: videoPageController.sourceLatency,
         onEpisodeSelected: (episode, road) {
           if (episode == videoPageController.selectedEpisode.episode &&
               road == videoPageController.selectedEpisode.road) {

@@ -133,6 +133,10 @@ abstract class _VideoPageController with Store implements Disposable {
 
   String src = '';
 
+  final Map<int, String?> roadFormats = {};
+  final Map<int, String?> roadQuality = {};
+  Duration? sourceLatency;
+
   @observable
   var roadList = ObservableList<Road>();
 
@@ -164,6 +168,13 @@ abstract class _VideoPageController with Store implements Disposable {
         src = args.src;
         roadList.clear();
         roadList.addAll(args.roads);
+        roadFormats
+          ..clear()
+          ..addAll(args.roadFormats);
+        roadQuality
+          ..clear()
+          ..addAll(args.roadQuality);
+        sourceLatency = args.sourceLatency;
         resetEpisodeState(episode: args.initialEpisode, road: args.initialRoad);
         resumeHistory = args.resumeHistory;
       case OfflineVideoPlaybackArgs():
