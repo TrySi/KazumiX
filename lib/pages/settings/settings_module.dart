@@ -100,6 +100,6 @@ final settingsModule = createModule(
         ),
       )
       ..module(historyModule)
-      ..module(downloadModule);
+      ..module(createDownloadModule());
   },
 );

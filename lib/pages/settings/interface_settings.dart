@@ -27,6 +27,7 @@ class _InterfaceSettingsPageState extends State<InterfaceSettingsPage> {
     '/tab/popular/': '推荐',
     '/tab/timeline/': '时间表',
     '/tab/collect/': '追番',
+    '/tab/download/': '本地',
     '/tab/my/': '我的',
   };
 

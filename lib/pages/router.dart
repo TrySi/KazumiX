@@ -26,5 +26,6 @@ const MenuRoute menu = MenuRoute([
   MenuRouteItem(path: '/popular'),
   MenuRouteItem(path: '/timeline'),
   MenuRouteItem(path: '/collect'),
+  MenuRouteItem(path: '/download'),
   MenuRouteItem(path: '/my'),
 ]);

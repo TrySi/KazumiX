@@ -21,6 +21,7 @@ import 'package:kazumi/plugins/plugins_controller.dart';
 import 'package:kazumi/pages/collect/collect_controller.dart';
 import 'package:kazumi/pages/my/my_controller.dart';
 import 'package:kazumi/pages/download/download_controller.dart';
+import 'package:kazumi/pages/offline/offline_module.dart';
 import 'package:kazumi/services/shaders/shader_asset_service.dart';
 import 'package:kazumi/services/sync/danmaku_shield_sync_service.dart';
 
@@ -61,6 +62,7 @@ final tabModule = createModule(
             ..module(popularModule)
             ..module(timelineModule)
             ..module(collectModule)
+            ..module(createOfflineModule())
             ..module(myModule);
         },
       );

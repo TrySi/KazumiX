@@ -140,7 +140,17 @@ class _DownloadPageState extends State<DownloadPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: const SysAppBar(title: Text('下载管理')),
+      appBar: SysAppBar(
+        needTopOffset: false,
+        toolbarHeight: 72,
+        title: Text(
+          '离线',
+          style: Theme.of(context)
+              .textTheme
+              .headlineSmall
+              ?.copyWith(fontWeight: FontWeight.w700),
+        ),
+      ),
       body: Column(
         children: [
           Padding(
