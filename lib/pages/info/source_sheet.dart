@@ -378,13 +378,17 @@ class _SourceSheetState extends State<SourceSheet> {
     final source = _selectedSourceOption;
     if (source == null) return;
 
+    final alreadyDownloaded = _downloadController
+        .activeOrCompletedEpisodeNumbers(widget.infoController.bangumiItem.id);
     final episodesByNumber = {
       for (final episode in _releasedEpisodes) episode.episode.toInt(): episode,
     };
+    var addedCount = 0;
     for (final episodeNumber in selectedEpisodeNumbers.toList()..sort()) {
       final match = matches[episodeNumber];
       final episode = episodesByNumber[episodeNumber];
       if (match == null || episode == null) continue;
+      if (alreadyDownloaded.contains(episodeNumber)) continue;
       await _downloadController.startDownload(
         bangumiId: widget.infoController.bangumiItem.id,
         bangumiName: widget.infoController.bangumiItem.nameCn.isNotEmpty
@@ -397,11 +401,14 @@ class _SourceSheetState extends State<SourceSheet> {
         road: match.roadIndex,
         episodePageUrl: match.pageUrl,
       );
+      addedCount++;
     }
     if (!mounted) return;
     Navigator.of(context).pop();
     KazumiDialog.showToast(
-      message: '已添加 ${selectedEpisodeNumbers.length} 集到下载队列，可在下载管理中查看',
+      message: addedCount > 0
+          ? '已添加 $addedCount 集到下载队列，可在下载管理中查看'
+          : '所选集数均已下载或已在队列中',
     );
   }
 
@@ -566,6 +573,9 @@ class _SourceSheetState extends State<SourceSheet> {
         selectedRoadIndex: selectedRoad?.index,
         episodes: _releasedEpisodes,
         matches: selectedRoad?.matches ?? const {},
+        downloadedEpisodes: _downloadController.activeOrCompletedEpisodeNumbers(
+          widget.infoController.bangumiItem.id,
+        ),
         episodesLoading: _episodesLoading,
         roadsLoading: _roadsLoading,
         searchPending: searchPending,

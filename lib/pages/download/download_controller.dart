@@ -256,6 +256,22 @@ abstract class _DownloadController with Store {
     );
   }
 
+  /// Returns the episode numbers of [bangumiId] that already have a download
+  /// task in any source or road, excluding failed tasks which may be retried.
+  /// Used to mark already-downloaded episodes and prevent duplicate downloads.
+  Set<int> activeOrCompletedEpisodeNumbers(int bangumiId) {
+    final result = <int>{};
+    for (final record in records) {
+      if (record.bangumiId != bangumiId) continue;
+      for (final episode in record.episodes.values) {
+        if (episode.status != DownloadStatus.failed) {
+          result.add(episode.episodeNumber);
+        }
+      }
+    }
+    return result;
+  }
+
   double getSpeed(int bangumiId, String pluginName, int episodeNumber) {
     final key = '${pluginName}_${bangumiId}_$episodeNumber';
     return _speeds[key] ?? 0.0;

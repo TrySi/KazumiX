@@ -551,6 +551,7 @@ class _EpisodeSourceSheetView extends StatefulWidget {
     required this.selectedRoadIndex,
     required this.episodes,
     required this.matches,
+    required this.downloadedEpisodes,
     required this.episodesLoading,
     required this.roadsLoading,
     required this.sourceOptionsLoading,
@@ -570,6 +571,7 @@ class _EpisodeSourceSheetView extends StatefulWidget {
   final int? selectedRoadIndex;
   final List<EpisodeInfo> episodes;
   final Map<int, RoadEpisodeMatch> matches;
+  final Set<int> downloadedEpisodes;
   final bool episodesLoading;
   final bool roadsLoading;
   final bool sourceOptionsLoading;
@@ -608,7 +610,9 @@ class _EpisodeSourceSheetViewState extends State<_EpisodeSourceSheetView> {
     final selectedSource = widget.sourceOptions.firstWhereOrNull(
       (option) => option.key == widget.selectedSourceKey,
     );
-    final availableNumbers = widget.matches.keys.toSet();
+    final availableNumbers = widget.matches.keys
+        .where((number) => !widget.downloadedEpisodes.contains(number))
+        .toSet();
     final allAvailableSelected =
         availableNumbers.isNotEmpty &&
         _selectedEpisodes.length == availableNumbers.length;
@@ -720,21 +724,36 @@ class _EpisodeSourceSheetViewState extends State<_EpisodeSourceSheetView> {
                       final episode = widget.episodes[index];
                       final episodeNumber = episode.episode.toInt();
                       final match = widget.matches[episodeNumber];
-                      final enabled = match != null;
+                      final downloaded = widget.downloadedEpisodes.contains(
+                        episodeNumber,
+                      );
+                      final enabled = match != null && !downloaded;
                       final selected = _selectedEpisodes.contains(
                         episodeNumber,
                       );
                       final colors = theme.colorScheme;
+                      final backgroundColor = downloaded
+                          ? colors.surfaceContainerLow
+                          : !enabled
+                          ? colors.surfaceContainerLowest
+                          : selected
+                          ? colors.secondaryContainer
+                          : colors.surfaceContainerLow;
+                      final foregroundColor = downloaded
+                          ? colors.outline
+                          : !enabled
+                          ? colors.onSurface.withValues(alpha: 0.35)
+                          : selected
+                          ? colors.onSecondaryContainer
+                          : colors.onSurface;
                       return Tooltip(
-                        message: episode.nameCn.isNotEmpty
+                        message: downloaded
+                            ? '第$episodeNumber集 已下载'
+                            : episode.nameCn.isNotEmpty
                             ? episode.nameCn
                             : episode.name,
                         child: Material(
-                          color: !enabled
-                              ? colors.surfaceContainerLowest
-                              : selected
-                              ? colors.secondaryContainer
-                              : colors.surfaceContainerLow,
+                          color: backgroundColor,
                           shape: RoundedRectangleBorder(
                             side: BorderSide(
                               color: selected
@@ -757,17 +776,43 @@ class _EpisodeSourceSheetViewState extends State<_EpisodeSourceSheetView> {
                                   })
                                 : () =>
                                       widget.onEpisodeSelected(episode, match),
-                            child: Center(
-                              child: Text(
-                                '第$episodeNumber集',
-                                style: theme.textTheme.labelMedium?.copyWith(
-                                  color: enabled
-                                      ? colors.onSurface
-                                      : colors.onSurface.withValues(
-                                          alpha: 0.35,
-                                        ),
+                            child: Stack(
+                              children: [
+                                Center(
+                                  child: Padding(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 8,
+                                    ),
+                                    child: Text(
+                                      '第$episodeNumber集',
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                      style: theme.textTheme.labelMedium
+                                          ?.copyWith(color: foregroundColor),
+                                    ),
+                                  ),
                                 ),
-                              ),
+                                if (downloaded)
+                                  Positioned(
+                                    top: 4,
+                                    right: 4,
+                                    child: Icon(
+                                      Icons.download_done_rounded,
+                                      size: 14,
+                                      color: colors.outline,
+                                    ),
+                                  )
+                                else if (selected)
+                                  Positioned(
+                                    top: 4,
+                                    right: 4,
+                                    child: Icon(
+                                      Icons.check_circle_rounded,
+                                      size: 14,
+                                      color: colors.onSecondaryContainer,
+                                    ),
+                                  ),
+                              ],
                             ),
                           ),
                         ),
