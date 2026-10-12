@@ -5,6 +5,16 @@ import 'package:mobx/mobx.dart';
 
 part 'history_controller.g.dart';
 
+/// One offline watch-state edit, so several can be applied in a single batch.
+typedef EpisodeWatchUpdate = ({
+  BangumiItem bangumiItem,
+  String adapterName,
+  int episode,
+  String episodeTitle,
+  int road,
+  bool watched,
+});
+
 class HistoryController = _HistoryController with _$HistoryController;
 
 abstract class _HistoryController with Store {
@@ -53,6 +63,26 @@ abstract class _HistoryController with Store {
       watched: watched,
     );
     init();
+  }
+
+  /// Applies several offline watch-state edits and refreshes the in-memory
+  /// list once, instead of re-reading the whole history box per episode.
+  /// Returns how many edits were actually applied.
+  Future<int> setEpisodesWatched(Iterable<EpisodeWatchUpdate> updates) async {
+    var applied = 0;
+    for (final update in updates) {
+      final ok = await _historyRepository.setEpisodeWatched(
+        bangumiItem: update.bangumiItem,
+        adapterName: update.adapterName,
+        episode: update.episode,
+        episodeTitle: update.episodeTitle,
+        road: update.road,
+        watched: update.watched,
+      );
+      if (ok) applied++;
+    }
+    init();
+    return applied;
   }
 
   Progress? lastWatching(

@@ -286,9 +286,16 @@ class _OfflinePageState extends State<OfflinePage>
           episodes.add(_OfflineEpisode(record: record, episode: episode));
         }
       }
-      episodes.sort(
-        (a, b) => a.episode.episodeNumber.compareTo(b.episode.episodeNumber),
-      );
+      episodes.sort((a, b) {
+        final byNumber = a.episode.episodeNumber.compareTo(
+          b.episode.episodeNumber,
+        );
+        if (byNumber != 0) return byNumber;
+        // Tie-break on the source: List.sort is not stable, and the first
+        // record to carry an episode wins in _deriveDownloads, so ordering by
+        // episode number alone could flip an episode's owner between rebuilds.
+        return DownloadRecord.compareBySource(a.record, b.record);
+      });
       shows.add(
         _OfflineShow(
           primaryRecord: records.first,
@@ -420,26 +427,32 @@ class _OfflinePageState extends State<OfflinePage>
     if (picked == null) return;
 
     final bangumiItem = _bangumiItemFor(show);
-    var changed = 0;
+    final updates = <EpisodeWatchUpdate>[];
     for (final n in numbers) {
       final wasWatched = states[n] == _EpisodeWatchState.completed;
       final shouldWatch = picked.contains(n);
       if (wasWatched == shouldWatch) continue;
       final entry = episodes[n]!;
-      await historyController.setEpisodeWatched(
+      updates.add((
         bangumiItem: bangumiItem,
         adapterName: entry.record.pluginName,
         episode: n,
         episodeTitle: entry.episode.episodeName,
         road: entry.episode.road,
         watched: shouldWatch,
-      );
-      changed++;
+      ));
     }
-    if (changed > 0 && mounted) {
-      setState(() {});
-      KazumiDialog.showToast(message: '已更新 $changed 集的观看状态');
-    }
+    if (updates.isEmpty) return;
+    // One batch: the controller refreshes the history list once, and reports
+    // how many writes really landed instead of assuming they all did.
+    final changed = await historyController.setEpisodesWatched(updates);
+    if (!mounted) return;
+    setState(() {});
+    KazumiDialog.showToast(
+      message: changed == updates.length
+          ? '已更新 $changed 集的观看状态'
+          : '已更新 $changed/${updates.length} 集，其余写入失败',
+    );
   }
 
   /// Confirms and deletes every downloaded episode of the selected shows,
@@ -471,22 +484,45 @@ class _OfflinePageState extends State<OfflinePage>
       ),
     );
     if (confirmed != true) return;
+    var deleted = 0;
+    var failed = 0;
     for (final show in selected) {
       final plugins = <String>{
         for (final e in show.episodes) e.record.pluginName,
       };
+      var showDeleted = true;
       for (final pluginName in plugins) {
-        await downloadController.deleteRecord(show.bangumiId, pluginName);
+        try {
+          await downloadController.deleteRecord(show.bangumiId, pluginName);
+        } catch (error, stackTrace) {
+          // Keep going: one broken record must not leave the rest behind, and
+          // the selection state still has to be released below.
+          showDeleted = false;
+          KazumiLogger().e(
+            'OfflinePage: 删除下载失败 '
+            'bangumiId=${show.bangumiId} plugin=$pluginName',
+            error: error,
+            stackTrace: stackTrace,
+          );
+        }
+      }
+      if (showDeleted) {
+        deleted++;
+      } else {
+        failed++;
       }
     }
-    if (mounted) {
-      downloadController.refreshRecords();
-      setState(() {
-        _selecting = false;
-        _selectedIds.clear();
-      });
-      KazumiDialog.showToast(message: '已删除 ${selected.length} 部番剧的下载');
-    }
+    if (!mounted) return;
+    downloadController.refreshRecords();
+    setState(() {
+      _selecting = false;
+      _selectedIds.clear();
+    });
+    KazumiDialog.showToast(
+      message: failed == 0
+          ? '已删除 $deleted 部番剧的下载'
+          : '已删除 $deleted 部，$failed 部失败',
+    );
   }
 
   /// Minimal item carrying the show's identity for history lookups (the
@@ -1536,13 +1572,14 @@ class _OfflineEpisodeSheet extends StatelessWidget {
       watchStates[number] ?? _EpisodeWatchState.unwatched;
 
   List<_OfflineEpisodeChoice> _buildChoices(List<EpisodeInfo>? cached) {
-    final downloadedByNumber = <int, _OfflineEpisode>{};
+    // Reuse the show's deduplicated map so an episode plays from the same
+    // source here as it does from the card and the player.
+    final downloadedByNumber = show.completedByNumber;
     final downloadedByName = <String, _OfflineEpisode>{};
     for (final e in show.episodes) {
       if (e.episode.status != DownloadStatus.completed) continue;
-      downloadedByNumber[e.episode.episodeNumber] = e;
       final name = e.episode.episodeName.trim();
-      if (name.isNotEmpty) downloadedByName[name] = e;
+      if (name.isNotEmpty) downloadedByName.putIfAbsent(name, () => e);
     }
 
     // Prefer the offline-cached episode list so the full episode range is

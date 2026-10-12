@@ -58,7 +58,9 @@ abstract class IHistoryRepository {
   ///
   /// [watched] true stores `completed` with zero progress; false stores a zero
   /// progress without the completion flag (which reads back as "未看过").
-  Future<void> setEpisodeWatched({
+  /// Returns whether the write was applied, so a batch caller can report
+  /// partial failures instead of claiming success.
+  Future<bool> setEpisodeWatched({
     required BangumiItem bangumiItem,
     required String adapterName,
     required int episode,
@@ -317,7 +319,7 @@ class HistoryRepository implements IHistoryRepository {
   }
 
   @override
-  Future<void> setEpisodeWatched({
+  Future<bool> setEpisodeWatched({
     required BangumiItem bangumiItem,
     required String adapterName,
     required int episode,
@@ -326,6 +328,7 @@ class HistoryRepository implements IHistoryRepository {
     required bool watched,
     String entryKind = HistoryEntryKind.offline,
   }) async {
+    var applied = false;
     await _storageCoordinator.run(() async {
       try {
         if (getPrivateMode()) return;
@@ -369,6 +372,7 @@ class HistoryRepository implements IHistoryRepository {
           progressMs: 0,
           updatedAt: nowMs,
         );
+        applied = true;
       } catch (e, stackTrace) {
         KazumiLogger().e(
           'GStorage: set episode watched failed. bangumi=${bangumiItem.name}, episode=$episode',
@@ -377,6 +381,7 @@ class HistoryRepository implements IHistoryRepository {
         );
       }
     });
+    return applied;
   }
 
   @override

@@ -291,13 +291,16 @@ void main() {
       final item = _item(8);
 
       // Mark two episodes watched; the record is created on demand.
-      await repository.setEpisodeWatched(
-        bangumiItem: item,
-        adapterName: 'plugin',
-        episode: 1,
-        episodeTitle: '第1话',
-        road: 0,
-        watched: true,
+      expect(
+        await repository.setEpisodeWatched(
+          bangumiItem: item,
+          adapterName: 'plugin',
+          episode: 1,
+          episodeTitle: '第1话',
+          road: 0,
+          watched: true,
+        ),
+        isTrue,
       );
       await repository.setEpisodeWatched(
         bangumiItem: item,
@@ -333,14 +336,17 @@ void main() {
       expect(history.progresses[1]!.progress, Duration.zero);
       expect(history.progresses[2]!.completed, isTrue);
 
-      // Unmarking a nonexistent record is a no-op.
-      await repository.setEpisodeWatched(
-        bangumiItem: _item(9),
-        adapterName: 'plugin',
-        episode: 5,
-        episodeTitle: '第5话',
-        road: 0,
-        watched: false,
+      // Unmarking a nonexistent record is a no-op, reported as not applied.
+      expect(
+        await repository.setEpisodeWatched(
+          bangumiItem: _item(9),
+          adapterName: 'plugin',
+          episode: 5,
+          episodeTitle: '第5话',
+          road: 0,
+          watched: false,
+        ),
+        isFalse,
       );
       expect(
         repository.getHistory(

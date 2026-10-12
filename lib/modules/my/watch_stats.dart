@@ -58,24 +58,37 @@ final class WatchStats {
       }
     }
 
+    // Deduplicate by (bangumi id, episode number) so an episode downloaded from
+    // several sources is counted once, matching the download and offline pages.
+    // A finished copy wins over an in-flight or failed one.
+    final statusByEpisode = <(int, int), int>{};
+    for (final record in downloadRecords) {
+      for (final episode in record.episodes.values) {
+        final key = (record.bangumiId, episode.episodeNumber);
+        final current = statusByEpisode[key];
+        if (current == null ||
+            _statusRank(episode.status) < _statusRank(current)) {
+          statusByEpisode[key] = episode.status;
+        }
+      }
+    }
+
     var completed = 0;
     var downloading = 0;
     var paused = 0;
     var failed = 0;
-    for (final record in downloadRecords) {
-      for (final episode in record.episodes.values) {
-        switch (episode.status) {
-          case DownloadStatus.completed:
-            completed++;
-          case DownloadStatus.downloading:
-          case DownloadStatus.resolving:
-          case DownloadStatus.pending:
-            downloading++;
-          case DownloadStatus.paused:
-            paused++;
-          case DownloadStatus.failed:
-            failed++;
-        }
+    for (final status in statusByEpisode.values) {
+      switch (status) {
+        case DownloadStatus.completed:
+          completed++;
+        case DownloadStatus.downloading:
+        case DownloadStatus.resolving:
+        case DownloadStatus.pending:
+          downloading++;
+        case DownloadStatus.paused:
+          paused++;
+        case DownloadStatus.failed:
+          failed++;
       }
     }
 
@@ -93,4 +106,16 @@ final class WatchStats {
       failedCount: failed,
     );
   }
+
+  /// Lower is better, so a duplicated episode is reported by its most complete
+  /// download: a finished copy outranks an in-flight, paused or failed one.
+  static int _statusRank(int status) => switch (status) {
+    DownloadStatus.completed => 0,
+    DownloadStatus.downloading ||
+    DownloadStatus.resolving ||
+    DownloadStatus.pending => 1,
+    DownloadStatus.paused => 2,
+    DownloadStatus.failed => 3,
+    _ => 4,
+  };
 }
