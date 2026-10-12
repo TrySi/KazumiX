@@ -7,11 +7,11 @@ class ApiEndpoints {
   /// 规则API级别
   static const int apiLevel = 8;
 
-  /// 项目主页
-  static const String projectUrl = "https://kazumi.app/";
+  /// 本分支的仓库
+  static const String sourceUrl = "https://github.com/TrySi/KazumiX";
 
-  /// Github 项目主页
-  static const String sourceUrl = "https://github.com/Predidit/Kazumi";
+  /// 上游项目，本分支的来源
+  static const String upstreamUrl = "https://github.com/Predidit/Kazumi";
 
   /// 图标作者
   static const String iconUrl = "https://www.pixiv.net/users/66219277";
@@ -46,9 +46,6 @@ class ApiEndpoints {
 
   /// Bangumi 鉴权 API
   static const String bangumiAuthAPIMirrorDomain = 'https://api.bgmapi.com';
-
-  /// Telegram 群组
-  static const String telegramGroup = 'https://t.me/kazumi_app';
 
   /// 番剧信息
   static const String bangumiInfoByID = '/v0/subjects/{0}';

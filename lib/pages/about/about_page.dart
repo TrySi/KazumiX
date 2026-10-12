@@ -29,31 +29,21 @@ class AboutPage extends StatelessWidget {
                     url: ApiEndpoints.sourceUrl,
                   ),
                   AboutLinkTile(
-                    icon: Icons.language_rounded,
-                    title: '项目主页',
-                    url: ApiEndpoints.projectUrl,
-                  ),
-                  AboutLinkTile(
                     icon: Icons.bug_report_rounded,
                     title: '问题反馈',
                     url: '${ApiEndpoints.sourceUrl}/issues',
                   ),
                   AboutLinkTile(
-                    icon: Icons.forum_rounded,
-                    title: 'Telegram',
-                    url: ApiEndpoints.telegramGroup,
+                    icon: Icons.call_split_rounded,
+                    title: 'Kazumi',
+                    subtitle: '本分支的上游项目',
+                    url: ApiEndpoints.upstreamUrl,
                   ),
                 ],
               ),
               ContentSection.group(
                 title: '开源',
                 children: [
-                  const AboutLinkTile(
-                    icon: Icons.handshake_outlined,
-                    title: '贡献指南',
-                    url:
-                        '${ApiEndpoints.sourceUrl}/blob/main/static/doc/CONTRIBUTING.md',
-                  ),
                   const AboutLinkTile.route(
                     icon: Icons.favorite_outline_rounded,
                     title: '致谢',
