@@ -851,7 +851,9 @@ abstract class _DownloadController with Store {
       final bool downloadDanmaku = GStorage.getSetting(
         SettingsKeys.downloadDanmaku,
       );
-      if (downloadDanmaku) {
+      // Without build-time credentials every DanDan request would 403, so the
+      // download proceeds without a danmaku file instead of failing noisily.
+      if (downloadDanmaku && DanmakuApi.isAvailable) {
         _fetchAndCacheDanmakuAsync(
           request.recordKey,
           request.bangumiId,

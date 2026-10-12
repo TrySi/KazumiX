@@ -4,3 +4,12 @@ const Map<String, String> dandanCredentials = {
   'id': String.fromEnvironment('DANDANAPI_APPID'),
   'value': String.fromEnvironment('DANDANAPI_KEY'),
 };
+
+/// Whether the credentials above were injected at build time.
+///
+/// Every DanDanPlay request is signed with them, so a build without them would
+/// fail each call with HTTP 403. Callers check this and keep the whole danmaku
+/// feature off instead of issuing requests that cannot succeed.
+bool get hasDandanCredentials =>
+    dandanCredentials['id']!.isNotEmpty &&
+    dandanCredentials['value']!.isNotEmpty;

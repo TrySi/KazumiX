@@ -9,24 +9,46 @@ class SettingsList extends StatelessWidget {
   const SettingsList({
     super.key,
     required this.sections,
+    this.header,
+    this.enabled = true,
     this.maxWidth = 1000,
   });
 
   final List<Widget> sections;
 
+  /// Fixed content above the scrollable sections, e.g. an availability notice.
+  /// It is never dimmed by [enabled], so the reason stays readable.
+  final Widget? header;
+
+  /// Greys out and disables every tile while keeping [header] active.
+  final bool enabled;
+
   final double maxWidth;
 
   @override
   Widget build(BuildContext context) {
-    return ListView.builder(
-      padding: const EdgeInsets.symmetric(vertical: 12),
-      itemCount: sections.length,
-      itemBuilder: (context, index) => Center(
-        child: ConstrainedBox(
-          constraints: BoxConstraints(maxWidth: maxWidth),
-          child: sections[index],
+    return Column(
+      children: [
+        ?header,
+        Expanded(
+          child: IgnorePointer(
+            ignoring: !enabled,
+            child: Opacity(
+              opacity: enabled ? 1 : 0.38,
+              child: ListView.builder(
+                padding: const EdgeInsets.symmetric(vertical: 12),
+                itemCount: sections.length,
+                itemBuilder: (context, index) => Center(
+                  child: ConstrainedBox(
+                    constraints: BoxConstraints(maxWidth: maxWidth),
+                    child: sections[index],
+                  ),
+                ),
+              ),
+            ),
+          ),
         ),
-      ),
+      ],
     );
   }
 }

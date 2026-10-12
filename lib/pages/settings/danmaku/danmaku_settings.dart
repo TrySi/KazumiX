@@ -5,6 +5,7 @@ import 'package:kazumi/bean/settings/settings_detail_scaffold.dart';
 import 'package:kazumi/bean/settings/settings_list.dart';
 import 'package:kazumi/pages/settings/danmaku/danmaku_ch_convert_tile.dart';
 import 'package:kazumi/services/storage/storage.dart';
+import 'package:kazumi/utils/dandan_credentials.dart';
 
 class DanmakuSettingsPage extends StatefulWidget {
   const DanmakuSettingsPage({super.key});
@@ -153,6 +154,10 @@ class _DanmakuSettingsPageState extends State<DanmakuSettingsPage> {
     return SettingsDetailScaffold(
       title: const Text('弹幕设置'),
       body: SettingsList(
+        // Without build-time credentials no danmaku can be fetched, so every
+        // setting is inert and greyed out instead of offering dead switches.
+        header: hasDandanCredentials ? null : const _DanmakuUnavailableNotice(),
+        enabled: hasDandanCredentials,
         sections: [
           SettingsSection(
             title: Text('弹幕来源'),
@@ -391,6 +396,61 @@ class _DanmakuSettingsPageState extends State<DanmakuSettingsPage> {
             ],
           ),
         ],
+      ),
+    );
+  }
+}
+
+/// Explains why the danmaku settings cannot be used. It renders above the
+/// dimmed list so the reason stays readable.
+class _DanmakuUnavailableNotice extends StatelessWidget {
+  const _DanmakuUnavailableNotice();
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+      child: Center(
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 1000),
+          child: Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: colors.errorContainer,
+              borderRadius: BorderRadius.circular(20),
+            ),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Icon(
+                  Icons.info_outline_rounded,
+                  color: colors.onErrorContainer,
+                ),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        '弹幕功能未启用',
+                        style: textTheme.titleSmall
+                            ?.copyWith(color: colors.onErrorContainer),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        '当前构建未包含弹幕 API 凭证，无法获取弹幕，以下设置不会生效。',
+                        style: textTheme.bodySmall
+                            ?.copyWith(color: colors.onErrorContainer),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
       ),
     );
   }

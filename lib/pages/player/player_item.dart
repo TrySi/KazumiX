@@ -30,6 +30,7 @@ import 'package:kazumi/services/storage/storage.dart';
 import 'package:kazumi/modules/danmaku/danmaku_module.dart';
 import 'package:kazumi/pages/player/controller/player_danmaku_controller.dart';
 import 'package:kazumi/pages/player/danmaku_source_sheet.dart';
+import 'package:kazumi/request/apis/danmaku_api.dart';
 import 'package:kazumi/pages/player/player_item_surface.dart';
 import 'package:mobx/mobx.dart' as mobx;
 import 'package:kazumi/pages/my/my_controller.dart';
@@ -573,6 +574,10 @@ class _PlayerItemState extends State<PlayerItem>
   }
 
   void handleDanmaku() {
+    if (!DanmakuApi.isAvailable) {
+      KazumiDialog.showToast(message: '弹幕功能未启用');
+      return;
+    }
     playerController.danmaku.canvasController.clear();
     if (playerController.danmaku.danmakuOn) {
       playerController.danmaku.setDanmakuEnabled(false);

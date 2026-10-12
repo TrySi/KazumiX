@@ -31,6 +31,13 @@ Future<void> showDanmakuSourceSheet(
   required PlayerDanmakuController danmakuController,
   required VoidCallback onBeforeApply,
 }) async {
+  // Manual search is a DanDanPlay lookup as well, so it cannot work without
+  // the build-time credentials.
+  if (!DanmakuApi.isAvailable) {
+    KazumiDialog.showToast(message: '弹幕功能未启用');
+    return;
+  }
+
   Widget buildSheet(BuildContext _) => _DanmakuSourceSheet(
         bangumiId: bangumiId,
         initialKeyword: initialKeyword,

@@ -6,6 +6,7 @@ import 'package:kazumi/bean/dialog/dialog_helper.dart';
 import 'package:kazumi/bean/settings/settings_detail_scaffold.dart';
 import 'package:kazumi/bean/settings/settings_list.dart';
 import 'package:kazumi/bean/widget/loading_indicator.dart';
+import 'package:kazumi/request/apis/danmaku_api.dart';
 import 'package:kazumi/services/download/download_directory_service.dart';
 import 'package:kazumi/services/storage/storage.dart';
 import 'package:kazumi/utils/file_system.dart';
@@ -170,6 +171,7 @@ class _DownloadSettingsPageState extends State<DownloadSettingsPage> {
               ),
               SettingsTile.switchTile(
                 leading: Icons.subtitles_rounded,
+                enabled: DanmakuApi.isAvailable,
                 onToggle: (value) {
                   setState(() => downloadDanmaku = value ?? !downloadDanmaku);
                   GStorage.putSetting(
@@ -177,7 +179,9 @@ class _DownloadSettingsPageState extends State<DownloadSettingsPage> {
                 },
                 title: Text('缓存弹幕'),
                 description: Text(
-                  '下载视频时同时缓存弹幕数据',
+                  DanmakuApi.isAvailable
+                      ? '下载视频时同时缓存弹幕数据'
+                      : '当前构建未包含弹幕 API 凭证',
                 ),
                 initialValue: downloadDanmaku,
               ),

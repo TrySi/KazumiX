@@ -21,6 +21,7 @@ import 'package:flutter/services.dart';
 import 'package:kazumi/services/player/remote.dart';
 import 'package:kazumi/bean/appbar/drag_to_move_bar.dart' as dtb;
 import 'package:kazumi/pages/settings/danmaku/danmaku_settings_sheet.dart';
+import 'package:kazumi/request/apis/danmaku_api.dart';
 import 'package:kazumi/utils/constants.dart';
 import 'package:audio_video_progress_bar/audio_video_progress_bar.dart';
 import 'package:kazumi/services/player/timed_shutdown_service.dart';
@@ -339,6 +340,8 @@ class _PlayerItemPanelState extends State<PlayerItemPanel> {
     return Observer(builder: (context) {
       final danmakuLoading = playerController.danmaku.danmakuLoading;
       final danmakuOn = playerController.danmaku.danmakuOn;
+      // A build without DanDanPlay credentials cannot fetch danmaku at all.
+      final danmakuAvailable = DanmakuApi.isAvailable;
       return IconButton(
         color: Colors.white,
         icon: danmakuLoading
@@ -350,8 +353,14 @@ class _PlayerItemPanelState extends State<PlayerItemPanel> {
                 ),
               )
             : (danmakuOn ? _danmakuOnIcon(context) : _cachedDanmakuOffIcon),
-        onPressed: danmakuLoading ? null : widget.handleDanmaku,
-        tooltip: danmakuLoading ? '弹幕加载中...' : (danmakuOn ? '关闭弹幕' : '打开弹幕'),
+        onPressed: danmakuLoading || !danmakuAvailable
+            ? null
+            : widget.handleDanmaku,
+        tooltip: !danmakuAvailable
+            ? '弹幕功能未启用'
+            : danmakuLoading
+            ? '弹幕加载中...'
+            : (danmakuOn ? '关闭弹幕' : '打开弹幕'),
       );
     });
   }
@@ -638,8 +647,10 @@ class _PlayerItemPanelState extends State<PlayerItemPanel> {
             icon: playerController.danmaku.danmakuOn
                 ? _danmakuOnIcon(context)
                 : _cachedDanmakuOffIcon,
-            onPressed: widget.handleDanmaku,
-            tooltip: playerController.danmaku.danmakuOn ? '关闭弹幕' : '打开弹幕',
+            onPressed: DanmakuApi.isAvailable ? widget.handleDanmaku : null,
+            tooltip: !DanmakuApi.isAvailable
+                ? '弹幕功能未启用'
+                : playerController.danmaku.danmakuOn ? '关闭弹幕' : '打开弹幕',
           ),
           if (playerController.danmaku.danmakuOn) ...[
             _danmakuSettingsButton,
