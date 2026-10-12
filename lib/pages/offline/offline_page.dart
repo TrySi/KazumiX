@@ -405,6 +405,12 @@ class _OfflinePageState extends State<OfflinePage>
   /// Opens a bottom sheet (matching the download picker) so the user can
   /// choose which downloaded episodes are watched; writes back to history.
   Future<void> _editWatchStates(_OfflineShow show) async {
+    // 隐身模式 (SettingsKeys.privateMode) 下 history 写入被静默跳过，此时打开
+    // 编辑器只会让用户改完后拿到「0/N 集写入失败」的误导提示。
+    if (GStorage.getSetting<bool>(SettingsKeys.privateMode)) {
+      KazumiDialog.showToast(message: '隐身模式已开启，不记录观看状态');
+      return;
+    }
     final episodes = show.completedByNumber;
     final numbers = episodes.keys.toList()..sort();
     if (numbers.isEmpty) return;
