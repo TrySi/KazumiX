@@ -50,33 +50,53 @@ enum _EpisodeWatchState {
 /// with its cover and every downloaded episode keeping its owning record.
 class _OfflineShow {
   _OfflineShow({
-    required this.bangumiId,
-    required this.bangumiName,
-    required this.coverSource,
+    required this.primaryRecord,
     required this.latestTime,
     required this.episodes,
     this.lastWatchTime,
-  });
+  }) : downloadedNumbers = _downloadedNumbers(episodes),
+       activeCount = _activeCount(episodes);
 
-  final int bangumiId;
-  final String bangumiName;
-  final String coverSource;
+  /// The record supplying the show's identity (name and cover) when several
+  /// sources downloaded the same bangumi.
+  final DownloadRecord primaryRecord;
+
   final DateTime latestTime;
   final List<_OfflineEpisode> episodes;
+
+  int get bangumiId => primaryRecord.bangumiId;
+  String get bangumiName => primaryRecord.bangumiName;
+  String get coverSource => primaryRecord.coverSource;
 
   /// Most recent watch time of this show across all history entries.
   final DateTime? lastWatchTime;
 
-  int get completedCount => episodes
-      .where((e) => e.episode.status == DownloadStatus.completed)
-      .length;
+  /// Distinct episode numbers that finished downloading. Derived once so
+  /// sorting and filtering never re-scan [episodes].
+  final Set<int> downloadedNumbers;
 
-  int get activeCount => episodes.where((e) {
-        final status = e.episode.status;
-        return status == DownloadStatus.downloading ||
-            status == DownloadStatus.resolving ||
-            status == DownloadStatus.pending;
-      }).length;
+  /// Episodes still downloading or queued. Derived once for the same reason.
+  final int activeCount;
+
+  int get completedCount => downloadedNumbers.length;
+
+  static Set<int> _downloadedNumbers(List<_OfflineEpisode> episodes) => {
+    for (final e in episodes)
+      if (e.episode.status == DownloadStatus.completed) e.episode.episodeNumber,
+  };
+
+  static int _activeCount(List<_OfflineEpisode> episodes) {
+    var count = 0;
+    for (final e in episodes) {
+      final status = e.episode.status;
+      if (status == DownloadStatus.downloading ||
+          status == DownloadStatus.resolving ||
+          status == DownloadStatus.pending) {
+        count++;
+      }
+    }
+    return count;
+  }
 }
 
 class _OfflineEpisode {
@@ -232,9 +252,7 @@ class _OfflinePageState extends State<OfflinePage>
       final first = records.first;
       shows.add(
         _OfflineShow(
-          bangumiId: bangumiId,
-          bangumiName: first.bangumiName,
-          coverSource: first.coverSource,
+          primaryRecord: first,
           latestTime: latestTime,
           lastWatchTime: watchTimes[bangumiId],
           episodes: episodes,
@@ -299,16 +317,27 @@ class _OfflinePageState extends State<OfflinePage>
     return result;
   }
 
-  /// Derives the per-episode watch state for a show's offline history,
-  /// merging every offline entry (across sources) by the newest update.
-  Map<int, _EpisodeWatchState> _watchStatesFor(int bangumiId) {
-    final latest = <int, ({Progress progress, int updatedAt})>{};
+  /// Groups the offline history entries by bangumi once, so deriving watch
+  /// states for every show costs O(histories) instead of
+  /// O(shows x histories).
+  Map<int, List<History>> _offlineHistoriesByBangumi() {
+    final grouped = <int, List<History>>{};
     for (final history in historyController.histories) {
-      if (history.bangumiItem.id != bangumiId) continue;
       if (HistoryEntryKind.normalize(history.entryKind) !=
           HistoryEntryKind.offline) {
         continue;
       }
+      grouped.putIfAbsent(history.bangumiItem.id, () => []).add(history);
+    }
+    return grouped;
+  }
+
+  /// Derives the per-episode watch state from a show's offline history
+  /// entries, merging every source by the newest update.
+  Map<int, _EpisodeWatchState> _watchStatesFrom(List<History>? histories) {
+    if (histories == null || histories.isEmpty) return const {};
+    final latest = <int, ({Progress progress, int updatedAt})>{};
+    for (final history in histories) {
       history.progresses.forEach((episode, progress) {
         final updatedAt = progress.effectiveUpdatedAtMs(history.lastWatchTime);
         final current = latest[episode];
@@ -337,7 +366,9 @@ class _OfflinePageState extends State<OfflinePage>
     }
     final numbers = episodes.keys.toList()..sort();
     if (numbers.isEmpty) return;
-    final states = _watchStatesFor(show.bangumiId);
+    final states = _watchStatesFrom(
+      _offlineHistoriesByBangumi()[show.bangumiId],
+    );
 
     final picked = await showAdaptiveBottomSheet<Set<int>>(
       context: context,
@@ -425,30 +456,17 @@ class _OfflinePageState extends State<OfflinePage>
 
   /// Minimal item carrying the show's identity for history lookups (the
   /// history key only uses the bangumi id).
-  BangumiItem _bangumiItemFor(_OfflineShow show) => BangumiItem(
-    id: show.bangumiId,
-    type: 2,
-    name: show.bangumiName,
-    nameCn: show.bangumiName,
-    summary: '',
-    airDate: '',
-    airWeekday: 0,
-    rank: 0,
-    images: {'large': show.coverSource},
-    tags: [],
-    alias: [],
-    ratingScore: 0.0,
-    votes: 0,
-    votesCount: [],
-    info: '',
-  );
+  BangumiItem _bangumiItemFor(_OfflineShow show) =>
+      show.primaryRecord.toBangumiItem();
 
   void _openEpisodes(_OfflineShow show) {
     showAdaptiveBottomSheet<void>(
       context: context,
       builder: (context) => _OfflineEpisodeSheet(
         show: show,
-        watchStates: _watchStatesFor(show.bangumiId),
+        watchStates: _watchStatesFrom(
+          _offlineHistoriesByBangumi()[show.bangumiId],
+        ),
         onPlay: (entry) => _playEpisode(show, entry),
       ),
     );
@@ -472,23 +490,7 @@ class _OfflinePageState extends State<OfflinePage>
       return;
     }
 
-    final bangumiItem = BangumiItem(
-      id: record.bangumiId,
-      type: 2,
-      name: record.bangumiName,
-      nameCn: record.bangumiName,
-      summary: '',
-      airDate: '',
-      airWeekday: 0,
-      rank: 0,
-      images: {'large': record.coverSource},
-      tags: [],
-      alias: [],
-      ratingScore: 0.0,
-      votes: 0,
-      votesCount: [],
-      info: '',
-    );
+    final bangumiItem = record.toBangumiItem();
 
     context.pushNamed(
       '/video/',
@@ -531,11 +533,13 @@ class _OfflinePageState extends State<OfflinePage>
           for (final entry in collectibles)
             entry.bangumiItem.id: CollectType.fromValue(entry.type),
         };
-        // Compute watch states for every show before filtering.
+        // Compute watch states for every show before filtering. Histories are
+        // grouped once so this stays linear in the number of history entries.
         final allShows = _buildShows();
+        final offlineHistories = _offlineHistoriesByBangumi();
         final watchStatesByShow = <int, Map<int, _EpisodeWatchState>>{
           for (final show in allShows)
-            show.bangumiId: _watchStatesFor(show.bangumiId),
+            show.bangumiId: _watchStatesFrom(offlineHistories[show.bangumiId]),
         };
         final shows = _filter(allShows, collectTypes, watchStatesByShow);
         return Scaffold(
@@ -1290,12 +1294,7 @@ _EpisodeWatchState _overallWatchState(
   _OfflineShow show,
   Map<int, _EpisodeWatchState> watchStates,
 ) {
-  final numbers = <int>{};
-  for (final e in show.episodes) {
-    if (e.episode.status == DownloadStatus.completed) {
-      numbers.add(e.episode.episodeNumber);
-    }
-  }
+  final numbers = show.downloadedNumbers;
   if (numbers.isEmpty) return _EpisodeWatchState.unwatched;
 
   var completed = 0;
