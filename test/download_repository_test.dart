@@ -176,6 +176,30 @@ void main() {
       expect(merged.plugins, {1: 'alpha'});
     });
 
+    test('orders and attributes by source recency, not by box order', () async {
+      // beta is the newer download but is inserted first, so neither the box
+      // key order nor the episode numbers line up with the expected result.
+      await GStorage.downloads.put(
+        'beta_1',
+        _record(1, 'beta', {
+          2: DownloadStatus.completed,
+          4: DownloadStatus.completed,
+        }, createdAt: DateTime(2026, 5)),
+      );
+      await GStorage.downloads.put(
+        'alpha_1',
+        _record(1, 'alpha', {
+          1: DownloadStatus.completed,
+          4: DownloadStatus.completed,
+        }, createdAt: DateTime(2026, 1)),
+      );
+
+      final merged = repository.getCompletedEpisodesAcrossSources(1);
+
+      expect(merged.episodes.map((e) => e.episodeNumber), [1, 2, 4]);
+      expect(merged.plugins, {1: 'alpha', 2: 'beta', 4: 'alpha'});
+    });
+
     test('returns empty results when nothing is downloaded', () {
       final merged = repository.getCompletedEpisodesAcrossSources(999);
 

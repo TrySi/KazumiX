@@ -1,5 +1,6 @@
 import 'package:kazumi/services/storage/storage.dart';
 import 'package:kazumi/modules/download/download_module.dart';
+import 'package:kazumi/modules/download/download_show_group.dart';
 import 'package:kazumi/services/logging/logger.dart';
 
 abstract class IDownloadRepository {
@@ -45,10 +46,10 @@ abstract class IDownloadRepository {
 
   /// 跨来源合并某番剧已完成下载的集数。
   ///
-  /// 本地播放的选集列表要覆盖所有下载来源，而不是只看当前来源。同一集在多个
-  /// 来源都存在时保留较早下载的那份（见 [DownloadRecord.compareBySource]），
-  /// 保证播放定位稳定。返回的 [plugins] 给出每集所属来源插件名，用于按集定位
-  /// 本地文件与弹幕。
+  /// 本地播放的选集列表要覆盖所有下载来源，而不是只看当前来源。来源顺序与同一集
+  /// 的归属由 [groupDownloadsByShow] 统一决定（较早下载的那份胜出，见
+  /// [DownloadRecord.compareBySource]），保证播放定位稳定。返回的 [plugins]
+  /// 给出每集所属来源插件名，用于按集定位本地文件与弹幕。
   ({List<DownloadEpisode> episodes, Map<int, String> plugins})
   getCompletedEpisodesAcrossSources(int bangumiId);
 
@@ -272,26 +273,32 @@ class DownloadRepository implements IDownloadRepository {
   @override
   ({List<DownloadEpisode> episodes, Map<int, String> plugins})
   getCompletedEpisodesAcrossSources(int bangumiId) {
+    // The grouping owns the merge rule (source order, and which source wins a
+    // duplicated episode), so this reads it instead of rebuilding the loop:
+    // reimplementing it is how the two copies drifted apart before.
+    final shows = groupDownloadsByShow(
+      getAllRecords().where((record) => record.bangumiId == bangumiId),
+    );
+    if (shows.isEmpty) {
+      return (
+        episodes: const <DownloadEpisode>[],
+        plugins: const <int, String>{},
+      );
+    }
+
     final byNumber = <int, DownloadEpisode>{};
     final plugins = <int, String>{};
-    // Sorted so the source that wins a duplicated episode does not depend on
-    // the storage box's key order.
-    final records = getAllRecords()..sort(DownloadRecord.compareBySource);
-    for (final record in records) {
-      if (record.bangumiId != bangumiId) continue;
-      for (final episode in record.episodes.values) {
-        if (episode.status != DownloadStatus.completed) continue;
-        final number = episode.episodeNumber;
-        // The earliest source that has an episode wins, so a duplicate
-        // download never shows up twice.
-        if (byNumber.containsKey(number)) continue;
-        byNumber[number] = episode;
-        plugins[number] = record.pluginName;
-      }
+    for (final entry in shows.single.entries) {
+      if (entry.episode.status != DownloadStatus.completed) continue;
+      final number = entry.episode.episodeNumber;
+      // Entries are ordered by episode number, so the earliest source that has
+      // an episode is reached first and a duplicate never shows up twice.
+      if (byNumber.containsKey(number)) continue;
+      byNumber[number] = entry.episode;
+      plugins[number] = entry.record.pluginName;
     }
-    final episodes = byNumber.values.toList()
-      ..sort((a, b) => a.episodeNumber.compareTo(b.episodeNumber));
-    return (episodes: episodes, plugins: plugins);
+    // Keys were inserted in episode-number order, so the list is already sorted.
+    return (episodes: byNumber.values.toList(), plugins: plugins);
   }
 
   @override
