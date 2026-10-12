@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:kazumi/modules/bangumi/episode_item.dart';
 import 'package:path/path.dart' as path;
 import 'package:path_provider/path_provider.dart';
 
@@ -33,6 +34,82 @@ int extractEpisodeNumber(String input) {
   }
 
   return 0;
+}
+
+/// Normalizes an episode label for display, so different sources' formats
+/// (`1`, `第1集`, `第1话`, `EP1`) render consistently as `第X话`.
+///
+/// Display only: it never rewrites the stored identifiers. A label carrying a
+/// descriptive title keeps it and only has the 集/话 marker normalized; a label
+/// that is just the episode number (optionally wrapped) becomes `第X话`.
+String formatEpisodeLabel(String input) {
+  final value = input.trim();
+  if (value.isEmpty) return value;
+  final number = extractEpisodeNumber(value);
+  if (number <= 0) return value;
+  final bare = RegExp('^第?\\s*0*$number\\s*[话集]?\$');
+  if (bare.hasMatch(value)) return '第$number话';
+  return value.replaceAll('集', '话');
+}
+
+/// Builds display titles for downloaded / offline episodes from cached Bangumi
+/// metadata, so every screen reads the same: main episodes as `第X话`, extras
+/// (SP/OP/ED) as `<PREFIX><index> <title>`.
+class OfflineEpisodeTitles {
+  const OfflineEpisodeTitles._(this._byNumber, this._byName);
+
+  final Map<int, String> _byNumber;
+  final Map<String, String> _byName;
+
+  static const OfflineEpisodeTitles empty = OfflineEpisodeTitles._(
+    {},
+    {},
+  );
+
+  factory OfflineEpisodeTitles.fromCache(Iterable<EpisodeInfo>? cached) {
+    final byNumber = <int, String>{};
+    final byName = <String, String>{};
+    final counters = <int, int>{};
+    for (final episode in cached ?? const <EpisodeInfo>[]) {
+      final nameCn = episode.nameCn.trim();
+      final name = episode.name.trim();
+      final label = nameCn.isNotEmpty ? nameCn : name;
+      if (episode.type == 0) {
+        final n = episode.episode;
+        if (n == n.roundToDouble() && n > 0) {
+          byNumber[n.toInt()] = '第${n.toInt()}话';
+        }
+        continue;
+      }
+      final prefix = switch (episode.type) {
+        1 => 'SP',
+        2 => 'OP',
+        3 => 'ED',
+        _ => null,
+      };
+      if (prefix == null) continue;
+      final index = (counters[episode.type] ?? 0) + 1;
+      counters[episode.type] = index;
+      final title = label.isNotEmpty ? '$prefix$index $label' : '$prefix$index';
+      if (nameCn.isNotEmpty) byName[nameCn] = title;
+      if (name.isNotEmpty) byName[name] = title;
+    }
+    return OfflineEpisodeTitles._(byNumber, byName);
+  }
+
+  /// Display title for an episode: extras matched by name win, then the main
+  /// episode number, falling back to the stored name.
+  String titleFor({required int episodeNumber, String name = ''}) {
+    final trimmed = name.trim();
+    if (trimmed.isNotEmpty) {
+      final byNameHit = _byName[trimmed];
+      if (byNameHit != null) return byNameHit;
+    }
+    final byNumberHit = _byNumber[episodeNumber];
+    if (byNumberHit != null) return byNumberHit;
+    if (trimmed.isNotEmpty) return formatEpisodeLabel(trimmed);
+    return episodeNumber > 0 ? '第$episodeNumber话' : trimmed;
+  }
 }
 
 Future<String> getPlayerTempPath() async {
