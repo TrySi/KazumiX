@@ -83,7 +83,7 @@ void main() {
   });
 
   group('OfflineRoadListSnapshot', () {
-    test('groups downloaded episodes by original road', () {
+    test('merges downloaded episodes into a single sorted list', () {
       final snapshot = buildOfflineRoadListSnapshot([
         _episode(2, '第二话', 2),
         _episode(1, '第一话', 0),
@@ -91,14 +91,22 @@ void main() {
         _episode(3, '第三话', 0),
       ]);
 
-      expect(snapshot.roads.length, 2);
-      expect(snapshot.roads[0].name, '播放列表1');
-      expect(snapshot.roads[0].data, ['1', '3']);
-      expect(snapshot.roads[0].identifier, ['第一话', '第三话']);
-      expect(snapshot.roads[1].name, '播放列表3');
-      expect(snapshot.roads[1].data, ['2', '4']);
-      expect(snapshot.displayRoadToOriginalRoad, {0: 0, 1: 2});
-      expect(snapshot.originalRoadToDisplayRoad, {0: 0, 2: 1});
+      expect(snapshot.roads.length, 1);
+      expect(snapshot.roads[0].data, ['1', '2', '3', '4']);
+      expect(snapshot.roads[0].identifier, ['第一话', '第二话', '第三话', '第四话']);
+      expect(snapshot.episodesByNumber.keys.toList()..sort(), [1, 2, 3, 4]);
+    });
+
+    test('keeps the first source when an episode is downloaded twice', () {
+      final snapshot = buildOfflineRoadListSnapshot([
+        _episode(1, '第一话 A', 0),
+        _episode(1, '第一话 B', 2),
+      ]);
+
+      expect(snapshot.roads.length, 1);
+      expect(snapshot.roads[0].data, ['1']);
+      expect(snapshot.roads[0].identifier, ['第一话 A']);
+      expect(snapshot.episodesByNumber[1]!.road, 0);
     });
   });
 

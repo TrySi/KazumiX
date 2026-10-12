@@ -52,10 +52,15 @@ class OfflineVideoPlaybackArgs extends VideoPlaybackArgs {
     required this.episodeNumber,
     required this.road,
     required this.downloadedEpisodes,
+    this.episodePlugins = const {},
   });
 
   final String pluginName;
   final int episodeNumber;
   final int road;
   final List<DownloadEpisode> downloadedEpisodes;
+
+  /// Episode number to owning source plugin, so a merged offline list can
+  /// resolve each episode's file, danmaku and history from the right source.
+  final Map<int, String> episodePlugins;
 }

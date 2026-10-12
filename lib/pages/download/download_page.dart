@@ -9,8 +9,10 @@ import 'package:kazumi/modules/bangumi/bangumi_item.dart';
 import 'package:kazumi/pages/download/download_controller.dart';
 import 'package:kazumi/pages/download/download_widgets.dart';
 import 'package:kazumi/pages/video/video_playback_args.dart';
+import 'package:kazumi/repositories/bangumi_offline_cache_repository.dart';
 import 'package:kazumi/services/logging/logger.dart';
 import 'package:kazumi/utils/format.dart';
+import 'package:kazumi/utils/media.dart';
 
 enum _DownloadFilter { downloading, completed }
 
@@ -302,14 +304,29 @@ class _DownloadPageState extends State<DownloadPage> {
     final episode = entry.episode;
     return DownloadEpisodeTile(
       episode: episode,
+      title: _titlesFor(record.bangumiId).titleFor(
+        episodeNumber: episode.episodeNumber,
+        name: episode.episodeName,
+      ),
       statusText: _getStatusText(record, episode),
       sourceLabel: record.pluginName,
-      actions: _getActionButtons(record, episode),
+      actions: _getActionButtons(entry),
       onPlay: episode.status == DownloadStatus.completed
-          ? () => _playEpisode(record, episode)
+          ? () => _playEpisode(entry)
           : null,
     );
   }
+
+  final Map<int, OfflineEpisodeTitles> _titlesCache = {};
+
+  /// Cached episode titles for a bangumi so downloaded episodes read `第X话`
+  /// (main) or `SPx/OPx/EDx <title>` (extras), matching the offline screens.
+  OfflineEpisodeTitles _titlesFor(int bangumiId) => _titlesCache.putIfAbsent(
+    bangumiId,
+    () => OfflineEpisodeTitles.fromCache(
+      BangumiOfflineCacheRepository().readEpisodes(bangumiId),
+    ),
+  );
 
   String _getStatusText(DownloadRecord record, DownloadEpisode episode) {
     switch (episode.status) {
@@ -337,10 +354,9 @@ class _DownloadPageState extends State<DownloadPage> {
     }
   }
 
-  List<Widget> _getActionButtons(
-    DownloadRecord record,
-    DownloadEpisode episode,
-  ) {
+  List<Widget> _getActionButtons(_EpisodeEntry entry) {
+    final record = entry.record;
+    final episode = entry.episode;
     final colorScheme = Theme.of(context).colorScheme;
     final buttons = <Widget>[];
 
@@ -353,7 +369,7 @@ class _DownloadPageState extends State<DownloadPage> {
               size: 20,
               color: colorScheme.primary,
             ),
-            onPressed: () => _playEpisode(record, episode),
+            onPressed: () => _playEpisode(entry),
             tooltip: '播放',
             visualDensity: VisualDensity.compact,
           ),
@@ -442,7 +458,9 @@ class _DownloadPageState extends State<DownloadPage> {
     return buttons;
   }
 
-  void _playEpisode(DownloadRecord record, DownloadEpisode episode) {
+  void _playEpisode(_EpisodeEntry entry) {
+    final record = entry.record;
+    final episode = entry.episode;
     final localPath = downloadController.getLocalVideoPath(
       record.bangumiId,
       record.pluginName,
@@ -471,10 +489,26 @@ class _DownloadPageState extends State<DownloadPage> {
       info: '',
     );
 
-    final downloadedEpisodes = downloadController.getCompletedEpisodes(
-      record.bangumiId,
-      record.pluginName,
-    );
+    // Mirror the 本地 tab: play the show's downloaded episodes merged across
+    // every source, resolving each episode's file from its owning source.
+    final completedByNumber = <int, DownloadEpisode>{};
+    final episodePlugins = <int, String>{};
+    for (final candidate in downloadController.records) {
+      if (candidate.bangumiId != record.bangumiId) continue;
+      for (final candidateEpisode in candidate.episodes.values) {
+        if (candidateEpisode.status != DownloadStatus.completed) continue;
+        completedByNumber.putIfAbsent(
+          candidateEpisode.episodeNumber,
+          () => candidateEpisode,
+        );
+        episodePlugins.putIfAbsent(
+          candidateEpisode.episodeNumber,
+          () => candidate.pluginName,
+        );
+      }
+    }
+    final downloadedEpisodes = completedByNumber.values.toList()
+      ..sort((a, b) => a.episodeNumber.compareTo(b.episodeNumber));
 
     context.pushNamed(
       '/video/',
@@ -484,6 +518,7 @@ class _DownloadPageState extends State<DownloadPage> {
         episodeNumber: episode.episodeNumber,
         road: episode.road,
         downloadedEpisodes: downloadedEpisodes,
+        episodePlugins: episodePlugins,
       ),
     );
   }
@@ -493,7 +528,7 @@ class _DownloadPageState extends State<DownloadPage> {
       builder: (context) => AlertDialog(
         title: const Text('删除下载'),
         content: Text(
-          '确定要删除「${episode.episodeName.isNotEmpty ? episode.episodeName : '第${episode.episodeNumber}集'}」的下载文件吗？',
+          '确定要删除「${_titlesFor(record.bangumiId).titleFor(episodeNumber: episode.episodeNumber, name: episode.episodeName)}」的下载文件吗？',
         ),
         actions: [
           TextButton(

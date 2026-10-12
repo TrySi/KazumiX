@@ -143,6 +143,7 @@ abstract class _VideoPageController with Store implements Disposable {
   late Plugin currentPlugin;
 
   String _offlinePluginName = '';
+  final Map<int, String> _offlineEpisodePlugins = {};
 
   final HistoryController historyController;
   final IDownloadRepository downloadRepository;
@@ -184,6 +185,7 @@ abstract class _VideoPageController with Store implements Disposable {
           episodeNumber: args.episodeNumber,
           road: args.road,
           downloadedEpisodes: args.downloadedEpisodes,
+          episodePlugins: args.episodePlugins,
         );
     }
   }
@@ -195,10 +197,14 @@ abstract class _VideoPageController with Store implements Disposable {
     required int episodeNumber,
     required int road,
     required List<DownloadEpisode> downloadedEpisodes,
+    Map<int, String> episodePlugins = const {},
   }) {
     this.bangumiItem = bangumiItem;
     resumeHistory = false;
     _offlinePluginName = pluginName;
+    _offlineEpisodePlugins
+      ..clear()
+      ..addAll(episodePlugins);
     title = bangumiItem.nameCn.isNotEmpty
         ? bangumiItem.nameCn
         : bangumiItem.name;
@@ -249,6 +255,28 @@ abstract class _VideoPageController with Store implements Disposable {
   }
 
   String get offlinePluginName => _offlinePluginName;
+
+  /// Display label of the currently selected episode, normalized so every
+  /// source's format renders consistently (e.g. `1` / `第1集` -> `第1话`).
+  String get currentEpisodeLabel {
+    final selection = selectedEpisode;
+    final roadIndex = selection.road;
+    final episodeIndex = selection.episode - 1;
+    if (roadIndex < 0 ||
+        roadIndex >= roadList.length ||
+        episodeIndex < 0 ||
+        episodeIndex >= roadList[roadIndex].identifier.length) {
+      return '第${selection.episode}话';
+    }
+    final raw = roadList[roadIndex].identifier[episodeIndex];
+    final formatted = formatEpisodeLabel(raw);
+    return formatted.isEmpty ? '第${selection.episode}话' : formatted;
+  }
+
+  /// Owning source plugin for an offline episode; falls back to the entry
+  /// plugin for episodes without a recorded source.
+  String _offlinePluginFor(int episodeNumber) =>
+      _offlineEpisodePlugins[episodeNumber] ?? _offlinePluginName;
 
   PlaybackHistoryIdentity? get currentHistoryIdentity =>
       _playbackHistoryIdentity;
@@ -322,7 +350,7 @@ abstract class _VideoPageController with Store implements Disposable {
   void _setOfflineHistoryIdentity(EpisodeRef episode) {
     _playbackHistoryIdentity = PlaybackHistoryIdentity.offline(
       bangumiItem: bangumiItem,
-      pluginName: _offlinePluginName,
+      pluginName: _offlinePluginFor(episode.historyEpisodeNumber),
       episodeNumber: episode.historyEpisodeNumber,
       episodeTitle: episode.displayTitle,
       road: episode.originalRoadIndex,
@@ -512,9 +540,10 @@ abstract class _VideoPageController with Store implements Disposable {
       return;
     }
 
+    final episodePlugin = _offlinePluginFor(resolvedEpisode.historyEpisodeNumber);
     final localPath = _getLocalVideoPath(
       bangumiItem.id,
-      _offlinePluginName,
+      episodePlugin,
       resolvedEpisode.historyEpisodeNumber,
     );
     if (localPath == null) {
@@ -540,7 +569,7 @@ abstract class _VideoPageController with Store implements Disposable {
       offset: resolvedOffset,
       isLocalPlayback: true,
       bangumiId: bangumiItem.id,
-      pluginName: _offlinePluginName,
+      pluginName: episodePlugin,
       episode: resolvedEpisode.listIndex,
       danmakuEpisodeNumber: resolvedEpisode.danmakuEpisodeNumber,
       pageUrl: resolvedEpisode.pageUrl,
@@ -817,47 +846,37 @@ class OfflineRoadListSnapshot {
 OfflineRoadListSnapshot buildOfflineRoadListSnapshot(
   List<DownloadEpisode> episodes,
 ) {
-  final groupedEpisodes = <int, List<DownloadEpisode>>{};
   final episodesByNumber = <int, DownloadEpisode>{};
-
   for (final episode in episodes) {
-    episodesByNumber[episode.episodeNumber] = episode;
-    groupedEpisodes.putIfAbsent(episode.road, () => []).add(episode);
+    // Local files carry no source-road meaning, and the same episode may have
+    // been downloaded from several sources; keep the first per number.
+    episodesByNumber.putIfAbsent(episode.episodeNumber, () => episode);
   }
 
-  final originalRoads = groupedEpisodes.keys.toList()..sort();
-  final roads = <Road>[];
-  final displayRoadToOriginalRoad = <int, int>{};
-  final originalRoadToDisplayRoad = <int, int>{};
+  // Offline merges every downloaded episode into a single list, sorted by
+  // episode number, instead of grouping by the originating road.
+  final ordered = episodesByNumber.values.toList()
+    ..sort((a, b) => a.episodeNumber.compareTo(b.episodeNumber));
 
-  for (final originalRoad in originalRoads) {
-    final roadEpisodes = groupedEpisodes[originalRoad]!
-      ..sort((a, b) => a.episodeNumber.compareTo(b.episodeNumber));
-    final displayRoad = roads.length;
-    displayRoadToOriginalRoad[displayRoad] = originalRoad;
-    originalRoadToDisplayRoad[originalRoad] = displayRoad;
-    roads.add(
-      Road(
-        name: originalRoad >= 0
-            ? '播放列表${originalRoad + 1}'
-            : '播放列表${displayRoad + 1}',
-        data: roadEpisodes.map((e) => e.episodeNumber.toString()).toList(),
-        identifier: roadEpisodes
-            .map(
-              (e) => e.episodeName.isNotEmpty
-                  ? e.episodeName
-                  : '第${e.episodeNumber}集',
-            )
-            .toList(),
-      ),
-    );
-  }
+  final roads = <Road>[
+    Road(
+      name: '本地',
+      data: ordered.map((e) => e.episodeNumber.toString()).toList(),
+      identifier: ordered
+          .map(
+            (e) => e.episodeName.isNotEmpty ? e.episodeName : '第${e.episodeNumber}集',
+          )
+          .toList(),
+    ),
+  ];
 
   return OfflineRoadListSnapshot(
     roads: roads,
     episodesByNumber: episodesByNumber,
-    displayRoadToOriginalRoad: displayRoadToOriginalRoad,
-    originalRoadToDisplayRoad: originalRoadToDisplayRoad,
+    displayRoadToOriginalRoad: const {0: 0},
+    originalRoadToDisplayRoad: {
+      for (final episode in ordered) episode.road: 0,
+    },
   );
 }
 
