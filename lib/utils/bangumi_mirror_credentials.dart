@@ -4,3 +4,11 @@ const Map<String, String> bangumiMirrorCredentials = {
   'id': String.fromEnvironment('KAZUMI_APPID'),
   'value': String.fromEnvironment('KAZUMI_KEY'),
 };
+
+/// Whether the credentials above were injected at build time.
+///
+/// The mirror signs searches and comments with them, so without them those
+/// endpoints cannot be used and mirror mode should not be the default.
+bool get hasBangumiMirrorCredentials =>
+    bangumiMirrorCredentials['id']!.isNotEmpty &&
+    bangumiMirrorCredentials['value']!.isNotEmpty;

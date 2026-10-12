@@ -36,6 +36,7 @@ void main() {
     await GStorage.putSetting(SettingsKeys.bangumiAccessToken, 'saved-token');
     await GStorage.putSetting(SettingsKeys.bangumiSyncEnable, true);
     await GStorage.putSetting(SettingsKeys.enableBangumiProxy, false);
+    await GStorage.putSetting(SettingsKeys.bangumiAcceleration, '');
     await GStorage.collectibles.clear();
     DioFactory.reset();
     adapter = _BangumiAdapter();
@@ -90,7 +91,9 @@ void main() {
       () => GStorage.putSetting(SettingsKeys.imageAcceleration, previousMode),
     );
     await GStorage.putSetting(SettingsKeys.imageAcceleration, 'ech');
-    await GStorage.putSetting(SettingsKeys.enableBangumiProxy, true);
+    // Mirror routing is requested through the explicit choice, not the legacy
+    // switch, so the test does not depend on the build's mirror credentials.
+    await GStorage.putSetting(SettingsKeys.bangumiAcceleration, 'mirror');
     for (final url in [
       'https://api.bgm.tv/v0/subjects/1',
       'https://next.bgm.tv/p1/subjects/1?test=value',
