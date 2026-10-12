@@ -1,6 +1,6 @@
 <div align=center>
 
-<h1>Kazumi</h1>
+<h1>KazumiX</h1>
 
 <img src="assets/images/logo/logo_rounded.png" width=200></img>
 
@@ -17,12 +17,14 @@
 
 ## 支持平台
 
+本仓库是仅供自用的分支，只保留下面两个平台：
+
 - Android 10 及以上
 - Windows 10 及以上
-- MacOS 10.15 及以上
-- Linux (实验性)
-- iOS 13 及以上 (需要 [侧载](https://kazumi.app/docs/misc/how-to-install-in-ios))
-- HarmonyOS 5.0 及以上 (位于 [分支仓库](https://github.com/ErBWs/Kazumi/releases/latest)，需要 [侧载](https://kazumi.app/docs/misc/how-to-install-in-ohos))
+
+原项目的 macOS / Linux / iOS / HarmonyOS 构建已从本仓库移除：`linux/`、`ios/`、
+`macos/` 目录以及对应的 CI 任务都不再存在。Dart 代码里仍保留这些平台的分支（例如
+`Platform.isMacOS` 判断），只是不会再被构建。
 
 ## 屏幕截图
 
@@ -67,37 +69,21 @@
 - [ ]  番剧更新提醒
 - [ ]  还有更多 (/・ω・＼)
 
-## 下载
+## 构建
 
-通过本页面 [Releases](https://github.com/Predidit/Kazumi/releases/latest) 选项卡下载：
-
-<a href="https://github.com/Predidit/Kazumi/releases">
-  <img src="static/svg/get_it_on_github.svg" alt="Get it on Github" width="200"/>
-</a>
-
-### Android
-
-<a href="https://f-droid.org/packages/com.predidit.kazumi">
-  <img src="https://fdroid.gitlab.io/artwork/badge/get-it-on-zh-hans.svg"
-  alt="Get it on F-Droid" width="200">
-</a>
-
-### GNU/Linux
-
-<a href="https://flathub.org/apps/io.github.Predidit.Kazumi">
-  <img src="https://flathub.org/api/badge?svg&locale=zh-Hans" alt="Get it on Flathub" width="175"/>
-</a>
-
-#### Arch Linux
-
-可以从 [AUR](http://aur.archlinux.org) 安装。
-
-##### AUR
+本分支不发布到任何应用商店，自行构建即可：
 
 ```bash
-[yay/paru] -S kazumi # 从源码构建
-[yay/paru] -S kazumi-bin # 二进制包
+flutter pub get
+
+flutter build apk --split-per-abi   # Android
+flutter build windows               # Windows
 ```
+
+弹幕和 Bangumi 镜像的凭据通过 `--dart-define` 注入。不注入时：没有 DanDanPlay 凭据，
+弹幕功能不可用；没有 Kazumi 镜像凭据，网络设置会默认直连而不是镜像。
+
+`.github/workflows/release.yaml` 保留了 Android + Windows 的完整构建与签名流程可供参考。
 
 ## 贡献
 
@@ -123,10 +109,6 @@ A: 本程序在视频播放时, 会尽可能多地缓存视频到内存, 以提�
 #### Q: 为什么少数番剧无法通过外部播放器观看？
 
 A: 部分视频源的番剧使用了反盗链措施, 这可以被 Kazumi 解决, 但无法被外部播放器解决。
-
-#### Q: 为什么下载的 Linux 版本缺少图标和托盘功能？
-
-A: 使用 .deb 版本进行安装, tar.gz 版本仅为方便二次打包, 这一格式先天缺乏图标和托盘功能支持。
 
 </details>
 
@@ -158,9 +140,16 @@ A: 本项目编译需要良好的网络环境, 除了由 Google 托管的 Flutte
 
 ## 美术资源
 
-本项目图标来自 [Yuquanaaa](https://www.pixiv.net/users/66219277) 发表在 [Pixiv](https://www.pixiv.net/artworks/116666979) 上的作品。
+原项目图标来自 [Yuquanaaa](https://www.pixiv.net/users/66219277) 发表在 [Pixiv](https://www.pixiv.net/artworks/116666979) 上的作品。
 
-此图标由其原作者 [Yuquanaaa](https://www.pixiv.net/users/66219277) 拥有版权。我们已获得原作者的授权和许可, 可以在本项目中使用这一图标。这一图标不是自由使用的, 未经原作者明确授权, 任何人不得擅自使用、复制、修改或分发这一图标。
+原作者拥有该图标的版权，并且明确声明该图标不是自由使用的、不随本项目的 GPL 授权，
+因此本仓库不再包含这一图标：`assets/images/logo/` 下是一张写着 `KazumiX PLACEHOLDER`
+的白底占位图。换入自有图标后重新运行下面两条命令即可重新生成各平台图标：
+
+```bash
+dart run flutter_launcher_icons
+dart run flutter_native_splash:create
+```
 
 本项目内嵌字体为 [Mi Sans](https://hyperos.mi.com/font/zh/details/sc/) 字体, 由 [Xiaomi](https://www.mi.com/index.html) 开发和拥有版权。
 

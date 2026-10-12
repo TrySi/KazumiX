@@ -120,30 +120,23 @@ dev_dependencies:
 
 flutter_launcher_icons:
   android: true
-  ios: true
-  remove_alpha_ios: true
+  ios: false
   image_path: assets/images/logo/logo_android.png
   image_path_android: assets/images/logo/logo_android.png
-  image_path_ios: assets/images/logo/logo_ios.png
   adaptive_icon_background: "#ffffff"
   adaptive_icon_foreground: assets/images/logo/logo_android.png
   adaptive_icon_monochrome: assets/images/logo/logo_android.png
-  macos:
-    generate: true
-    image_path: assets/images/logo/logo_rounded.png
   windows:
     generate: true
     image_path: assets/images/logo/logo_rounded.png
     icon_size: 256
 
+# 本分支不再生成启动图：Android 的启动页由 android/app/src/main/res/values/styles.xml
+# 的 LaunchTheme 提供，Windows 本来也不由这个工具生成。
 flutter_native_splash:
   android: false
-  ios: true
+  ios: false
   web: false
-  color_ios: "#ffffff"
-  color_dark_ios: "#212121"
-  image_ios: assets/images/logo/logo_ios.png
-  image_dark_ios: assets/images/logo/logo_ios.png
 
 msix_config:
   display_name: KazumiX
