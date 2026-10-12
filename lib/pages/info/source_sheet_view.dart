@@ -716,7 +716,7 @@ class _EpisodeSourceSheetViewState extends State<_EpisodeSourceSheetView> {
                           : colors.onSurface;
                       return Tooltip(
                         message: downloaded
-                            ? '第$episodeNumber集 已下载'
+                            ? '第$episodeNumber话 已下载'
                             : episode.nameCn.isNotEmpty
                             ? episode.nameCn
                             : episode.name,
@@ -752,7 +752,7 @@ class _EpisodeSourceSheetViewState extends State<_EpisodeSourceSheetView> {
                                       horizontal: 8,
                                     ),
                                     child: Text(
-                                      '第$episodeNumber集',
+                                      '第$episodeNumber话',
                                       maxLines: 1,
                                       overflow: TextOverflow.ellipsis,
                                       style: theme.textTheme.labelMedium

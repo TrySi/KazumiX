@@ -8,6 +8,7 @@ import 'package:kazumi/bean/widget/empty_state_widget.dart';
 import 'package:kazumi/bean/widget/compact_source_selector.dart';
 import 'package:kazumi/modules/download/download_module.dart';
 import 'package:kazumi/modules/roads/road_module.dart';
+import 'package:kazumi/utils/media.dart';
 
 class EpisodeSelectionPanel extends StatefulWidget {
   const EpisodeSelectionPanel({
@@ -277,14 +278,14 @@ class EpisodeSelectionPanelState extends State<EpisodeSelectionPanel> {
                       itemCount: count,
                       itemBuilder: (context, index) {
                         final episode = index + 1;
-                        final name =
-                            index < road!.identifier.length &&
-                                road.identifier[index].trim().isNotEmpty
-                            ? road.identifier[index]
-                            : '第$episode集';
+                        final name = formatEpisodeLabel(
+                          index < road!.identifier.length
+                              ? road.identifier[index]
+                              : '',
+                        );
                         return _EpisodeRow(
                           key: ValueKey('$_visibleRoad:$episode'),
-                          name: name,
+                          name: name.isEmpty ? '第$episode话' : name,
                           first: index == 0,
                           last: index == count - 1,
                           selected:

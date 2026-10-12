@@ -10,6 +10,7 @@ import 'package:kazumi/modules/bangumi/bangumi_item.dart';
 import 'package:kazumi/modules/roads/road_module.dart';
 import 'package:kazumi/plugins/plugins.dart';
 import 'package:kazumi/pages/download/download_controller.dart';
+import 'package:kazumi/utils/media.dart';
 
 class DownloadEpisodeSheet extends StatefulWidget {
   final int road;
@@ -120,7 +121,9 @@ class _DownloadEpisodeSheetState extends State<DownloadEpisodeSheet> {
                           episodeNumber,
                         );
                         return _EpisodeTile(
-                          identifier: currentRoadData.identifier[index],
+                          identifier: formatEpisodeLabel(
+                            currentRoadData.identifier[index],
+                          ),
                           isDownloaded: isDownloaded,
                           isSelected: isSelected,
                           onTap: isDownloaded

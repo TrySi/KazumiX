@@ -782,7 +782,8 @@ class _PlayerItemPanelState extends State<PlayerItemPanel> {
                   child: compact
                       ? const SizedBox(height: 40)
                       : Text(
-                          ' ${videoPageController.title} [${videoPageController.roadList[videoPageController.selectedEpisode.road].identifier[videoPageController.selectedEpisode.episode - 1]}]',
+                          ' ${videoPageController.title} '
+                          '[${videoPageController.currentEpisodeLabel}]',
                           style: TextStyle(
                             color: Colors.white,
                             fontSize: Theme.of(context)

@@ -6,6 +6,7 @@ import 'package:kazumi/bean/widget/kazumi_menu.dart';
 import 'package:kazumi/bean/widget/loading_indicator.dart';
 import 'package:kazumi/modules/download/download_module.dart';
 import 'package:kazumi/utils/format.dart';
+import 'package:kazumi/utils/media.dart';
 
 const Duration _kExpandDuration = Duration(milliseconds: 250);
 const Curve _kExpandCurve = Curves.easeInOutCubic;
@@ -162,6 +163,7 @@ class DownloadEpisodeTile extends StatelessWidget {
     super.key,
     required this.episode,
     required this.statusText,
+    this.title,
     this.sourceLabel,
     this.actions = const [],
     this.onPlay,
@@ -169,6 +171,9 @@ class DownloadEpisodeTile extends StatelessWidget {
 
   final DownloadEpisode episode;
   final String statusText;
+
+  /// Pre-computed display title; falls back to the stored episode name.
+  final String? title;
   final String? sourceLabel;
   final List<Widget> actions;
 
@@ -198,9 +203,10 @@ class DownloadEpisodeTile extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    episode.episodeName.isNotEmpty
-                        ? episode.episodeName
-                        : '第${episode.episodeNumber}集',
+                    title ??
+                        (episode.episodeName.isNotEmpty
+                            ? formatEpisodeLabel(episode.episodeName)
+                            : '第${episode.episodeNumber}话'),
                     style: textTheme.bodyMedium,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
