@@ -37,14 +37,14 @@ abstract class IDownloadRepository {
   /// 返回所有已完成下载的集数
   List<DownloadEpisode> getCompletedEpisodes(int bangumiId, String pluginName);
 
-  /// 跨来源合并某番剧已完成下载的集数，按集数去重并升序排列。
+  /// 跨来源合并某番剧已完成下载的集数。
   ///
-  /// 本地播放的选集列表要覆盖所有下载来源，而不是只看当前来源。
-  /// [pluginByNumber] 非空时写入每集所属来源插件名，播放时据此定位文件。
-  List<DownloadEpisode> getCompletedEpisodesAcrossSources(
-    int bangumiId, {
-    Map<int, String>? pluginByNumber,
-  });
+  /// 本地播放的选集列表要覆盖所有下载来源，而不是只看当前来源。同一集在多个
+  /// 来源都存在时保留较早下载的那份（见 [DownloadRecord.compareBySource]），
+  /// 保证播放定位稳定。返回的 [plugins] 给出每集所属来源插件名，用于按集定位
+  /// 本地文件与弹幕。
+  ({List<DownloadEpisode> episodes, Map<int, String> plugins})
+  getCompletedEpisodesAcrossSources(int bangumiId);
 
   /// 通过集数页面 URL 查找下载记录
   ///
@@ -251,25 +251,29 @@ class DownloadRepository implements IDownloadRepository {
   }
 
   @override
-  List<DownloadEpisode> getCompletedEpisodesAcrossSources(
-    int bangumiId, {
-    Map<int, String>? pluginByNumber,
-  }) {
+  ({List<DownloadEpisode> episodes, Map<int, String> plugins})
+  getCompletedEpisodesAcrossSources(int bangumiId) {
     final byNumber = <int, DownloadEpisode>{};
-    for (final record in getAllRecords()) {
+    final plugins = <int, String>{};
+    // Sorted so the source that wins a duplicated episode does not depend on
+    // the storage box's key order.
+    final records = getAllRecords()
+      ..sort(DownloadRecord.compareBySource);
+    for (final record in records) {
       if (record.bangumiId != bangumiId) continue;
       for (final episode in record.episodes.values) {
         if (episode.status != DownloadStatus.completed) continue;
-        // The first source that has an episode wins, so a duplicate download
-        // never shows up twice.
-        final existing = byNumber[episode.episodeNumber];
-        if (existing != null) continue;
-        byNumber[episode.episodeNumber] = episode;
-        pluginByNumber?[episode.episodeNumber] = record.pluginName;
+        final number = episode.episodeNumber;
+        // The earliest source that has an episode wins, so a duplicate
+        // download never shows up twice.
+        if (byNumber.containsKey(number)) continue;
+        byNumber[number] = episode;
+        plugins[number] = record.pluginName;
       }
     }
-    return byNumber.values.toList()
+    final episodes = byNumber.values.toList()
       ..sort((a, b) => a.episodeNumber.compareTo(b.episodeNumber));
+    return (episodes: episodes, plugins: plugins);
   }
 
   @override

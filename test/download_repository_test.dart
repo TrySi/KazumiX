@@ -40,18 +40,22 @@ DownloadEpisode _episode(int number, int status) => DownloadEpisode(
   '',
 );
 
-DownloadRecord _record(int bangumiId, String plugin, Map<int, int> statuses) =>
-    DownloadRecord(
-      bangumiId,
-      '番剧$bangumiId',
-      'https://example.com/$bangumiId.jpg',
-      plugin,
-      {
-        for (final entry in statuses.entries)
-          entry.key: _episode(entry.key, entry.value),
-      },
-      DateTime(2026),
-    );
+DownloadRecord _record(
+  int bangumiId,
+  String plugin,
+  Map<int, int> statuses, {
+  DateTime? createdAt,
+}) => DownloadRecord(
+  bangumiId,
+  '番剧$bangumiId',
+  'https://example.com/$bangumiId.jpg',
+  plugin,
+  {
+    for (final entry in statuses.entries)
+      entry.key: _episode(entry.key, entry.value),
+  },
+  createdAt ?? DateTime(2026),
+);
 
 void main() {
   late Directory directory;
@@ -97,18 +101,47 @@ void main() {
         }),
       );
 
-      final plugins = <int, String>{};
-      final episodes = repository.getCompletedEpisodesAcrossSources(
-        1,
-        pluginByNumber: plugins,
+      final merged = repository.getCompletedEpisodesAcrossSources(1);
+
+      expect(merged.episodes.map((e) => e.episodeNumber), [1, 2, 3, 4]);
+      // Episode 3 exists in both sources; both were created at the same time,
+      // so the tie-break on the source name decides.
+      expect(merged.plugins[1], 'alpha');
+      expect(merged.plugins[2], 'beta');
+      expect(merged.plugins[3], 'alpha');
+      expect(merged.plugins[4], 'beta');
+    });
+
+    test('the earlier download wins a duplicated episode', () async {
+      // Inserted beta first so box key order cannot be mistaken for recency.
+      await GStorage.downloads.put(
+        'beta_1',
+        _record(1, 'beta', {3: DownloadStatus.completed}, createdAt: DateTime(2026, 5)),
+      );
+      await GStorage.downloads.put(
+        'alpha_1',
+        _record(1, 'alpha', {3: DownloadStatus.completed}, createdAt: DateTime(2026, 1)),
       );
 
-      expect(episodes.map((e) => e.episodeNumber), [1, 2, 3, 4]);
-      // Episode 3 exists in both sources; the first one wins.
-      expect(plugins[1], 'alpha');
-      expect(plugins[2], 'beta');
-      expect(plugins[3], 'alpha');
-      expect(plugins[4], 'beta');
+      final merged = repository.getCompletedEpisodesAcrossSources(1);
+
+      expect(merged.plugins[3], 'alpha');
+    });
+
+    test('a source still downloading does not shadow a finished one', () async {
+      await GStorage.downloads.put(
+        'alpha_1',
+        _record(1, 'alpha', {3: DownloadStatus.downloading}, createdAt: DateTime(2026, 1)),
+      );
+      await GStorage.downloads.put(
+        'beta_1',
+        _record(1, 'beta', {3: DownloadStatus.completed}, createdAt: DateTime(2026, 5)),
+      );
+
+      final merged = repository.getCompletedEpisodesAcrossSources(1);
+
+      expect(merged.episodes.map((e) => e.episodeNumber), [3]);
+      expect(merged.plugins[3], 'beta');
     });
 
     test('ignores other bangumis and unfinished episodes', () async {
@@ -129,13 +162,17 @@ void main() {
         }),
       );
 
-      final episodes = repository.getCompletedEpisodesAcrossSources(1);
+      final merged = repository.getCompletedEpisodesAcrossSources(1);
 
-      expect(episodes.map((e) => e.episodeNumber), [1]);
+      expect(merged.episodes.map((e) => e.episodeNumber), [1]);
+      expect(merged.plugins, {1: 'alpha'});
     });
 
-    test('returns an empty list when nothing is downloaded', () {
-      expect(repository.getCompletedEpisodesAcrossSources(999), isEmpty);
+    test('returns empty results when nothing is downloaded', () {
+      final merged = repository.getCompletedEpisodesAcrossSources(999);
+
+      expect(merged.episodes, isEmpty);
+      expect(merged.plugins, isEmpty);
     });
   });
 

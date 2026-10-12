@@ -474,12 +474,9 @@ class _DownloadPageState extends State<DownloadPage> {
 
     // Mirror the 本地 tab: play the show's downloaded episodes merged across
     // every source, resolving each episode's file from its owning source.
-    final episodePlugins = <int, String>{};
-    final downloadedEpisodes = downloadController
-        .getCompletedEpisodesAcrossSources(
-          record.bangumiId,
-          pluginByNumber: episodePlugins,
-        );
+    final merged = downloadController.getCompletedEpisodesAcrossSources(
+      record.bangumiId,
+    );
 
     context.pushNamed(
       '/video/',
@@ -488,8 +485,8 @@ class _DownloadPageState extends State<DownloadPage> {
         pluginName: record.pluginName,
         episodeNumber: episode.episodeNumber,
         road: episode.road,
-        downloadedEpisodes: downloadedEpisodes,
-        episodePlugins: episodePlugins,
+        downloadedEpisodes: merged.episodes,
+        episodePlugins: merged.plugins,
       ),
     );
   }

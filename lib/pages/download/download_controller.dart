@@ -532,15 +532,10 @@ abstract class _DownloadController with Store {
 
   /// 跨来源合并某番剧已完成下载的集数（按集数去重升序）。
   ///
-  /// [pluginByNumber] 非空时写入每集所属来源插件名，本地播放据此逐集定位文件。
-  List<DownloadEpisode> getCompletedEpisodesAcrossSources(
-    int bangumiId, {
-    Map<int, String>? pluginByNumber,
-  }) {
-    return _repository.getCompletedEpisodesAcrossSources(
-      bangumiId,
-      pluginByNumber: pluginByNumber,
-    );
+  /// 返回的 `plugins` 给出每集所属来源插件名，本地播放据此逐集定位文件。
+  ({List<DownloadEpisode> episodes, Map<int, String> plugins})
+  getCompletedEpisodesAcrossSources(int bangumiId) {
+    return _repository.getCompletedEpisodesAcrossSources(bangumiId);
   }
 
   /// 弹幕文件路径

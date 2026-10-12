@@ -29,6 +29,18 @@ class DownloadRecord {
 
   String get key => '${pluginName}_$bangumiId';
 
+  /// Orders records by download recency, then by source name.
+  ///
+  /// Used wherever the "first" record of a show has to be stable across
+  /// rebuilds: it supplies the show's name and cover, and it wins when several
+  /// sources downloaded the same episode. Without an explicit order that
+  /// winner would follow container iteration order and could change between
+  /// the in-memory list and the storage box.
+  static int compareBySource(DownloadRecord a, DownloadRecord b) {
+    final byRecency = a.createdAt.compareTo(b.createdAt);
+    return byRecency != 0 ? byRecency : a.pluginName.compareTo(b.pluginName);
+  }
+
   DownloadRecord(
     this.bangumiId,
     this.bangumiName,
