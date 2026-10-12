@@ -124,13 +124,15 @@ class _PopularPageState extends State<PopularPage> {
   }
 
   Widget contentGrid(List<BangumiItem> bangumiList) {
-    int crossCount = 3;
+    int baseCrossCount = 3;
     if (MediaQuery.sizeOf(context).width > LayoutBreakpoint.compact['width']!) {
-      crossCount = 5;
+      baseCrossCount = 5;
     }
     if (MediaQuery.sizeOf(context).width > LayoutBreakpoint.medium['width']!) {
-      crossCount = 6;
+      baseCrossCount = 6;
     }
+    // Fit ~1.5x the columns so each poster renders at about 2/3 the size.
+    final crossCount = (baseCrossCount * 3 / 2).floor();
     return SliverPadding(
       padding: const EdgeInsets.all(8),
       sliver: SliverGrid(

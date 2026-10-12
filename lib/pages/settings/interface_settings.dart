@@ -55,7 +55,7 @@ class _InterfaceSettingsPageState extends State<InterfaceSettingsPage> {
       await GStorage.putSetting(SettingsKeys.defaultCollectLayout, layout.name);
       if (mounted) setState(() => _defaultCollectLayout = layout);
     } catch (_) {
-      if (mounted) KazumiDialog.showToast(message: '追番默认布局保存失败，请重试');
+      if (mounted) KazumiDialog.showToast(message: '默认布局保存失败，请重试');
     } finally {
       if (mounted) setState(() => _savingCollectLayout = false);
     }
@@ -81,8 +81,8 @@ class _InterfaceSettingsPageState extends State<InterfaceSettingsPage> {
           SettingsSection(title: Text('展示信息'), tiles: [
             SettingsDropdownTile<CollectLayout>(
               leading: Icons.view_agenda_rounded,
-              title: const Text('追番默认布局'),
-              description: const Text('下次打开追番页时使用，页面内切换不会改变此设置'),
+              title: const Text('默认布局'),
+              description: const Text('追番与本地页打开时使用，页面内切换不会改变此设置'),
               enabled: !_savingCollectLayout,
               value: _defaultCollectLayout,
               options: {
