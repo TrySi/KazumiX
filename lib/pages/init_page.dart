@@ -106,7 +106,10 @@ class _InitPageState extends State<InitPage> {
           final navigationContext = rootNavigatorKey.currentContext;
           if (navigationContext == null || !navigationContext.mounted) return;
           final path = navigationContext.routeState(listen: false).uri.path;
-          if (path.contains('/download')) return;
+          // Exact match, not a substring: the local tab also lives under
+          // '/tab/download/', and tapping the background notification from it
+          // should still open download management.
+          if (path == '/settings/download/') return;
           navigationContext.pushNamed('/settings/download/');
         } catch (e) {
           KazumiLogger()

@@ -76,7 +76,12 @@ class DownloadHttpClient {
           receiveTimeout: receiveTimeout,
         ),
       );
-      if (response.statusCode != 206) return null;
+      if (response.statusCode != 206) {
+        // The server ignored the Range header; drain the body so the
+        // underlying connection is released instead of hanging on a socket.
+        await response.data!.stream.drain<void>();
+        return null;
+      }
       final builder = BytesBuilder(copy: false);
       await for (final chunk in response.data!.stream) {
         builder.add(chunk);

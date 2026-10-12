@@ -825,7 +825,7 @@ class _SourceSheetState extends State<SourceSheet> {
   /// Builds the quality label from a `moov` payload (resolution + bitrate).
   String? _moovQualityLabel(Uint8List moov, int? totalSize) {
     final parts = <String>[];
-    final tkhd = _findBox(moov, 'tkhd');
+    final tkhd = _findVideoTkhd(moov);
     if (tkhd != null) {
       final dimensions = _parseTkhdDimensions(tkhd);
       if (dimensions != null) {
@@ -850,14 +850,18 @@ class _SourceSheetState extends State<SourceSheet> {
     const o = 0x6F; // 'o'
     const v = 0x76; // 'v'
     for (var i = tail.length - 8; i >= 0; i--) {
-      if (tail[i] == m && tail[i + 1] == o && tail[i + 2] == o && tail[i + 3] == v) {
+      if (tail[i] == m &&
+          tail[i + 1] == o &&
+          tail[i + 2] == o &&
+          tail[i + 3] == v) {
         // Standard 32-bit size header.
         if (i - 4 >= 0) {
           final size = _readUint32(tail, i - 4);
           final payloadStart = i + 4;
           final payloadEnd = payloadStart + size - 8;
           if (size >= 8 && payloadEnd <= tail.length) {
-            return tail.sublist(payloadStart, payloadEnd);
+            final payload = tail.sublist(payloadStart, payloadEnd);
+            if (_looksLikeMoov(payload)) return payload;
           }
         }
         // 64-bit large size header (size field == 1).
@@ -866,12 +870,26 @@ class _SourceSheetState extends State<SourceSheet> {
           final payloadStart = i + 4;
           final payloadEnd = payloadStart + largeSize - 16;
           if (largeSize >= 16 && payloadEnd <= tail.length) {
-            return tail.sublist(payloadStart, payloadEnd);
+            final payload = tail.sublist(payloadStart, payloadEnd);
+            if (_looksLikeMoov(payload)) return payload;
           }
         }
       }
     }
     return null;
+  }
+
+  /// A real `moov` payload starts with one of its children. The scan above
+  /// matches the "moov" bytes wherever they appear, and `mdat` payload data
+  /// can contain them, so the candidate is validated before being trusted.
+  bool _looksLikeMoov(Uint8List payload) {
+    if (payload.length < 8) return false;
+    final type = _readType(payload, 4);
+    return type == 'mvhd' ||
+        type == 'trak' ||
+        type == 'udta' ||
+        type == 'iods' ||
+        type == 'meta';
   }
 
   /// Walks MP4 boxes looking for [type]; [maxDepth] limits container recursion.
@@ -881,8 +899,17 @@ class _SourceSheetState extends State<SourceSheet> {
       final size = _readUint32(bytes, offset);
       final boxType = _readType(bytes, offset + 4);
       var headerSize = 8;
-      if (size == 1) headerSize = 16;
-      final boxSize = size == 0 ? bytes.length - offset : size;
+      var boxSize = size;
+      if (size == 1) {
+        // 64-bit size follows the type. Without reading it the loop would see
+        // a size of 1, bail out, and never find boxes in a large file.
+        if (offset + 16 > bytes.length) break;
+        headerSize = 16;
+        boxSize = _readUint64(bytes, offset + 8);
+      } else if (size == 0) {
+        // Box runs to the end of the buffer.
+        boxSize = bytes.length - offset;
+      }
       if (boxSize < headerSize) break;
       final payloadStart = offset + headerSize;
       final payloadEnd = (offset + boxSize).clamp(0, bytes.length);
@@ -902,6 +929,50 @@ class _SourceSheetState extends State<SourceSheet> {
       offset += boxSize;
     }
     return null;
+  }
+
+  /// Iterates the top-level boxes of [bytes], yielding each payload in turn.
+  Iterable<({String type, Uint8List payload})> _topLevelBoxes(
+    Uint8List bytes,
+  ) sync* {
+    var offset = 0;
+    while (offset + 8 <= bytes.length) {
+      final size = _readUint32(bytes, offset);
+      final type = _readType(bytes, offset + 4);
+      var headerSize = 8;
+      var boxSize = size;
+      if (size == 1) {
+        if (offset + 16 > bytes.length) return;
+        headerSize = 16;
+        boxSize = _readUint64(bytes, offset + 8);
+      } else if (size == 0) {
+        boxSize = bytes.length - offset;
+      }
+      if (boxSize < headerSize) return;
+      final payloadEnd = (offset + boxSize).clamp(0, bytes.length);
+      if (payloadEnd <= offset + headerSize) return;
+      yield (type: type, payload: bytes.sublist(offset + headerSize, payloadEnd));
+      offset += boxSize;
+    }
+  }
+
+  /// The `tkhd` of the video track. Taking the first `tkhd` in the file would
+  /// read an audio track's zero dimensions when it is stored first.
+  Uint8List? _findVideoTkhd(Uint8List moov) {
+    for (final box in _topLevelBoxes(moov)) {
+      if (box.type != 'trak') continue;
+      final hdlr = _findBox(box.payload, 'hdlr', maxDepth: 1);
+      if (hdlr == null || _handlerType(hdlr) != 'vide') continue;
+      return _findBox(box.payload, 'tkhd', maxDepth: 1);
+    }
+    return null;
+  }
+
+  /// The handler type recorded in an `hdlr` payload (`vide`, `soun`, ...).
+  String? _handlerType(Uint8List hdlr) {
+    // version+flags (4) then pre_defined (4) then handler_type (4).
+    if (hdlr.length < 12) return null;
+    return _readType(hdlr, 8);
   }
 
   (int, int)? _parseTkhdDimensions(Uint8List tkhd) {
@@ -967,7 +1038,9 @@ class _SourceSheetState extends State<SourceSheet> {
   }
 
   Future<void> _selectCombined(String combinedKey) async {
-    final separator = combinedKey.indexOf('#');
+    // The road index is appended last, while the source key embeds the plugin
+    // src which may itself contain '#', so split on the final separator.
+    final separator = combinedKey.lastIndexOf('#');
     if (separator <= 0) return;
     final sourceKey = combinedKey.substring(0, separator);
     final roadIndex = int.tryParse(combinedKey.substring(separator + 1));

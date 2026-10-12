@@ -399,7 +399,7 @@ abstract class _VideoPageController with Store implements Disposable {
     final titleFromRoad = roadData.identifier[index];
     final episodeTitle = downloadEpisode?.episodeName.isNotEmpty == true
         ? downloadEpisode!.episodeName
-        : (titleFromRoad.isNotEmpty ? titleFromRoad : '第$episodeNumber集');
+        : (titleFromRoad.isNotEmpty ? titleFromRoad : '第$episodeNumber话');
     return EpisodeRef.offline(
       listIndex: episode,
       roadIndex: targetRoad,
@@ -864,7 +864,9 @@ OfflineRoadListSnapshot buildOfflineRoadListSnapshot(
       data: ordered.map((e) => e.episodeNumber.toString()).toList(),
       identifier: ordered
           .map(
-            (e) => e.episodeName.isNotEmpty ? e.episodeName : '第${e.episodeNumber}集',
+            (e) => e.episodeName.isNotEmpty
+                ? e.episodeName
+                : '第${e.episodeNumber}话',
           )
           .toList(),
     ),

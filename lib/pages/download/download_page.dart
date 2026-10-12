@@ -110,9 +110,12 @@ class _DownloadPageState extends State<DownloadPage> {
           b.episode.episodeNumber,
         );
         if (byEpisode != 0) return byEpisode;
-        return a.record.pluginName.compareTo(b.record.pluginName);
+        return DownloadRecord.compareBySource(a.record, b.record);
       });
 
+      // Same ordering rule as the repository, so the card's name and cover do
+      // not depend on how the records happened to be collected.
+      records.sort(DownloadRecord.compareBySource);
       final first = records.first;
       groups.add(
         _ShowGroup(
@@ -215,6 +218,9 @@ class _DownloadPageState extends State<DownloadPage> {
   Widget _buildShowCard(_ShowGroup group) {
     return Observer(
       builder: (context) {
+        // Refresh this show's titles on every rebuild so metadata that arrived
+        // from a sync shows up; tiles within the card still share one read.
+        _titlesCache.remove(group.bangumiId);
         final entries = _filteredEntries(group);
         final totalCount = entries.length;
         final completedCount = entries

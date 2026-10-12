@@ -113,6 +113,7 @@ abstract class IDownloadManager {
     String pluginName,
     int episodeNumber, {
     DownloadEpisode? episode,
+    String? bangumiName,
   });
   Future<void> deleteRecordFiles(
     int bangumiId,
@@ -268,21 +269,28 @@ class DownloadManager implements IDownloadManager {
     return episodeDir;
   }
 
-  /// Directory to remove for an episode: the recorded one, or the default
-  /// location for episodes that never started downloading.
+  /// Directory to remove for an episode: the recorded one, or the layout the
+  /// download would have used. Episodes that never started have no recorded
+  /// directory, so the current flattened layout is guessed when the show name
+  /// is known, and the legacy plugin-nested one otherwise.
   Future<String> _episodeDirForDeletion(
     DownloadEpisode? episode,
     int bangumiId,
     String pluginName,
-    int episodeNumber,
-  ) async {
+    int episodeNumber, {
+    String? bangumiName,
+  }) async {
     final storedDir = episode?.downloadDirectory.trim() ?? '';
     if (storedDir.isNotEmpty) return storedDir;
-    return path.join(
-      await getDefaultDownloadDirectory(),
-      '${bangumiId}_$pluginName',
-      '$episodeNumber',
-    );
+    final base = await getDefaultDownloadDirectory();
+    if (bangumiName != null && bangumiName.isNotEmpty) {
+      return path.join(
+        base,
+        _directoryService.bangumiDownloadDirectoryName(bangumiId, bangumiName),
+        '$episodeNumber',
+      );
+    }
+    return path.join(base, '${bangumiId}_$pluginName', '$episodeNumber');
   }
 
   @override
@@ -973,12 +981,14 @@ class DownloadManager implements IDownloadManager {
     String pluginName,
     int episodeNumber, {
     DownloadEpisode? episode,
+    String? bangumiName,
   }) async {
     final episodePath = await _episodeDirForDeletion(
       episode,
       bangumiId,
       pluginName,
       episodeNumber,
+      bangumiName: bangumiName,
     );
     final dir = Directory(episodePath);
     if (await dir.exists()) {
@@ -1033,6 +1043,7 @@ class DownloadManager implements IDownloadManager {
         bangumiId,
         pluginName,
         entry.key,
+        bangumiName: record.bangumiName,
       );
       final dir = Directory(episodeDir);
       if (await dir.exists()) {

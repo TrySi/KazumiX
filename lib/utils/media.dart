@@ -26,8 +26,11 @@ String decodeVideoSource(String iframeUrl) {
 }
 
 int extractEpisodeNumber(String input) {
-  final regExp = RegExp(r'第?(\d+)[话集]?');
-  final match = regExp.firstMatch(input);
+  // An explicit 第N话/第N集 marker wins, because a title can also carry a year
+  // or a resolution and the loose fallback below would pick that up instead.
+  final match =
+      RegExp(r'第\s*(\d+)\s*[话集]').firstMatch(input) ??
+      RegExp(r'第?(\d+)[话集]?').firstMatch(input);
 
   if (match != null && match.group(1) != null) {
     return int.tryParse(match.group(1)!) ?? 0;

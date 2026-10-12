@@ -1175,6 +1175,7 @@ abstract class _DownloadController with Store {
         pluginName,
         episodeNumber,
         episode: episode,
+        bangumiName: record?.bangumiName,
       );
       if (record != null && record.episodes.length == 1) {
         await _deleteCoverIfUnused(record.localCoverPath);
