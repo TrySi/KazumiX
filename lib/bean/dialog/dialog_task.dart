@@ -31,7 +31,7 @@ mixin KazumiDialogOwner<T extends StatefulWidget> on State<T> {
 
 class KazumiDialogController extends ChangeNotifier {
   KazumiDialogController({BuildContext Function()? context})
-      : _context = context;
+    : _context = context;
 
   final BuildContext Function()? _context;
   KazumiDialogTask? _current;
@@ -157,9 +157,11 @@ class KazumiDialogTask {
       clickMaskDismiss: barrierDismissible,
       builder: builder ?? (_) => _LoadingDialog(message: message),
     );
-    unawaited(closed.then((_) {
-      if (identical(_dialog, dialog)) cancel();
-    }));
+    unawaited(
+      closed.then((_) {
+        if (identical(_dialog, dialog)) cancel();
+      }),
+    );
     late T result;
     try {
       if (!dialog.isActive) cancel();
@@ -186,12 +188,14 @@ class KazumiDialogTask {
     final dialog = KazumiDialogHandle<T>();
     _dialog = dialog;
     try {
-      final result = await wait(KazumiDialog.show<T>(
-        context: _owner._context?.call(),
-        handle: dialog,
-        clickMaskDismiss: clickMaskDismiss,
-        builder: builder,
-      ));
+      final result = await wait(
+        KazumiDialog.show<T>(
+          context: _owner._context?.call(),
+          handle: dialog,
+          clickMaskDismiss: clickMaskDismiss,
+          builder: builder,
+        ),
+      );
       if (result == null) {
         cancel();
         throw const _DialogTaskCancelled();
@@ -215,22 +219,20 @@ class _LoadingDialog extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Center(
-        child: Card(
-          elevation: 8,
-          shape:
-              RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-          child: Padding(
-            padding: const EdgeInsets.all(24),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                const LoadingIndicator(),
-                const SizedBox(height: 16),
-                Text(message ?? 'Loading...',
-                    style: const TextStyle(fontSize: 16)),
-              ],
-            ),
-          ),
+    child: Card(
+      elevation: 8,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      child: Padding(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const LoadingIndicator(),
+            const SizedBox(height: 16),
+            Text(message ?? 'Loading...', style: const TextStyle(fontSize: 16)),
+          ],
         ),
-      );
+      ),
+    ),
+  );
 }

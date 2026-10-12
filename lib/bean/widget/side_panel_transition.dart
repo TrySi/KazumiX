@@ -14,10 +14,10 @@ class SidePanelTransition extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => SlideTransition(
-        position: Tween<Offset>(
-          begin: const Offset(1, 0),
-          end: Offset.zero,
-        ).animate(animation.drive(CurveTween(curve: Curves.easeOut))),
-        child: child,
-      );
+    position: Tween<Offset>(
+      begin: const Offset(1, 0),
+      end: Offset.zero,
+    ).animate(animation.drive(CurveTween(curve: Curves.easeOut))),
+    child: child,
+  );
 }

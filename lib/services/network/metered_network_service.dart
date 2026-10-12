@@ -37,9 +37,9 @@ class MeteredNetworkService {
           KazumiLogger().w('Network: 网络类型监听中断 $error');
         },
       );
-      final results = await Connectivity()
-          .checkConnectivity()
-          .timeout(const Duration(seconds: 3));
+      final results = await Connectivity().checkConnectivity().timeout(
+        const Duration(seconds: 3),
+      );
       // Discard queries superseded by a refresh or a network event.
       if (revision == _revision) {
         _apply(results);
@@ -54,8 +54,9 @@ class MeteredNetworkService {
     if (metered == null || metered == _metered.value) {
       return;
     }
-    KazumiLogger()
-        .i(metered ? 'Network: 切换到移动数据网络' : 'Network: 切换到 WLAN / 局域网');
+    KazumiLogger().i(
+      metered ? 'Network: 切换到移动数据网络' : 'Network: 切换到 WLAN / 局域网',
+    );
     _metered.value = metered;
   }
 

@@ -19,9 +19,9 @@ enum LowMemoryMode {
   }
 
   static Stream<void> watch() => GStorage.watchSettings([
-        SettingsKeys.lowMemoryPolicy,
-        SettingsKeys.lowMemoryMode,
-      ]);
+    SettingsKeys.lowMemoryPolicy,
+    SettingsKeys.lowMemoryMode,
+  ]);
 
   Future<void> save() =>
       GStorage.putSetting(SettingsKeys.lowMemoryPolicy, _storageValue);

@@ -5,11 +5,7 @@ class PaletteCard extends StatefulWidget {
   final Color color;
   final bool selected;
 
-  const PaletteCard({
-    super.key,
-    required this.color,
-    required this.selected,
-  });
+  const PaletteCard({super.key, required this.color, required this.selected});
 
   @override
   State<StatefulWidget> createState() => _PaletteCardState();
@@ -36,25 +32,13 @@ class _PaletteCardState extends State<PaletteCard> {
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Expanded(
-                      child: Container(
-                        color: primary,
-                      ),
-                    ),
+                    Expanded(child: Container(color: primary)),
                     Expanded(
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          Expanded(
-                            child: Container(
-                              color: tertiary,
-                            ),
-                          ),
-                          Expanded(
-                            child: Container(
-                              color: primaryContainer,
-                            ),
-                          ),
+                          Expanded(child: Container(color: tertiary)),
+                          Expanded(child: Container(color: primaryContainer)),
                         ],
                       ),
                     ),

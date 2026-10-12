@@ -30,10 +30,12 @@ class _DownloadSettingsPageState extends State<DownloadSettingsPage> {
   @override
   void initState() {
     super.initState();
-    parallelEpisodes =
-        GStorage.getSetting(SettingsKeys.downloadParallelEpisodes);
-    parallelSegments =
-        GStorage.getSetting(SettingsKeys.downloadParallelSegments);
+    parallelEpisodes = GStorage.getSetting(
+      SettingsKeys.downloadParallelEpisodes,
+    );
+    parallelSegments = GStorage.getSetting(
+      SettingsKeys.downloadParallelSegments,
+    );
     downloadDanmaku = GStorage.getSetting(SettingsKeys.downloadDanmaku);
     downloadDirectory = _directoryService.customDirectory;
     _loadDefaultDownloadDirectory();
@@ -161,12 +163,12 @@ class _DownloadSettingsPageState extends State<DownloadSettingsPage> {
                         child: LoadingIndicator(),
                       )
                     : _hasCustomDirectory
-                        ? IconButton(
-                            tooltip: '恢复默认',
-                            icon: const Icon(Icons.restore_rounded),
-                            onPressed: _resetDownloadDirectory,
-                          )
-                        : null,
+                    ? IconButton(
+                        tooltip: '恢复默认',
+                        icon: const Icon(Icons.restore_rounded),
+                        onPressed: _resetDownloadDirectory,
+                      )
+                    : null,
                 onPressed: (_) => _selectDownloadDirectory(),
               ),
               SettingsTile.switchTile(
@@ -175,13 +177,13 @@ class _DownloadSettingsPageState extends State<DownloadSettingsPage> {
                 onToggle: (value) {
                   setState(() => downloadDanmaku = value ?? !downloadDanmaku);
                   GStorage.putSetting(
-                      SettingsKeys.downloadDanmaku, downloadDanmaku);
+                    SettingsKeys.downloadDanmaku,
+                    downloadDanmaku,
+                  );
                 },
                 title: Text('缓存弹幕'),
                 description: Text(
-                  DanmakuApi.isAvailable
-                      ? '下载视频时同时缓存弹幕数据'
-                      : '当前构建未包含弹幕 API 凭证',
+                  DanmakuApi.isAvailable ? '下载视频时同时缓存弹幕数据' : '当前构建未包含弹幕 API 凭证',
                 ),
                 initialValue: downloadDanmaku,
               ),

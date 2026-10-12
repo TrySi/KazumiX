@@ -97,7 +97,8 @@ class _ConnectedSegmentState extends State<_ConnectedSegment> {
         duration: const Duration(milliseconds: 180),
         curve: Curves.easeOutCubic,
         builder: (context, press, child) {
-          var inner = _connectedInnerCorner +
+          var inner =
+              _connectedInnerCorner +
               (outerCorner - _connectedInnerCorner) * selection;
           inner +=
               (_connectedPressedInnerCorner - inner) * press * (1 - selection);

@@ -116,11 +116,15 @@ void main() {
       // Inserted beta first so box key order cannot be mistaken for recency.
       await GStorage.downloads.put(
         'beta_1',
-        _record(1, 'beta', {3: DownloadStatus.completed}, createdAt: DateTime(2026, 5)),
+        _record(1, 'beta', {
+          3: DownloadStatus.completed,
+        }, createdAt: DateTime(2026, 5)),
       );
       await GStorage.downloads.put(
         'alpha_1',
-        _record(1, 'alpha', {3: DownloadStatus.completed}, createdAt: DateTime(2026, 1)),
+        _record(1, 'alpha', {
+          3: DownloadStatus.completed,
+        }, createdAt: DateTime(2026, 1)),
       );
 
       final merged = repository.getCompletedEpisodesAcrossSources(1);
@@ -131,11 +135,15 @@ void main() {
     test('a source still downloading does not shadow a finished one', () async {
       await GStorage.downloads.put(
         'alpha_1',
-        _record(1, 'alpha', {3: DownloadStatus.downloading}, createdAt: DateTime(2026, 1)),
+        _record(1, 'alpha', {
+          3: DownloadStatus.downloading,
+        }, createdAt: DateTime(2026, 1)),
       );
       await GStorage.downloads.put(
         'beta_1',
-        _record(1, 'beta', {3: DownloadStatus.completed}, createdAt: DateTime(2026, 5)),
+        _record(1, 'beta', {
+          3: DownloadStatus.completed,
+        }, createdAt: DateTime(2026, 5)),
       );
 
       final merged = repository.getCompletedEpisodesAcrossSources(1);

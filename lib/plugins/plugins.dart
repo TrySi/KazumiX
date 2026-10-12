@@ -73,9 +73,9 @@ class Plugin {
     ApiSearchConfig? searchApiConfig,
     ApiChapterConfig? chapterApiConfig,
     AntiCrawlerConfig? antiCrawlerConfig,
-  })  : searchApiConfig = searchApiConfig ?? ApiSearchConfig(),
-        chapterApiConfig = chapterApiConfig ?? ApiChapterConfig(),
-        antiCrawlerConfig = antiCrawlerConfig ?? AntiCrawlerConfig.empty();
+  }) : searchApiConfig = searchApiConfig ?? ApiSearchConfig(),
+       chapterApiConfig = chapterApiConfig ?? ApiChapterConfig(),
+       antiCrawlerConfig = antiCrawlerConfig ?? AntiCrawlerConfig.empty();
 
   factory Plugin.fromJson(Map<String, dynamic> json) {
     return Plugin(
@@ -186,21 +186,21 @@ class Plugin {
   bool get requiresNewerClient => int.parse(api) > ApiEndpoints.apiLevel;
 
   RuleExecutionConfig get _executionConfig => RuleExecutionConfig(
-        pluginName: name,
-        baseUrl: baseUrl,
-        usePost: usePost,
-        searchMode: searchMode,
-        chapterMode: chapterMode,
-        searchUrl: searchURL,
-        searchList: searchList,
-        searchName: searchName,
-        searchResult: searchResult,
-        chapterRoads: chapterRoads,
-        chapterResult: chapterResult,
-        searchApiConfig: searchApiConfig,
-        chapterApiConfig: chapterApiConfig,
-        antiCrawlerConfig: antiCrawlerConfig,
-      );
+    pluginName: name,
+    baseUrl: baseUrl,
+    usePost: usePost,
+    searchMode: searchMode,
+    chapterMode: chapterMode,
+    searchUrl: searchURL,
+    searchList: searchList,
+    searchName: searchName,
+    searchResult: searchResult,
+    chapterRoads: chapterRoads,
+    chapterResult: chapterResult,
+    searchApiConfig: searchApiConfig,
+    chapterApiConfig: chapterApiConfig,
+    antiCrawlerConfig: antiCrawlerConfig,
+  );
 
   Future<RuleSearchTrace> traceSearch(
     String keyword, {

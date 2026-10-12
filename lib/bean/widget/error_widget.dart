@@ -63,12 +63,14 @@ class GeneralErrorWidget extends StatelessWidget {
                       child: Text(
                         title,
                         textAlign: TextAlign.center,
-                        style: (compact
-                                ? theme.textTheme.titleMedium
-                                : theme.textTheme.headlineSmall)
-                            ?.copyWith(
-                                color: colors.onSurface,
-                                fontWeight: FontWeight.w700),
+                        style:
+                            (compact
+                                    ? theme.textTheme.titleMedium
+                                    : theme.textTheme.headlineSmall)
+                                ?.copyWith(
+                                  color: colors.onSurface,
+                                  fontWeight: FontWeight.w700,
+                                ),
                       ),
                     ),
                     if (errMsg.isNotEmpty) ...[
@@ -76,8 +78,9 @@ class GeneralErrorWidget extends StatelessWidget {
                       Text(
                         errMsg,
                         textAlign: TextAlign.center,
-                        style: theme.textTheme.bodyMedium
-                            ?.copyWith(color: colors.onSurfaceVariant),
+                        style: theme.textTheme.bodyMedium?.copyWith(
+                          color: colors.onSurfaceVariant,
+                        ),
                       ),
                     ],
                   ],

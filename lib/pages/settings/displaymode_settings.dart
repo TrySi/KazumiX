@@ -74,12 +74,14 @@ class _SetDisplayModeState extends State<SetDisplayMode> {
                     await fetchAll();
                   },
                   tiles: modes
-                      .map((e) => SettingsTile<DisplayMode>.radioTile(
-                            radioValue: e,
-                            title: e == DisplayMode.auto
-                                ? Text('自动')
-                                : Text('$e${e == active ? "  [系统]" : ""}'),
-                          ))
+                      .map(
+                        (e) => SettingsTile<DisplayMode>.radioTile(
+                          radioValue: e,
+                          title: e == DisplayMode.auto
+                              ? Text('自动')
+                              : Text('$e${e == active ? "  [系统]" : ""}'),
+                        ),
+                      )
                       .toList(),
                 ),
               ],

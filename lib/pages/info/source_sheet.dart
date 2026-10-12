@@ -695,7 +695,19 @@ class _SourceSheetState extends State<SourceSheet> {
 
     var chromaFormatIdc = 1; // default 4:2:0 for non-high profiles
     const highProfiles = {
-      100, 110, 122, 244, 44, 83, 86, 118, 128, 138, 139, 134, 135,
+      100,
+      110,
+      122,
+      244,
+      44,
+      83,
+      86,
+      118,
+      128,
+      138,
+      139,
+      134,
+      135,
     };
     if (highProfiles.contains(profileIdc)) {
       chromaFormatIdc = reader.readUe();
@@ -757,9 +769,8 @@ class _SourceSheetState extends State<SourceSheet> {
     };
     final width =
         (picWidthInMbsMinus1 + 1) * 16 - (cropLeft + cropRight) * subWidthC;
-    final height = (2 - frameMbsOnlyFlag) *
-            (picHeightInMapUnitsMinus1 + 1) *
-            16 -
+    final height =
+        (2 - frameMbsOnlyFlag) * (picHeightInMapUnitsMinus1 + 1) * 16 -
         (cropTop + cropBottom) * subHeightC * (2 - frameMbsOnlyFlag);
     if (width <= 0 || height <= 0) return null;
     return (width, height);
@@ -951,7 +962,10 @@ class _SourceSheetState extends State<SourceSheet> {
       if (boxSize < headerSize) return;
       final payloadEnd = (offset + boxSize).clamp(0, bytes.length);
       if (payloadEnd <= offset + headerSize) return;
-      yield (type: type, payload: bytes.sublist(offset + headerSize, payloadEnd));
+      yield (
+        type: type,
+        payload: bytes.sublist(offset + headerSize, payloadEnd),
+      );
       offset += boxSize;
     }
   }

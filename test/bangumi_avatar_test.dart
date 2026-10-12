@@ -43,11 +43,9 @@ void main() {
       find.byType(CachedNetworkImage),
     );
     final context = tester.element(find.byType(CachedNetworkImage));
-    final fallback = image.errorWidget!(
-      context,
-      image.imageUrl,
-      Exception('image failed'),
-    ) as CircleAvatar;
+    final fallback =
+        image.errorWidget!(context, image.imageUrl, Exception('image failed'))
+            as CircleAvatar;
     final provider = fallback.backgroundImage! as AssetImage;
     expect(provider.assetName, 'assets/images/noface.jpeg');
   });

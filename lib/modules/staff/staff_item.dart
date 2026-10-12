@@ -2,10 +2,7 @@ class StaffFullItem {
   final Staff staff;
   final List<String> relations;
 
-  StaffFullItem({
-    required this.staff,
-    required this.relations,
-  });
+  StaffFullItem({required this.staff, required this.relations});
 }
 
 class Staff {

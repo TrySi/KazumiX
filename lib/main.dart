@@ -29,11 +29,13 @@ void main() async {
   MediaKit.ensureInitialized();
   if (Platform.isAndroid || Platform.isIOS) {
     SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
-    SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(
-      systemNavigationBarColor: Colors.transparent,
-      systemNavigationBarDividerColor: Colors.transparent,
-      statusBarColor: Colors.transparent,
-    ));
+    SystemChrome.setSystemUIOverlayStyle(
+      const SystemUiOverlayStyle(
+        systemNavigationBarColor: Colors.transparent,
+        systemNavigationBarDividerColor: Colors.transparent,
+        statusBarColor: Colors.transparent,
+      ),
+    );
   }
 
   if (Platform.isAndroid) {
@@ -55,18 +57,27 @@ void main() async {
         await windowManager.focus();
       });
     }
-    runApp(MaterialApp(
+    runApp(
+      MaterialApp(
         title: '初始化失败',
         localizationsDelegates: GlobalMaterialLocalizations.delegates,
         supportedLocales: const [
           Locale.fromSubtags(
-              languageCode: 'zh', scriptCode: 'Hans', countryCode: "CN")
+            languageCode: 'zh',
+            scriptCode: 'Hans',
+            countryCode: "CN",
+          ),
         ],
         locale: const Locale.fromSubtags(
-            languageCode: 'zh', scriptCode: 'Hans', countryCode: "CN"),
+          languageCode: 'zh',
+          scriptCode: 'Hans',
+          countryCode: "CN",
+        ),
         builder: (context, child) {
           return const StorageErrorPage();
-        }));
+        },
+      ),
+    );
     return;
   }
   await DownloadDirectoryService().restoreAccess();

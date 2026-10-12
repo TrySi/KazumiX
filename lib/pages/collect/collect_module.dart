@@ -8,9 +8,8 @@ final collectModule = createModule(
     c.route(
       '/',
       transition: TransitionType.none,
-      child: (context, state) => CollectPage(
-        controller: inject<CollectController>(),
-      ),
+      child: (context, state) =>
+          CollectPage(controller: inject<CollectController>()),
     );
   },
 );

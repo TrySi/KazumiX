@@ -41,8 +41,9 @@ class _CharacterPageState extends State<CharacterPage> {
     setState(() {
       _character = null;
     });
-    final character =
-        await BangumiApi.getCharacterByCharacterID(widget.characterID);
+    final character = await BangumiApi.getCharacterByCharacterID(
+      widget.characterID,
+    );
     if (mounted) {
       setState(() {
         _character = character;
@@ -57,7 +58,8 @@ class _CharacterPageState extends State<CharacterPage> {
     });
     try {
       final response = await BangumiApi.getCharacterCommentsByCharacterID(
-          widget.characterID);
+        widget.characterID,
+      );
       if (!mounted) return;
       setState(() {
         _comments = response.commentList;
@@ -124,14 +126,15 @@ class _CharacterPageState extends State<CharacterPage> {
       return const SingleChildScrollView(
         padding: materialBottomSheetContentPadding,
         child: Skeletonizer.zone(
-            child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Bone(height: 300, width: double.infinity, uniRadius: 28),
-            SizedBox(height: 24),
-            Bone.multiText(lines: 5),
-          ],
-        )),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Bone(height: 300, width: double.infinity, uniRadius: 28),
+              SizedBox(height: 24),
+              Bone.multiText(lines: 5),
+            ],
+          ),
+        ),
       );
     }
     return CharacterInfoView(
@@ -146,10 +149,7 @@ class _CharacterPageState extends State<CharacterPage> {
     return CustomScrollView(
       scrollBehavior: const ScrollBehavior().copyWith(
         scrollbars: false,
-        dragDevices: {
-          PointerDeviceKind.mouse,
-          PointerDeviceKind.touch,
-        },
+        dragDevices: {PointerDeviceKind.mouse, PointerDeviceKind.touch},
       ),
       slivers: [
         SliverPadding(

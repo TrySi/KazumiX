@@ -115,10 +115,8 @@ class _OfflineShow {
       : '已下载 $completedCount 集';
 
   /// Splits [episodes] into the two states the cards report, in one pass.
-  static ({
-    Map<int, _OfflineEpisode> completed,
-    Set<int> active,
-  }) _deriveDownloads(List<_OfflineEpisode> episodes) {
+  static ({Map<int, _OfflineEpisode> completed, Set<int> active})
+  _deriveDownloads(List<_OfflineEpisode> episodes) {
     final completed = <int, _OfflineEpisode>{};
     final active = <int>{};
     for (final entry in episodes) {
@@ -326,39 +324,34 @@ class _OfflinePageState extends State<OfflinePage>
     Map<int, Map<int, _EpisodeWatchState>> watchStatesByShow,
   ) {
     final terms = _query.trim().toLowerCase().split(RegExp(r'\s+'));
-    final result = shows
-        .where((show) {
-          if (!terms.every(show.bangumiName.toLowerCase().contains)) {
-            return false;
-          }
-          if (_collectFilter != null &&
-              (collectTypes[show.bangumiId] ?? CollectType.none) !=
-                  _collectFilter) {
-            return false;
-          }
-          if (_progressFilter != null) {
-            final states = watchStatesByShow[show.bangumiId] ?? const {};
-            if (_overallWatchState(show, states) != _progressFilter) {
-              return false;
-            }
-          }
-          return true;
-        })
-        .toList();
+    final result = shows.where((show) {
+      if (!terms.every(show.bangumiName.toLowerCase().contains)) {
+        return false;
+      }
+      if (_collectFilter != null &&
+          (collectTypes[show.bangumiId] ?? CollectType.none) !=
+              _collectFilter) {
+        return false;
+      }
+      if (_progressFilter != null) {
+        final states = watchStatesByShow[show.bangumiId] ?? const {};
+        if (_overallWatchState(show, states) != _progressFilter) {
+          return false;
+        }
+      }
+      return true;
+    }).toList();
     result.sort((a, b) {
       final comparison = switch (_sort) {
         _OfflineSort.recentWatch => _compareWatch(a, b),
         _OfflineSort.recent => b.latestTime.compareTo(a.latestTime),
         _OfflineSort.title => a.bangumiName.toLowerCase().compareTo(
-              b.bangumiName.toLowerCase(),
-            ),
-        _OfflineSort.downloaded =>
-          b.completedCount.compareTo(a.completedCount),
+          b.bangumiName.toLowerCase(),
+        ),
+        _OfflineSort.downloaded => b.completedCount.compareTo(a.completedCount),
       };
       if (comparison != 0) return comparison;
-      return a.bangumiName.toLowerCase().compareTo(
-            b.bangumiName.toLowerCase(),
-          );
+      return a.bangumiName.toLowerCase().compareTo(b.bangumiName.toLowerCase());
     });
     return result;
   }
@@ -397,8 +390,8 @@ class _OfflinePageState extends State<OfflinePage>
         entry.key: entry.value.progress.completed
             ? _EpisodeWatchState.completed
             : entry.value.progress.progress > Duration.zero
-                ? _EpisodeWatchState.partial
-                : _EpisodeWatchState.unwatched,
+            ? _EpisodeWatchState.partial
+            : _EpisodeWatchState.unwatched,
     };
   }
 
@@ -471,9 +464,7 @@ class _OfflinePageState extends State<OfflinePage>
     final confirmed = await KazumiDialog.show<bool>(
       builder: (context) => AlertDialog(
         title: const Text('删除下载'),
-        content: Text(
-          '确定要删除选中的 ${selected.length} 部番剧的全部下载文件吗？此操作不可恢复。',
-        ),
+        content: Text('确定要删除选中的 ${selected.length} 部番剧的全部下载文件吗？此操作不可恢复。'),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(false),
@@ -613,10 +604,9 @@ class _OfflinePageState extends State<OfflinePage>
             toolbarHeight: 72,
             title: Text(
               _selecting ? '已选 ${_selectedIds.length} 部' : '本地',
-              style: Theme.of(context)
-                  .textTheme
-                  .headlineSmall
-                  ?.copyWith(fontWeight: FontWeight.w700),
+              style: Theme.of(
+                context,
+              ).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w700),
             ),
             actions: [
               Padding(
@@ -645,7 +635,8 @@ class _OfflinePageState extends State<OfflinePage>
               builder: (context, constraints) {
                 final compact = constraints.maxWidth < 600;
                 final width = constraints.maxWidth.clamp(0.0, 1560.0);
-                final inset = (constraints.maxWidth - width) / 2 +
+                final inset =
+                    (constraints.maxWidth - width) / 2 +
                     (compact ? 16.0 : 32.0);
                 final contentWidth = constraints.maxWidth - inset * 2;
                 return CustomScrollView(
@@ -676,8 +667,12 @@ class _OfflinePageState extends State<OfflinePage>
                         ),
                         sliver: _layout == CollectLayout.cards
                             ? _grid(shows, contentWidth)
-                            : _list(shows, contentWidth, collectTypes,
-                                watchStatesByShow),
+                            : _list(
+                                shows,
+                                contentWidth,
+                                collectTypes,
+                                watchStatesByShow,
+                              ),
                       ),
                   ],
                 );
@@ -694,8 +689,7 @@ class _OfflinePageState extends State<OfflinePage>
   Widget _selectionBar(List<_OfflineShow> shows) {
     final theme = Theme.of(context);
     final colors = theme.colorScheme;
-    final allSelected =
-        shows.isNotEmpty && _selectedIds.length == shows.length;
+    final allSelected = shows.isNotEmpty && _selectedIds.length == shows.length;
     return SafeArea(
       top: false,
       child: Padding(
@@ -737,9 +731,7 @@ class _OfflinePageState extends State<OfflinePage>
                     : () => _deleteSelected(shows),
                 icon: const Icon(Icons.delete_outline_rounded),
                 label: Text(
-                  _selectedIds.isEmpty
-                      ? '选择番剧'
-                      : '删除 ${_selectedIds.length} 部',
+                  _selectedIds.isEmpty ? '选择番剧' : '删除 ${_selectedIds.length} 部',
                 ),
               ),
             ),
@@ -755,16 +747,12 @@ class _OfflinePageState extends State<OfflinePage>
       children: [
         _FilterTabs(
           controller: _progressTab,
-          labels: [
-            for (final state in _watchFilters) state?.label ?? '全部',
-          ],
+          labels: [for (final state in _watchFilters) state?.label ?? '全部'],
         ),
         const SizedBox(height: 4),
         _FilterTabs(
           controller: _collectTab,
-          labels: [
-            for (final type in _collectFilters) type?.label ?? '全部',
-          ],
+          labels: [for (final type in _collectFilters) type?.label ?? '全部'],
         ),
         const SizedBox(height: 12),
         Row(
@@ -820,35 +808,35 @@ class _OfflinePageState extends State<OfflinePage>
   }
 
   Widget _searchBar() => Semantics(
-        label: '搜索离线内容',
-        child: SearchBar(
-          controller: _searchController,
-          focusNode: _searchFocus,
-          hintText: '搜索离线内容',
-          leading: const Icon(Icons.search_rounded, size: 22),
-          trailing: [
-            if (_query.isNotEmpty)
-              IconButton(
-                tooltip: '清除搜索',
-                onPressed: () {
-                  _searchController.clear();
-                  setState(() => _query = '');
-                },
-                icon: const Icon(Icons.close_rounded),
-              ),
-          ],
-          elevation: const WidgetStatePropertyAll(0),
-          backgroundColor: WidgetStatePropertyAll(
-            Theme.of(context).colorScheme.surfaceContainerLow,
+    label: '搜索离线内容',
+    child: SearchBar(
+      controller: _searchController,
+      focusNode: _searchFocus,
+      hintText: '搜索离线内容',
+      leading: const Icon(Icons.search_rounded, size: 22),
+      trailing: [
+        if (_query.isNotEmpty)
+          IconButton(
+            tooltip: '清除搜索',
+            onPressed: () {
+              _searchController.clear();
+              setState(() => _query = '');
+            },
+            icon: const Icon(Icons.close_rounded),
           ),
-          padding: const WidgetStatePropertyAll(
-            EdgeInsets.symmetric(horizontal: 16),
-          ),
-          constraints: const BoxConstraints(minHeight: 48),
-          onChanged: (value) => setState(() => _query = value),
-          onSubmitted: (_) => _searchFocus.unfocus(),
-        ),
-      );
+      ],
+      elevation: const WidgetStatePropertyAll(0),
+      backgroundColor: WidgetStatePropertyAll(
+        Theme.of(context).colorScheme.surfaceContainerLow,
+      ),
+      padding: const WidgetStatePropertyAll(
+        EdgeInsets.symmetric(horizontal: 16),
+      ),
+      constraints: const BoxConstraints(minHeight: 48),
+      onChanged: (value) => setState(() => _query = value),
+      onSubmitted: (_) => _searchFocus.unfocus(),
+    ),
+  );
 
   Widget _sortMenu({required bool showLabel}) {
     return KazumiMenuButton(
@@ -866,7 +854,9 @@ class _OfflinePageState extends State<OfflinePage>
             ? TextButton.icon(
                 onPressed: toggle,
                 style: TextButton.styleFrom(
-                  foregroundColor: Theme.of(context).colorScheme.onSurfaceVariant,
+                  foregroundColor: Theme.of(
+                    context,
+                  ).colorScheme.onSurfaceVariant,
                   minimumSize: const Size(48, 48),
                 ),
                 icon: const Icon(Icons.sort_rounded, size: 20),
@@ -897,29 +887,32 @@ class _OfflinePageState extends State<OfflinePage>
               style: ButtonStyle(
                 minimumSize: const WidgetStatePropertyAll(Size(48, 48)),
                 visualDensity: VisualDensity.standard,
-                backgroundColor: WidgetStateProperty.resolveWith((states) =>
-                    states.contains(WidgetState.selected)
-                        ? colors.secondaryContainer
-                        : colors.surfaceContainerLow),
-                foregroundColor: WidgetStateProperty.resolveWith((states) =>
-                    states.contains(WidgetState.selected)
-                        ? colors.onSecondaryContainer
-                        : colors.onSurfaceVariant),
-                shape: WidgetStateProperty.resolveWith((states) =>
-                    RoundedRectangleBorder(
-                      borderRadius: states.contains(WidgetState.pressed)
-                          ? BorderRadius.circular(12)
-                          : states.contains(WidgetState.selected)
-                          ? BorderRadius.circular(24)
-                          : BorderRadiusDirectional.horizontal(
-                              start: Radius.circular(
-                                layout == CollectLayout.cards ? 24 : 8,
-                              ),
-                              end: Radius.circular(
-                                layout == CollectLayout.list ? 24 : 8,
-                              ),
+                backgroundColor: WidgetStateProperty.resolveWith(
+                  (states) => states.contains(WidgetState.selected)
+                      ? colors.secondaryContainer
+                      : colors.surfaceContainerLow,
+                ),
+                foregroundColor: WidgetStateProperty.resolveWith(
+                  (states) => states.contains(WidgetState.selected)
+                      ? colors.onSecondaryContainer
+                      : colors.onSurfaceVariant,
+                ),
+                shape: WidgetStateProperty.resolveWith(
+                  (states) => RoundedRectangleBorder(
+                    borderRadius: states.contains(WidgetState.pressed)
+                        ? BorderRadius.circular(12)
+                        : states.contains(WidgetState.selected)
+                        ? BorderRadius.circular(24)
+                        : BorderRadiusDirectional.horizontal(
+                            start: Radius.circular(
+                              layout == CollectLayout.cards ? 24 : 8,
                             ),
-                    )),
+                            end: Radius.circular(
+                              layout == CollectLayout.list ? 24 : 8,
+                            ),
+                          ),
+                  ),
+                ),
                 animationDuration: MediaQuery.disableAnimationsOf(context)
                     ? Duration.zero
                     : const Duration(milliseconds: 200),
@@ -1267,10 +1260,11 @@ class _OfflineListTile extends StatelessWidget {
                                     show.bangumiName,
                                     maxLines: 2,
                                     overflow: TextOverflow.ellipsis,
-                                    style: theme.textTheme.titleMedium?.copyWith(
-                                      fontWeight: FontWeight.w700,
-                                      height: 1.35,
-                                    ),
+                                    style: theme.textTheme.titleMedium
+                                        ?.copyWith(
+                                          fontWeight: FontWeight.w700,
+                                          height: 1.35,
+                                        ),
                                   ),
                                 ],
                               ),
@@ -1294,8 +1288,10 @@ class _OfflineListTile extends StatelessWidget {
                           if (!selecting) ...[
                             const SizedBox(width: 8),
                             _OfflineWatchProgressButton(
-                              label:
-                                  _overallWatchState(show, watchStates).label,
+                              label: _overallWatchState(
+                                show,
+                                watchStates,
+                              ).label,
                               enabled: show.completedCount > 0,
                               onPressed: onEditProgress,
                             ),
@@ -1446,7 +1442,8 @@ class _WatchStateEditorSheetState extends State<_WatchStateEditorSheet> {
       children: [
         MaterialBottomSheetHeader(
           title: '编辑观看状态',
-          description: '${widget.showName} · '
+          description:
+              '${widget.showName} · '
               '勾选已看完的集数，共 ${widget.numbers.length} 集',
           onClose: () => Navigator.of(context).pop(),
         ),
@@ -1513,8 +1510,7 @@ class _WatchStateEditorSheetState extends State<_WatchStateEditorSheet> {
                     style: FilledButton.styleFrom(
                       minimumSize: const Size.fromHeight(48),
                     ),
-                    onPressed: () =>
-                        Navigator.of(context).pop({..._selected}),
+                    onPressed: () => Navigator.of(context).pop({..._selected}),
                     icon: const Icon(Icons.check_rounded),
                     label: const Text('应用'),
                   ),
@@ -1536,13 +1532,13 @@ class _OfflineCover extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => LayoutBuilder(
-        builder: (context, constraints) => NetworkImgLayer(
-          src: src,
-          width: constraints.maxWidth,
-          height: constraints.maxHeight,
-          borderRadius: borderRadius,
-        ),
-      );
+    builder: (context, constraints) => NetworkImgLayer(
+      src: src,
+      width: constraints.maxWidth,
+      height: constraints.maxHeight,
+      borderRadius: borderRadius,
+    ),
+  );
 }
 
 /// One episode row in the offline picker: either a cached episode number with
@@ -1639,7 +1635,9 @@ class _OfflineEpisodeSheet extends StatelessWidget {
         if (prefix == null) continue;
         final index = (counters[episode.type] ?? 0) + 1;
         counters[episode.type] = index;
-        final title = label.isNotEmpty ? '$prefix$index $label' : '$prefix$index';
+        final title = label.isNotEmpty
+            ? '$prefix$index $label'
+            : '$prefix$index';
         choices.add(
           _OfflineEpisodeChoice(
             number: 0,
@@ -1652,12 +1650,14 @@ class _OfflineEpisodeSheet extends StatelessWidget {
     }
 
     // 无缓存时，退回只显示已下载完成的集。
-    final completed = show.episodes
-        .where((e) => e.episode.status == DownloadStatus.completed)
-        .toList()
-      ..sort(
-        (a, b) => a.episode.episodeNumber.compareTo(b.episode.episodeNumber),
-      );
+    final completed =
+        show.episodes
+            .where((e) => e.episode.status == DownloadStatus.completed)
+            .toList()
+          ..sort(
+            (a, b) =>
+                a.episode.episodeNumber.compareTo(b.episode.episodeNumber),
+          );
     return [
       for (final e in completed)
         _OfflineEpisodeChoice(
@@ -1673,9 +1673,7 @@ class _OfflineEpisodeSheet extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final cached = BangumiOfflineCacheRepository().readEpisodes(
-      show.bangumiId,
-    );
+    final cached = BangumiOfflineCacheRepository().readEpisodes(show.bangumiId);
     final choices = _buildChoices(cached);
     final downloadedCount = choices.where((c) => c.downloaded).length;
     final watchedCount = choices
@@ -1689,7 +1687,7 @@ class _OfflineEpisodeSheet extends StatelessWidget {
           title: show.bangumiName,
           description: cached != null && cached.isNotEmpty
               ? '共 ${choices.length} 集 · 已下载 $downloadedCount 集'
-                  '${watchedCount > 0 ? ' · 已看完 $watchedCount 集' : ''}'
+                    '${watchedCount > 0 ? ' · 已看完 $watchedCount 集' : ''}'
               : '已下载 $downloadedCount 集',
           onClose: () => Navigator.of(context).pop(),
         ),
@@ -1705,13 +1703,12 @@ class _OfflineEpisodeSheet extends StatelessWidget {
               : GridView.builder(
                   shrinkWrap: true,
                   padding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
-                  gridDelegate:
-                      const SliverGridDelegateWithMaxCrossAxisExtent(
-                        maxCrossAxisExtent: 160,
-                        crossAxisSpacing: 8,
-                        mainAxisSpacing: 8,
-                        mainAxisExtent: 56,
-                      ),
+                  gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
+                    maxCrossAxisExtent: 160,
+                    crossAxisSpacing: 8,
+                    mainAxisSpacing: 8,
+                    mainAxisExtent: 56,
+                  ),
                   itemCount: choices.length,
                   itemBuilder: (context, index) {
                     final choice = choices[index];
@@ -1754,18 +1751,21 @@ class _OfflineEpisodeTile extends StatelessWidget {
         ? colorScheme.onSurface
         : colorScheme.outline;
 
-    final (IconData? stateIcon, Color? stateColor, String stateLabel) =
-        switch (state) {
+    final (
+      IconData? stateIcon,
+      Color? stateColor,
+      String stateLabel,
+    ) = switch (state) {
       _EpisodeWatchState.completed => (
-          Icons.check_circle_rounded,
-          downloaded ? colorScheme.primary : colorScheme.outline,
-          '已看完',
-        ),
+        Icons.check_circle_rounded,
+        downloaded ? colorScheme.primary : colorScheme.outline,
+        '已看完',
+      ),
       _EpisodeWatchState.partial => (
-          Icons.play_circle_outline_rounded,
-          downloaded ? colorScheme.primary : colorScheme.outline,
-          '观看中',
-        ),
+        Icons.play_circle_outline_rounded,
+        downloaded ? colorScheme.primary : colorScheme.outline,
+        '观看中',
+      ),
       _EpisodeWatchState.unwatched => (null, null, '未看过'),
     };
 
@@ -1796,10 +1796,9 @@ class _OfflineEpisodeTile extends StatelessWidget {
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                       textAlign: TextAlign.center,
-                      style: Theme.of(context)
-                          .textTheme
-                          .bodyMedium
-                          ?.copyWith(color: foregroundColor),
+                      style: Theme.of(
+                        context,
+                      ).textTheme.bodyMedium?.copyWith(color: foregroundColor),
                     ),
                   ),
                 ),
@@ -1807,11 +1806,7 @@ class _OfflineEpisodeTile extends StatelessWidget {
                   Positioned(
                     top: 4,
                     right: 4,
-                    child: Icon(
-                      stateIcon,
-                      size: 14,
-                      color: stateColor,
-                    ),
+                    child: Icon(stateIcon, size: 14, color: stateColor),
                   ),
               ],
             ),

@@ -28,8 +28,9 @@ class SectionHeader extends StatelessWidget {
         if (description != null) ...[
           const SizedBox(height: 4),
           DefaultTextStyle.merge(
-            style: theme.textTheme.bodyMedium
-                ?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+            style: theme.textTheme.bodyMedium?.copyWith(
+              color: theme.colorScheme.onSurfaceVariant,
+            ),
             child: description!,
           ),
         ],
@@ -45,17 +46,17 @@ class ContentSection extends StatelessWidget {
     required Widget child,
     this.description,
     this.padding = const EdgeInsets.all(16),
-  })  : _child = child,
-        _children = null;
+  }) : _child = child,
+       _children = null;
 
   const ContentSection.group({
     super.key,
     required this.title,
     required List<Widget> children,
     this.description,
-  })  : _children = children,
-        _child = null,
-        padding = EdgeInsets.zero;
+  }) : _children = children,
+       _child = null,
+       padding = EdgeInsets.zero;
 
   final String title;
   final String? description;
@@ -65,19 +66,19 @@ class ContentSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
-            child: SectionHeader(
-              title: Text(title),
-              description: description == null ? null : Text(description!),
-            ),
-          ),
-          if (_children != null)
-            SplitListGroup(children: _children)
-          else
-            TonalCard(padding: padding, child: _child!),
-        ],
-      );
+    crossAxisAlignment: CrossAxisAlignment.stretch,
+    children: [
+      Padding(
+        padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+        child: SectionHeader(
+          title: Text(title),
+          description: description == null ? null : Text(description!),
+        ),
+      ),
+      if (_children != null)
+        SplitListGroup(children: _children)
+      else
+        TonalCard(padding: padding, child: _child!),
+    ],
+  );
 }

@@ -14,16 +14,14 @@ final searchModule = createModule(
       ..route(
         '/',
         provide: _provideSearchController,
-        child: (context, state) => SearchPage(
-          controller: context.read<SearchPageController>(),
-        ),
+        child: (context, state) =>
+            SearchPage(controller: context.read<SearchPageController>()),
       )
       ..route(
         '/image',
         provide: _provideSearchController,
-        child: (context, state) => ImageSearchPage(
-          controller: context.read<SearchPageController>(),
-        ),
+        child: (context, state) =>
+            ImageSearchPage(controller: context.read<SearchPageController>()),
       )
       ..route(
         '/:tag',

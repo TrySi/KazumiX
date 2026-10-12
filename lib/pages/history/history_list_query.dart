@@ -10,12 +10,12 @@ enum HistorySourceFilter {
   final String label;
 
   bool _matches(History history) => switch (this) {
-        all => true,
-        online => HistoryEntryKind.normalize(history.entryKind) ==
-            HistoryEntryKind.online,
-        offline => HistoryEntryKind.normalize(history.entryKind) ==
-            HistoryEntryKind.offline,
-      };
+    all => true,
+    online =>
+      HistoryEntryKind.normalize(history.entryKind) == HistoryEntryKind.online,
+    offline =>
+      HistoryEntryKind.normalize(history.entryKind) == HistoryEntryKind.offline,
+  };
 }
 
 class HistoryDateGroup {
@@ -44,10 +44,13 @@ List<HistoryDateGroup> groupHistoryEntries(
     if (!source._matches(entry)) return false;
     final item = entry.bangumiItem;
     return keyword.isEmpty ||
-        [item.name, item.nameCn, ...item.alias, entry.adapterName]
-            .any((value) => value.toLowerCase().contains(keyword));
-  }).toList()
-    ..sort((a, b) => b.lastWatchTime.compareTo(a.lastWatchTime));
+        [
+          item.name,
+          item.nameCn,
+          ...item.alias,
+          entry.adapterName,
+        ].any((value) => value.toLowerCase().contains(keyword));
+  }).toList()..sort((a, b) => b.lastWatchTime.compareTo(a.lastWatchTime));
 
   final groups = <HistoryDateGroup>[];
   for (final entry in filtered) {

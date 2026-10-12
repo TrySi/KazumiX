@@ -3,11 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:kazumi/services/logging/logger.dart';
 
 class BangumiAvatar extends StatelessWidget {
-  const BangumiAvatar({
-    super.key,
-    required this.imageUrl,
-    this.radius,
-  });
+  const BangumiAvatar({super.key, required this.imageUrl, this.radius});
 
   final String imageUrl;
   final double? radius;
@@ -24,19 +20,13 @@ class BangumiAvatar extends StatelessWidget {
       placeholder: (context, url) => _fallback(),
       errorWidget: (context, url, error) => _fallback(),
       errorListener: (error) {
-        KazumiLogger().w(
-          'BangumiAvatar: image load failed',
-          error: error,
-        );
+        KazumiLogger().w('BangumiAvatar: image load failed', error: error);
       },
     );
   }
 
   Widget _avatar(ImageProvider<Object> provider) {
-    return CircleAvatar(
-      radius: radius,
-      backgroundImage: provider,
-    );
+    return CircleAvatar(radius: radius, backgroundImage: provider);
   }
 
   Widget _fallback() {

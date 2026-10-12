@@ -10,21 +10,21 @@ class SyncPageBody extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => SafeArea(
-        top: false,
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.fromLTRB(20, 12, 20, 32),
-          child: Center(
-            child: ConstrainedBox(
-              constraints: BoxConstraints(maxWidth: maxWidth),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                spacing: 20,
-                children: children,
-              ),
-            ),
+    top: false,
+    child: SingleChildScrollView(
+      padding: const EdgeInsets.fromLTRB(20, 12, 20, 32),
+      child: Center(
+        child: ConstrainedBox(
+          constraints: BoxConstraints(maxWidth: maxWidth),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            spacing: 20,
+            children: children,
           ),
         ),
-      );
+      ),
+    ),
+  );
 }
 
 class SyncPageIntro extends StatelessWidget {
@@ -64,9 +64,12 @@ class SyncPageIntro extends StatelessWidget {
                   child: Text(title, style: theme.textTheme.headlineSmall),
                 ),
                 const SizedBox(height: 6),
-                Text(description,
-                    style: theme.textTheme.bodyMedium
-                        ?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
+                Text(
+                  description,
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    color: theme.colorScheme.onSurfaceVariant,
+                  ),
+                ),
               ],
             ),
           ),
@@ -111,8 +114,8 @@ class SyncFeedback extends StatelessWidget {
                   error
                       ? Icons.error_outline_rounded
                       : busy
-                          ? Icons.sync_rounded
-                          : Icons.check_circle_outline_rounded,
+                      ? Icons.sync_rounded
+                      : Icons.check_circle_outline_rounded,
                   size: 20,
                   color: error
                       ? colors.onErrorContainer
@@ -120,11 +123,14 @@ class SyncFeedback extends StatelessWidget {
                 ),
                 const SizedBox(width: 10),
                 Expanded(
-                  child: Text(message,
-                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                          color: error
-                              ? colors.onErrorContainer
-                              : colors.onSecondaryContainer)),
+                  child: Text(
+                    message,
+                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                      color: error
+                          ? colors.onErrorContainer
+                          : colors.onSecondaryContainer,
+                    ),
+                  ),
                 ),
               ],
             ),

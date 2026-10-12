@@ -3,11 +3,7 @@ class UserAvatar {
   final String medium;
   final String large;
 
-  UserAvatar({
-    required this.small,
-    required this.medium,
-    required this.large,
-  });
+  UserAvatar({required this.small, required this.medium, required this.large});
 
   factory UserAvatar.fromJson(Map<String, dynamic> json) {
     return UserAvatar(
@@ -18,11 +14,7 @@ class UserAvatar {
   }
 
   Map<String, dynamic> toJson() {
-    return {
-      'small': small,
-      'medium': medium,
-      'large': large,
-    };
+    return {'small': small, 'medium': medium, 'large': large};
   }
 }
 
@@ -71,11 +63,7 @@ class Comment {
   final String comment;
   final int updatedAt;
 
-  Comment({
-    required this.rate,
-    required this.comment,
-    required this.updatedAt,
-  });
+  Comment({required this.rate, required this.comment, required this.updatedAt});
 
   factory Comment.fromJson(Map<String, dynamic> json) {
     return Comment(
@@ -86,11 +74,7 @@ class Comment {
   }
 
   Map<String, dynamic> toJson() {
-    return {
-      'rate': rate,
-      'comment': comment,
-      'updatedAt': updatedAt,
-    };
+    return {'rate': rate, 'comment': comment, 'updatedAt': updatedAt};
   }
 }
 
@@ -98,10 +82,7 @@ class CommentItem {
   final User user;
   final Comment comment;
 
-  CommentItem({
-    required this.user,
-    required this.comment,
-  });
+  CommentItem({required this.user, required this.comment});
 
   factory CommentItem.fromJson(Map<String, dynamic> json) {
     return CommentItem(
@@ -111,10 +92,7 @@ class CommentItem {
   }
 
   Map<String, dynamic> toJson() {
-    return {
-      'user': user.toJson(),
-      'comment': comment.toJson(),
-    };
+    return {'user': user.toJson(), 'comment': comment.toJson()};
   }
 }
 
@@ -138,11 +116,7 @@ class EpisodeComment {
   }
 
   Map<String, dynamic> toJson() {
-    return {
-      'user': user.toJson(),
-      'content': comment,
-      'createdAt': createdAt,
-    };
+    return {'user': user.toJson(), 'content': comment, 'createdAt': createdAt};
   }
 }
 
@@ -154,17 +128,17 @@ class EpisodeCommentItem {
 
   factory EpisodeCommentItem.fromJson(Map<String, dynamic> json) {
     var list = json['replies'] as List;
-    List<EpisodeComment> tempList =
-        list.map((i) => EpisodeComment.fromJson(i)).toList();
+    List<EpisodeComment> tempList = list
+        .map((i) => EpisodeComment.fromJson(i))
+        .toList();
     return EpisodeCommentItem(
-        comment: EpisodeComment.fromJson(json), replies: tempList);
+      comment: EpisodeComment.fromJson(json),
+      replies: tempList,
+    );
   }
 
   Map<String, dynamic> toJson() {
-    return {
-      'comment': comment.toJson(),
-      'list': replies,
-    };
+    return {'comment': comment.toJson(), 'list': replies};
   }
 }
 
@@ -188,11 +162,7 @@ class CharacterComment {
   }
 
   Map<String, dynamic> toJson() {
-    return {
-      'user': user.toJson(),
-      'content': comment,
-      'createdAt': createdAt,
-    };
+    return {'user': user.toJson(), 'content': comment, 'createdAt': createdAt};
   }
 }
 
@@ -204,16 +174,16 @@ class CharacterCommentItem {
 
   factory CharacterCommentItem.fromJson(Map<String, dynamic> json) {
     var list = json['replies'] as List;
-    List<CharacterComment> tempList =
-        list.map((i) => CharacterComment.fromJson(i)).toList();
+    List<CharacterComment> tempList = list
+        .map((i) => CharacterComment.fromJson(i))
+        .toList();
     return CharacterCommentItem(
-        comment: CharacterComment.fromJson(json), replies: tempList);
+      comment: CharacterComment.fromJson(json),
+      replies: tempList,
+    );
   }
 
   Map<String, dynamic> toJson() {
-    return {
-      'comment': comment.toJson(),
-      'list': replies,
-    };
+    return {'comment': comment.toJson(), 'list': replies};
   }
 }

@@ -45,57 +45,64 @@ class _DanmakuShieldEditorState extends State<DanmakuShieldEditor> {
       children: [
         ContentSection(
           title: '添加规则',
-          child:
-              Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            TextField(
-              controller: textEditingController,
-              decoration: InputDecoration(
-                hintText: '关键词或 /正则表达式/',
-                border:
-                    OutlineInputBorder(borderRadius: BorderRadius.circular(16)),
-                suffixIcon: IconButton(
-                  tooltip: '添加规则',
-                  onPressed: _addRule,
-                  icon: const Icon(Icons.add_rounded),
-                ),
-              ),
-              onSubmitted: (_) => _addRule(),
-            ),
-            const SizedBox(height: 8),
-            Text('包含关键词的弹幕会被隐藏。用 / / 包裹正则表达式。',
-                style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      color: Theme.of(context).colorScheme.onSurfaceVariant,
-                    )),
-          ]),
-        ),
-        const SizedBox(height: 24),
-        Observer(builder: (context) {
-          final rules = myController.shieldList.toList();
-          if (rules.isEmpty) {
-            return const GeneralEmptyState(
-              icon: Icons.filter_alt_off_rounded,
-              title: '还没有屏蔽规则',
-              compact: true,
-            );
-          }
-          return ContentSection.group(
-            title: '已添加 · ${rules.length}',
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              for (final rule in rules)
-                ListTile(
-                  title: Text(rule),
-                  subtitle: rule.startsWith('/') && rule.endsWith('/')
-                      ? const Text('正则表达式')
-                      : null,
-                  trailing: IconButton(
-                    tooltip: '删除规则',
-                    icon: const Icon(Icons.close_rounded, size: 20),
-                    onPressed: () => myController.removeShieldList(rule),
+              TextField(
+                controller: textEditingController,
+                decoration: InputDecoration(
+                  hintText: '关键词或 /正则表达式/',
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  suffixIcon: IconButton(
+                    tooltip: '添加规则',
+                    onPressed: _addRule,
+                    icon: const Icon(Icons.add_rounded),
                   ),
                 ),
+                onSubmitted: (_) => _addRule(),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                '包含关键词的弹幕会被隐藏。用 / / 包裹正则表达式。',
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                ),
+              ),
             ],
-          );
-        }),
+          ),
+        ),
+        const SizedBox(height: 24),
+        Observer(
+          builder: (context) {
+            final rules = myController.shieldList.toList();
+            if (rules.isEmpty) {
+              return const GeneralEmptyState(
+                icon: Icons.filter_alt_off_rounded,
+                title: '还没有屏蔽规则',
+                compact: true,
+              );
+            }
+            return ContentSection.group(
+              title: '已添加 · ${rules.length}',
+              children: [
+                for (final rule in rules)
+                  ListTile(
+                    title: Text(rule),
+                    subtitle: rule.startsWith('/') && rule.endsWith('/')
+                        ? const Text('正则表达式')
+                        : null,
+                    trailing: IconButton(
+                      tooltip: '删除规则',
+                      icon: const Icon(Icons.close_rounded, size: 20),
+                      onPressed: () => myController.removeShieldList(rule),
+                    ),
+                  ),
+              ],
+            );
+          },
+        ),
       ],
     );
   }

@@ -1,12 +1,7 @@
 import 'package:flutter/services.dart';
 import 'package:kazumi/services/logging/logger.dart';
 
-enum LinuxExternalPlayerResult {
-  launched,
-  cancelled,
-  unavailable,
-  failed,
-}
+enum LinuxExternalPlayerResult { launched, cancelled, unavailable, failed }
 
 class ExternalPlayer {
   ExternalPlayer._();
@@ -15,8 +10,10 @@ class ExternalPlayer {
 
   static Future<bool> launchUrlWithMime(String url, String mimeType) async {
     try {
-      await _platform.invokeMethod(
-          'openWithMime', <String, String>{'url': url, 'mimeType': mimeType});
+      await _platform.invokeMethod('openWithMime', <String, String>{
+        'url': url,
+        'mimeType': mimeType,
+      });
       return true;
     } on PlatformException catch (e) {
       KazumiLogger().e("ExternalPlayer: failed to open with mime", error: e);
@@ -26,8 +23,10 @@ class ExternalPlayer {
 
   static Future<bool> launchUrlWithReferer(String url, String referer) async {
     try {
-      await _platform.invokeMethod(
-          'openWithReferer', <String, String>{'url': url, 'referer': referer});
+      await _platform.invokeMethod('openWithReferer', <String, String>{
+        'url': url,
+        'referer': referer,
+      });
       return true;
     } on PlatformException catch (e) {
       KazumiLogger().e("ExternalPlayer: failed to open with referer", error: e);
@@ -36,7 +35,8 @@ class ExternalPlayer {
   }
 
   static Future<LinuxExternalPlayerResult> launchLinuxDesktopPlayer(
-      String url) async {
+    String url,
+  ) async {
     try {
       final result = await _platform.invokeMethod<String>(
         'openWithDesktopPlayer',

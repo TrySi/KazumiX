@@ -29,15 +29,17 @@ url_8/193039199_mp4_h264_aac_fhd_8.m3u8
       final best = master.bestVariant;
       expect(best.bandwidth, 6221600);
       expect(best.resolution, '1920x1080');
-      expect(best.uri,
-          'https://test-streams.mux.dev/x36xhzz/url_8/193039199_mp4_h264_aac_fhd_8.m3u8');
+      expect(
+        best.uri,
+        'https://test-streams.mux.dev/x36xhzz/url_8/193039199_mp4_h264_aac_fhd_8.m3u8',
+      );
     });
 
     // ── Media playlist with VOD + ENDLIST ────────────────────────────────────
     test(
-        'Test 2: Mux media playlist (PLAYLIST-TYPE:VOD + ENDLIST) -> isVod=true',
-        () {
-      const content = '''
+      'Test 2: Mux media playlist (PLAYLIST-TYPE:VOD + ENDLIST) -> isVod=true',
+      () {
+        const content = '''
 #EXTM3U
 #EXT-X-VERSION:3
 #EXT-X-PLAYLIST-TYPE:VOD
@@ -53,27 +55,30 @@ seg_00002.ts
 seg_00003.ts
 #EXT-X-ENDLIST
 ''';
-      const baseUrl =
-          'https://test-streams.mux.dev/x36xhzz/url_0/193039199_mp4_h264_aac_hd_7.m3u8';
+        const baseUrl =
+            'https://test-streams.mux.dev/x36xhzz/url_0/193039199_mp4_h264_aac_hd_7.m3u8';
 
-      expect(M3u8Parser.detectType(content), M3u8Type.media);
+        expect(M3u8Parser.detectType(content), M3u8Type.media);
 
-      final playlist = M3u8Parser.parseMediaPlaylist(content, baseUrl);
-      expect(playlist.isVod, isTrue);
-      expect(playlist.targetDuration, 10.0);
-      expect(playlist.segments.length, 4);
-      expect(playlist.segments.first.uri,
-          'https://test-streams.mux.dev/x36xhzz/url_0/seg_00000.ts');
+        final playlist = M3u8Parser.parseMediaPlaylist(content, baseUrl);
+        expect(playlist.isVod, isTrue);
+        expect(playlist.targetDuration, 10.0);
+        expect(playlist.segments.length, 4);
+        expect(
+          playlist.segments.first.uri,
+          'https://test-streams.mux.dev/x36xhzz/url_0/seg_00000.ts',
+        );
 
-      expect(content.contains('#EXT-X-PLAYLIST-TYPE:VOD'), isTrue);
-      expect(content.contains('#EXT-X-ENDLIST'), isTrue);
-    });
+        expect(content.contains('#EXT-X-PLAYLIST-TYPE:VOD'), isTrue);
+        expect(content.contains('#EXT-X-ENDLIST'), isTrue);
+      },
+    );
 
     // ── Apple-style: VOD tag present, no ENDLIST ─────────────────────────────
     test(
-        'Test 3: Apple media playlist (PLAYLIST-TYPE:VOD, no ENDLIST) -> isVod=true',
-        () {
-      const content = '''
+      'Test 3: Apple media playlist (PLAYLIST-TYPE:VOD, no ENDLIST) -> isVod=true',
+      () {
+        const content = '''
 #EXTM3U
 #EXT-X-VERSION:3
 #EXT-X-PLAYLIST-TYPE:VOD
@@ -86,16 +91,17 @@ fileSequence1.mp4
 #EXTINF:7.975,
 fileSequence2.mp4
 ''';
-      const baseUrl =
-          'https://devstreaming-cdn.apple.com/videos/streaming/examples/bipbop_adv_example_hevc/v5/prog_index.m3u8';
+        const baseUrl =
+            'https://devstreaming-cdn.apple.com/videos/streaming/examples/bipbop_adv_example_hevc/v5/prog_index.m3u8';
 
-      final playlist = M3u8Parser.parseMediaPlaylist(content, baseUrl);
+        final playlist = M3u8Parser.parseMediaPlaylist(content, baseUrl);
 
-      expect(content.contains('#EXT-X-PLAYLIST-TYPE:VOD'), isTrue);
-      expect(content.contains('#EXT-X-ENDLIST'), isFalse);
-      expect(playlist.isVod, isTrue);
-      expect(playlist.segments.length, 3);
-    });
+        expect(content.contains('#EXT-X-PLAYLIST-TYPE:VOD'), isTrue);
+        expect(content.contains('#EXT-X-ENDLIST'), isFalse);
+        expect(playlist.isVod, isTrue);
+        expect(playlist.segments.length, 3);
+      },
+    );
 
     // ── No VOD tag, no ENDLIST ───────────────────────────────────────────────
     test('Test 4: no VOD tag no ENDLIST -> fallback isVod=true', () {
@@ -112,7 +118,9 @@ https://example.com/seg_00001.ts
 https://example.com/seg_00002.ts
 ''';
       final playlist = M3u8Parser.parseMediaPlaylist(
-          content, 'https://example.com/playlist.m3u8');
+        content,
+        'https://example.com/playlist.m3u8',
+      );
 
       expect(playlist.isVod, isTrue);
       expect(playlist.segments.length, 3);
@@ -132,7 +140,9 @@ https://example.com/seg_00000.ts
 https://example.com/seg_00001.ts
 ''';
       final playlist = M3u8Parser.parseMediaPlaylist(
-          content, 'https://example.com/event.m3u8');
+        content,
+        'https://example.com/event.m3u8',
+      );
 
       expect(playlist.isVod, isFalse);
     });
@@ -151,7 +161,9 @@ https://example.com/seg_00000.ts
 https://example.com/seg_00001.ts
 ''';
       final playlist = M3u8Parser.parseMediaPlaylist(
-          content, 'https://example.com/vod.m3u8');
+        content,
+        'https://example.com/vod.m3u8',
+      );
       expect(playlist.isVod, isTrue);
 
       const emptyVod = '''
@@ -161,7 +173,9 @@ https://example.com/seg_00001.ts
 #EXT-X-TARGETDURATION:10
 ''';
       final emptyPlaylist = M3u8Parser.parseMediaPlaylist(
-          emptyVod, 'https://example.com/empty.m3u8');
+        emptyVod,
+        'https://example.com/empty.m3u8',
+      );
       expect(emptyPlaylist.isVod, isTrue);
       expect(emptyPlaylist.segments.length, 0);
     });
@@ -195,17 +209,18 @@ seg_c.ts
 ''';
 
       final outer = M3u8Parser.parseMediaPlaylist(
-          outerContent, 'https://example.com/main.m3u8');
+        outerContent,
+        'https://example.com/main.m3u8',
+      );
       expect(outer.segments.length, 3);
       expect(outer.segments.where((s) => s.uri.endsWith('.m3u8')).length, 1);
 
-      final resolved = await M3u8Parser.resolveNestedSegments(
-        outer.segments,
-        (url) async {
-          if (url.contains('nested.m3u8')) return nestedContent;
-          throw Exception('Unknown URL: $url');
-        },
-      );
+      final resolved = await M3u8Parser.resolveNestedSegments(outer.segments, (
+        url,
+      ) async {
+        if (url.contains('nested.m3u8')) return nestedContent;
+        throw Exception('Unknown URL: $url');
+      });
 
       expect(resolved.length, 5);
       expect(resolved.any((s) => s.uri.endsWith('.m3u8')), isFalse);

@@ -6,19 +6,13 @@ import 'package:skeletonizer/skeletonizer.dart';
 import 'package:kazumi/utils/date_time.dart';
 
 class CommentsCard extends StatelessWidget {
-  const CommentsCard({
-    super.key,
-    required CommentItem this.commentItem,
-  }) : _isOwn = false;
+  const CommentsCard({super.key, required CommentItem this.commentItem})
+    : _isOwn = false;
 
-  const CommentsCard.bone({super.key})
-      : commentItem = null,
-        _isOwn = false;
+  const CommentsCard.bone({super.key}) : commentItem = null, _isOwn = false;
 
-  const CommentsCard.own({
-    super.key,
-    required CommentItem this.commentItem,
-  }) : _isOwn = true;
+  const CommentsCard.own({super.key, required CommentItem this.commentItem})
+    : _isOwn = true;
 
   final CommentItem? commentItem;
   final bool _isOwn;
@@ -63,9 +57,7 @@ class CommentsCard extends StatelessWidget {
             Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                BangumiAvatar(
-                  imageUrl: item.user.avatar.large,
-                ),
+                BangumiAvatar(imageUrl: item.user.avatar.large),
                 const SizedBox(width: 8),
                 Expanded(
                   child: Column(
@@ -79,20 +71,23 @@ class CommentsCard extends StatelessWidget {
                           Text(item.user.nickname),
                           if (_isOwn)
                             Container(
-                                padding:
-                                    const EdgeInsets.symmetric(horizontal: 2),
-                                decoration: BoxDecoration(
-                                  color: Theme.of(context).colorScheme.primary,
-                                  borderRadius: BorderRadius.circular(4),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 2,
+                              ),
+                              decoration: BoxDecoration(
+                                color: Theme.of(context).colorScheme.primary,
+                                borderRadius: BorderRadius.circular(4),
+                              ),
+                              child: Text(
+                                '我的吐槽',
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  color: Theme.of(
+                                    context,
+                                  ).colorScheme.primaryContainer,
                                 ),
-                                child: Text(
-                                  '我的吐槽',
-                                  style: TextStyle(
-                                      fontSize: 12,
-                                      color: Theme.of(context)
-                                          .colorScheme
-                                          .primaryContainer),
-                                ))
+                              ),
+                            ),
                         ],
                       ),
                       Text(dateFormat(item.comment.updatedAt)),
@@ -103,9 +98,8 @@ class CommentsCard extends StatelessWidget {
                 RatingBarIndicator(
                   itemCount: 5,
                   rating: item.comment.rate.toDouble() / 2,
-                  itemBuilder: (context, index) => const Icon(
-                    Icons.star_rounded,
-                  ),
+                  itemBuilder: (context, index) =>
+                      const Icon(Icons.star_rounded),
                   itemSize: 20.0,
                 ),
               ],

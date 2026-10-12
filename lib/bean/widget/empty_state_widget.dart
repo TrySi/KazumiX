@@ -50,9 +50,9 @@ class GeneralEmptyState extends StatelessWidget {
                   style:
                       (compact ? textTheme.titleMedium : textTheme.titleLarge)
                           ?.copyWith(
-                    color: colorScheme.onSurface,
-                    fontWeight: FontWeight.w700,
-                  ),
+                            color: colorScheme.onSurface,
+                            fontWeight: FontWeight.w700,
+                          ),
                 ),
               ),
               if (actions.isNotEmpty) ...[

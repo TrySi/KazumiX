@@ -69,10 +69,7 @@ class CollectCrudRepository implements ICollectCrudRepository {
     try {
       return _collectiblesBox.values.cast<CollectedBangumi>().toList();
     } catch (e) {
-      KazumiLogger().w(
-        'GStorage: get all collectibles failed',
-        error: e,
-      );
+      KazumiLogger().w('GStorage: get all collectibles failed', error: e);
       return [];
     }
   }
@@ -82,10 +79,7 @@ class CollectCrudRepository implements ICollectCrudRepository {
     try {
       return _collectiblesBox.get(id);
     } catch (e) {
-      KazumiLogger().w(
-        'GStorage: get collectible failed. id=$id',
-        error: e,
-      );
+      KazumiLogger().w('GStorage: get collectible failed. id=$id', error: e);
       return null;
     }
   }
@@ -96,10 +90,7 @@ class CollectCrudRepository implements ICollectCrudRepository {
       final collectible = _collectiblesBox.get(id);
       return collectible?.type ?? 0;
     } catch (e) {
-      KazumiLogger().w(
-        'GStorage: get collect type failed. id=$id',
-        error: e,
-      );
+      KazumiLogger().w('GStorage: get collect type failed. id=$id', error: e);
       return 0;
     }
   }
@@ -178,10 +169,7 @@ class CollectCrudRepository implements ICollectCrudRepository {
     try {
       return _favoritesBox.values.cast<BangumiItem>().toList();
     } catch (e) {
-      KazumiLogger().i(
-        'GStorage: get favorites failed',
-        error: e,
-      );
+      KazumiLogger().i('GStorage: get favorites failed', error: e);
       return [];
     }
   }
@@ -192,10 +180,7 @@ class CollectCrudRepository implements ICollectCrudRepository {
       await _favoritesBox.clear();
       await _favoritesBox.flush();
     } catch (e) {
-      KazumiLogger().i(
-        'GStorage: clear favorites failed',
-        error: e,
-      );
+      KazumiLogger().i('GStorage: clear favorites failed', error: e);
       rethrow;
     }
   }

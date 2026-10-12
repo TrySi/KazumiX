@@ -31,13 +31,19 @@ class EpisodeCommentsPicker extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('选择讨论分集',
-                      style: type.headlineSmall
-                          ?.copyWith(fontWeight: FontWeight.w700)),
+                  Text(
+                    '选择讨论分集',
+                    style: type.headlineSmall?.copyWith(
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
                   const SizedBox(height: 8),
-                  Text('切换想看的讨论，视频会继续播放。',
-                      style: type.bodyMedium
-                          ?.copyWith(color: colors.onSurfaceVariant)),
+                  Text(
+                    '切换想看的讨论，视频会继续播放。',
+                    style: type.bodyMedium?.copyWith(
+                      color: colors.onSurfaceVariant,
+                    ),
+                  ),
                 ],
               ),
             ),
@@ -49,8 +55,9 @@ class EpisodeCommentsPicker extends StatelessWidget {
                 separatorBuilder: (context, index) => const SizedBox(height: 3),
                 itemBuilder: (context, index) {
                   final info = episodes[index];
-                  final title =
-                      info.nameCn.isNotEmpty ? info.nameCn : info.name;
+                  final title = info.nameCn.isNotEmpty
+                      ? info.nameCn
+                      : info.name;
                   final selected = index + 1 == selectedEpisode;
                   return Material(
                     color: selected
@@ -59,14 +66,17 @@ class EpisodeCommentsPicker extends StatelessWidget {
                     borderRadius: BorderRadius.vertical(
                       top: Radius.circular(index == 0 ? 20 : 4),
                       bottom: Radius.circular(
-                          index == episodes.length - 1 ? 20 : 4),
+                        index == episodes.length - 1 ? 20 : 4,
+                      ),
                     ),
                     clipBehavior: Clip.antiAlias,
                     child: ListTile(
                       selected: selected,
                       selectedColor: colors.onPrimaryContainer,
                       contentPadding: const EdgeInsets.symmetric(
-                          horizontal: 16, vertical: 8),
+                        horizontal: 16,
+                        vertical: 8,
+                      ),
                       title: Text(
                         '${info.readType().toUpperCase()} ${info.episode}'
                             .trim(),
@@ -78,18 +88,21 @@ class EpisodeCommentsPicker extends StatelessWidget {
                       ),
                       subtitle: title.isEmpty
                           ? null
-                          : Text(title,
+                          : Text(
+                              title,
                               style: type.bodyLarge?.copyWith(
                                 color: selected
                                     ? colors.onPrimaryContainer
                                     : colors.onSurface,
-                              )),
+                              ),
+                            ),
                       trailing: Icon(
                         selected
                             ? Icons.check_circle_rounded
                             : Icons.chevron_right_rounded,
-                        color:
-                            selected ? colors.primary : colors.onSurfaceVariant,
+                        color: selected
+                            ? colors.primary
+                            : colors.onSurfaceVariant,
                       ),
                       onTap: () => Navigator.pop(context, index + 1),
                     ),

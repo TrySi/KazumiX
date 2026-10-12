@@ -77,9 +77,11 @@ class SystemProxyService {
     if (newState.sameAs(_state)) return false;
     _state = newState;
     final proxy = newState.httpProxy ?? newState.httpsProxy;
-    KazumiLogger().i(proxy == null
-        ? 'Proxy: 系统代理已移除，回到直连'
-        : 'Proxy: 检测到系统代理 ${proxy.$1}:${proxy.$2}');
+    KazumiLogger().i(
+      proxy == null
+          ? 'Proxy: 系统代理已移除，回到直连'
+          : 'Proxy: 检测到系统代理 ${proxy.$1}:${proxy.$2}',
+    );
     return true;
   }
 
@@ -98,8 +100,7 @@ class SystemProxyService {
       if (!isActive) return 'DIRECT';
       final state = _state;
       if (_shouldBypass(url, state)) return 'DIRECT';
-      final proxy =
-          url.scheme == 'https' ? state.httpsProxy : state.httpProxy;
+      final proxy = url.scheme == 'https' ? state.httpsProxy : state.httpProxy;
       if (proxy == null) return 'DIRECT';
       return 'PROXY ${proxy.$1}:${proxy.$2}';
     } catch (_) {
@@ -203,13 +204,16 @@ class SystemProxyService {
     if (colon > 0 && int.tryParse(pattern.substring(colon + 1)) != null) {
       target = '$host:$port';
     }
-    final regex =
-        RegExp('^${RegExp.escape(pattern).replaceAll(r'\*', '.*')}\$');
+    final regex = RegExp(
+      '^${RegExp.escape(pattern).replaceAll(r'\*', '.*')}\$',
+    );
     return regex.hasMatch(target);
   }
 
   static SystemProxyState _buildState(
-      String proxyServer, String proxyOverride) {
+    String proxyServer,
+    String proxyOverride,
+  ) {
     final (http, https) = _parseProxyServer(proxyServer);
     final (patterns, bypassLocal) = _parseBypassList(proxyOverride);
     return SystemProxyState(
@@ -228,20 +232,41 @@ class SystemProxyService {
         final valueName = name.toNativeUtf16(allocator: arena);
         final data = arena<Uint32>();
         final cbData = arena<Uint32>()..value = sizeOf<Uint32>();
-        final status = RegGetValue(HKEY_CURRENT_USER, subKey, valueName,
-            RRF_RT_REG_DWORD, nullptr, data, cbData);
+        final status = RegGetValue(
+          HKEY_CURRENT_USER,
+          subKey,
+          valueName,
+          RRF_RT_REG_DWORD,
+          nullptr,
+          data,
+          cbData,
+        );
         return status == ERROR_SUCCESS ? data.value : null;
       }
 
       String? readString(String name) {
         final valueName = name.toNativeUtf16(allocator: arena);
         final cbData = arena<Uint32>();
-        var status = RegGetValue(HKEY_CURRENT_USER, subKey, valueName,
-            RRF_RT_REG_SZ, nullptr, nullptr, cbData);
+        var status = RegGetValue(
+          HKEY_CURRENT_USER,
+          subKey,
+          valueName,
+          RRF_RT_REG_SZ,
+          nullptr,
+          nullptr,
+          cbData,
+        );
         if (status != ERROR_SUCCESS || cbData.value == 0) return null;
         final buffer = arena.allocate<Utf16>(cbData.value);
-        status = RegGetValue(HKEY_CURRENT_USER, subKey, valueName,
-            RRF_RT_REG_SZ, nullptr, buffer, cbData);
+        status = RegGetValue(
+          HKEY_CURRENT_USER,
+          subKey,
+          valueName,
+          RRF_RT_REG_SZ,
+          nullptr,
+          buffer,
+          cbData,
+        );
         return status == ERROR_SUCCESS ? buffer.toDartString() : null;
       }
 
@@ -283,12 +308,19 @@ class SystemProxyService {
         return;
       }
 
-      _waitCallback =
-          NativeCallable<_WaitOrTimerCallback>.listener(_onWaitSignaled);
+      _waitCallback = NativeCallable<_WaitOrTimerCallback>.listener(
+        _onWaitSignaled,
+      );
 
       final phWait = arena<IntPtr>();
-      if (_registerWaitForSingleObject(phWait, _hEvent,
-              _waitCallback!.nativeFunction, nullptr, INFINITE, 0) ==
+      if (_registerWaitForSingleObject(
+            phWait,
+            _hEvent,
+            _waitCallback!.nativeFunction,
+            nullptr,
+            INFINITE,
+            0,
+          ) ==
           0) {
         _stopWatcher('RegisterWaitForSingleObject 失败');
         return;
@@ -357,17 +389,20 @@ typedef _WaitOrTimerCallback = Void Function(Pointer<Void>, Uint8);
 /// Thread-pool wait on an event handle; not bound by package:win32.
 final _registerWaitForSingleObject = DynamicLibrary.open('kernel32.dll')
     .lookupFunction<
-        Int32 Function(
-            Pointer<IntPtr> phNewWaitObject,
-            IntPtr hObject,
-            Pointer<NativeFunction<_WaitOrTimerCallback>> callback,
-            Pointer<Void> context,
-            Uint32 dwMilliseconds,
-            Uint32 dwFlags),
-        int Function(
-            Pointer<IntPtr> phNewWaitObject,
-            int hObject,
-            Pointer<NativeFunction<_WaitOrTimerCallback>> callback,
-            Pointer<Void> context,
-            int dwMilliseconds,
-            int dwFlags)>('RegisterWaitForSingleObject');
+      Int32 Function(
+        Pointer<IntPtr> phNewWaitObject,
+        IntPtr hObject,
+        Pointer<NativeFunction<_WaitOrTimerCallback>> callback,
+        Pointer<Void> context,
+        Uint32 dwMilliseconds,
+        Uint32 dwFlags,
+      ),
+      int Function(
+        Pointer<IntPtr> phNewWaitObject,
+        int hObject,
+        Pointer<NativeFunction<_WaitOrTimerCallback>> callback,
+        Pointer<Void> context,
+        int dwMilliseconds,
+        int dwFlags,
+      )
+    >('RegisterWaitForSingleObject');

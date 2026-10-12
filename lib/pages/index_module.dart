@@ -96,10 +96,7 @@ final indexModule = createModule(
         '/error',
         child: (context, state) => Scaffold(
           appBar: AppBar(title: const Text('Kazumi')),
-          body: const GeneralErrorWidget(
-            title: '初始化失败',
-            errMsg: '请重新启动应用后再试。',
-          ),
+          body: const GeneralErrorWidget(title: '初始化失败', errMsg: '请重新启动应用后再试。'),
         ),
       )
       ..module(tabModule)

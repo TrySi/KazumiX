@@ -7,10 +7,7 @@ import 'package:kazumi/services/logging/logger.dart';
 
 /// Result of parsing a collect backup payload.
 class CollectBackupParseResult {
-  const CollectBackupParseResult({
-    required this.items,
-    this.skipped = 0,
-  });
+  const CollectBackupParseResult({required this.items, this.skipped = 0});
 
   /// Successfully parsed collectibles.
   final List<CollectedBangumi> items;

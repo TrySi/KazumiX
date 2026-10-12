@@ -111,8 +111,9 @@ class _LogsPageState extends State<LogsPage> {
       if (!mounted) return;
 
       final remainingLines = _allLines.length - _displayedLines;
-      final linesToLoad =
-          remainingLines < _loadMoreCount ? remainingLines : _loadMoreCount;
+      final linesToLoad = remainingLines < _loadMoreCount
+          ? remainingLines
+          : _loadMoreCount;
 
       final newLines = _allLines.skip(_displayedLines).take(linesToLoad);
 
@@ -169,9 +170,7 @@ class _LogsPageState extends State<LogsPage> {
 
   Widget _buildBody() {
     if (_isLoading) {
-      return const Center(
-        child: LoadingIndicator(),
-      );
+      return const Center(child: LoadingIndicator());
     }
 
     if (_hasError) {
@@ -207,10 +206,7 @@ class _LogsPageState extends State<LogsPage> {
                   _logLines[index],
                   softWrap: false,
                   overflow: TextOverflow.clip,
-                  style: const TextStyle(
-                    fontFamily: 'monospace',
-                    fontSize: 12,
-                  ),
+                  style: const TextStyle(fontFamily: 'monospace', fontSize: 12),
                 ),
               );
             },

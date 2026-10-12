@@ -13,15 +13,13 @@ final pluginModule = createModule(
     c
       ..route(
         '/',
-        child: (context, state) => PluginViewPage(
-          controller: inject<PluginsController>(),
-        ),
+        child: (context, state) =>
+            PluginViewPage(controller: inject<PluginsController>()),
       )
       ..route(
         '/shop',
-        child: (context, state) => PluginShopPage(
-          controller: inject<PluginsController>(),
-        ),
+        child: (context, state) =>
+            PluginShopPage(controller: inject<PluginsController>()),
       )
       ..route(
         '/test',

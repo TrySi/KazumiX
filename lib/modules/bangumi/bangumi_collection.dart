@@ -41,18 +41,19 @@ class BangumiCollection {
   List<Map<String, dynamic>> tags;
 
   BangumiCollection(
-      this.bangumiId,
-      this.date,
-      this.updatedAt,
-      this.type,
-      this.name,
-      this.nameCn,
-      this.shortSummary,
-      this.score,
-      this.eps,
-      this.rank,
-      this.images,
-      this.tags);
+    this.bangumiId,
+    this.date,
+    this.updatedAt,
+    this.type,
+    this.name,
+    this.nameCn,
+    this.shortSummary,
+    this.score,
+    this.eps,
+    this.rank,
+    this.images,
+    this.tags,
+  );
 
   BangumiItem toBangumiItem() {
     return BangumiItem.fromJson({
@@ -64,12 +65,7 @@ class BangumiCollection {
       'date': date ?? '',
       'images': images,
       'tags': tags,
-      'rating': {
-        'rank': rank,
-        'score': score,
-        'total': 0,
-        'count': <int>[],
-      },
+      'rating': {'rank': rank, 'score': score, 'total': 0, 'count': <int>[]},
       'info': '',
     });
   }
@@ -79,7 +75,8 @@ class BangumiCollection {
     final bangumiId = (subject['id'] as int?) ?? (json['subject_id'] as int?);
     if (bangumiId == null || bangumiId <= 0) {
       throw const FormatException(
-          'BangumiCollection: invalid or missing bangumi id');
+        'BangumiCollection: invalid or missing bangumi id',
+      );
     }
     final subjectImages = Map<String, String>.from(
       (subject['images'] as Map?) ??
@@ -98,12 +95,14 @@ class BangumiCollection {
     final updatedAtStr = json['updated_at'] as String?;
     if (updatedAtStr == null || updatedAtStr.trim().isEmpty) {
       throw const FormatException(
-          'BangumiCollection: missing or empty updated_at');
+        'BangumiCollection: missing or empty updated_at',
+      );
     }
     final updatedAt = DateTime.tryParse(updatedAtStr);
     if (updatedAt == null) {
       throw const FormatException(
-          'BangumiCollection: invalid updated_at format');
+        'BangumiCollection: invalid updated_at format',
+      );
     }
     return BangumiCollection(
       bangumiId,

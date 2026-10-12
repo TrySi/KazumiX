@@ -409,9 +409,8 @@ class _InfoPageState extends State<InfoPage>
                               bottom: kTextTabBarHeight,
                               child: IgnorePointer(
                                 child: _InfoHeaderBackground(
-                                  imageUrl: infoController
-                                      .bangumiItem
-                                      .displayCover,
+                                  imageUrl:
+                                      infoController.bangumiItem.displayCover,
                                 ),
                               ),
                             ),

@@ -7,22 +7,22 @@ import 'package:kazumi/modules/collect/collect_type.dart';
 import 'package:kazumi/services/sync/collect_backup_service.dart';
 
 BangumiItem _item(int id, String name) => BangumiItem(
-      id: id,
-      type: 2,
-      name: name,
-      nameCn: '$name 中文',
-      summary: '简介 $id',
-      airDate: '2024-04-01',
-      airWeekday: 1,
-      rank: 100,
-      images: {'large': 'https://example.com/$id.jpg'},
-      tags: [],
-      alias: ['别名 $id'],
-      ratingScore: 8.5,
-      votes: 1234,
-      votesCount: const [0, 10, 20, 30, 40, 50, 60, 70, 80, 90],
-      info: '信息 $id',
-    );
+  id: id,
+  type: 2,
+  name: name,
+  nameCn: '$name 中文',
+  summary: '简介 $id',
+  airDate: '2024-04-01',
+  airWeekday: 1,
+  rank: 100,
+  images: {'large': 'https://example.com/$id.jpg'},
+  tags: [],
+  alias: ['别名 $id'],
+  ratingScore: 8.5,
+  votes: 1234,
+  votesCount: const [0, 10, 20, 30, 40, 50, 60, 70, 80, 90],
+  info: '信息 $id',
+);
 
 void main() {
   final service = CollectBackupService.instance;
@@ -103,10 +103,7 @@ void main() {
     });
 
     test('rejects invalid JSON', () {
-      expect(
-        () => service.decode('not json'),
-        throwsA(isA<FormatException>()),
-      );
+      expect(() => service.decode('not json'), throwsA(isA<FormatException>()));
     });
 
     test('rejects a document without items', () {

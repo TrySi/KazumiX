@@ -53,7 +53,9 @@ class _WebDavServerPageState extends State<WebDavServerPage> {
     try {
       await GStorage.putSetting(SettingsKeys.webDavURL, _url.text.trim());
       await GStorage.putSetting(
-          SettingsKeys.webDavUsername, _username.text.trim());
+        SettingsKeys.webDavUsername,
+        _username.text.trim(),
+      );
       await GStorage.putSetting(SettingsKeys.webDavPassword, _password.text);
       await WebDav().init();
       _message = '连接成功，配置已保存';
@@ -69,99 +71,102 @@ class _WebDavServerPageState extends State<WebDavServerPage> {
 
   @override
   Widget build(BuildContext context) => PopScope(
-        canPop: !_busy,
-        child: SettingsDetailScaffold(
-          title: const Text('同步服务器'),
-          body: SyncPageBody(
-            maxWidth: 640,
-            children: [
-              const SyncPageIntro(
-                icon: Icons.dns_rounded,
-                title: '连接 WebDAV',
-                description: '填写云盘或服务器提供的连接信息。',
-              ),
-              TonalCard(
-                padding: const EdgeInsets.all(20),
-                child: Form(
-                  key: _formKey,
-                  onChanged: () {
-                    if (_message != null && !_busy) {
-                      setState(() => _message = null);
-                    }
-                  },
-                  child: Column(
-                    spacing: 20,
-                    children: [
-                      TextFormField(
-                        controller: _url,
-                        enabled: !_busy,
-                        keyboardType: TextInputType.url,
-                        textInputAction: TextInputAction.next,
-                        autocorrect: false,
-                        decoration: const InputDecoration(
-                          labelText: '服务器地址',
-                          hintText: 'https://example.com/dav/',
-                          border: OutlineInputBorder(),
-                          errorMaxLines: 3,
-                        ),
-                        validator: (value) {
-                          final uri = Uri.tryParse(value?.trim() ?? '');
-                          if (uri == null ||
-                              !['http', 'https'].contains(uri.scheme) ||
-                              uri.host.isEmpty) {
-                            return '请输入完整的 http:// 或 https:// 地址';
-                          }
-                          return null;
-                        },
-                      ),
-                      TextFormField(
-                        controller: _username,
-                        enabled: !_busy,
-                        textInputAction: TextInputAction.next,
-                        autocorrect: false,
-                        decoration: const InputDecoration(
-                          labelText: '用户名',
-                          border: OutlineInputBorder(),
-                        ),
-                      ),
-                      TextFormField(
-                        controller: _password,
-                        enabled: !_busy,
-                        obscureText: !_passwordVisible,
-                        autocorrect: false,
-                        enableSuggestions: false,
-                        onFieldSubmitted: (_) => _save(),
-                        decoration: InputDecoration(
-                          labelText: '密码或应用授权码',
-                          border: const OutlineInputBorder(),
-                          suffixIcon: IconButton(
-                            tooltip: _passwordVisible ? '隐藏密码' : '显示密码',
-                            onPressed: () => setState(
-                                () => _passwordVisible = !_passwordVisible),
-                            icon: Icon(_passwordVisible
-                                ? Icons.visibility_off_rounded
-                                : Icons.visibility_rounded),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-              StateActionButton(
-                onPressed: _busy ? null : _save,
-                text: _busy ? '正在测试连接…' : '保存并测试',
-                icon: Icons.cloud_done_rounded,
-              ),
-              if (_message != null)
-                SyncFeedback(message: _message!, error: _failed, busy: _busy),
-              if (_message != null && !_busy && !_failed)
-                TextButton(
-                  onPressed: () => context.maybePop(),
-                  child: const Text('返回同步设置'),
-                ),
-            ],
+    canPop: !_busy,
+    child: SettingsDetailScaffold(
+      title: const Text('同步服务器'),
+      body: SyncPageBody(
+        maxWidth: 640,
+        children: [
+          const SyncPageIntro(
+            icon: Icons.dns_rounded,
+            title: '连接 WebDAV',
+            description: '填写云盘或服务器提供的连接信息。',
           ),
-        ),
-      );
+          TonalCard(
+            padding: const EdgeInsets.all(20),
+            child: Form(
+              key: _formKey,
+              onChanged: () {
+                if (_message != null && !_busy) {
+                  setState(() => _message = null);
+                }
+              },
+              child: Column(
+                spacing: 20,
+                children: [
+                  TextFormField(
+                    controller: _url,
+                    enabled: !_busy,
+                    keyboardType: TextInputType.url,
+                    textInputAction: TextInputAction.next,
+                    autocorrect: false,
+                    decoration: const InputDecoration(
+                      labelText: '服务器地址',
+                      hintText: 'https://example.com/dav/',
+                      border: OutlineInputBorder(),
+                      errorMaxLines: 3,
+                    ),
+                    validator: (value) {
+                      final uri = Uri.tryParse(value?.trim() ?? '');
+                      if (uri == null ||
+                          !['http', 'https'].contains(uri.scheme) ||
+                          uri.host.isEmpty) {
+                        return '请输入完整的 http:// 或 https:// 地址';
+                      }
+                      return null;
+                    },
+                  ),
+                  TextFormField(
+                    controller: _username,
+                    enabled: !_busy,
+                    textInputAction: TextInputAction.next,
+                    autocorrect: false,
+                    decoration: const InputDecoration(
+                      labelText: '用户名',
+                      border: OutlineInputBorder(),
+                    ),
+                  ),
+                  TextFormField(
+                    controller: _password,
+                    enabled: !_busy,
+                    obscureText: !_passwordVisible,
+                    autocorrect: false,
+                    enableSuggestions: false,
+                    onFieldSubmitted: (_) => _save(),
+                    decoration: InputDecoration(
+                      labelText: '密码或应用授权码',
+                      border: const OutlineInputBorder(),
+                      suffixIcon: IconButton(
+                        tooltip: _passwordVisible ? '隐藏密码' : '显示密码',
+                        onPressed: () => setState(
+                          () => _passwordVisible = !_passwordVisible,
+                        ),
+                        icon: Icon(
+                          _passwordVisible
+                              ? Icons.visibility_off_rounded
+                              : Icons.visibility_rounded,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          StateActionButton(
+            onPressed: _busy ? null : _save,
+            text: _busy ? '正在测试连接…' : '保存并测试',
+            icon: Icons.cloud_done_rounded,
+          ),
+          if (_message != null)
+            SyncFeedback(message: _message!, error: _failed, busy: _busy),
+          if (_message != null && !_busy && !_failed)
+            TextButton(
+              onPressed: () => context.maybePop(),
+              child: const Text('返回同步设置'),
+            ),
+        ],
+      ),
+    ),
+  );
 }

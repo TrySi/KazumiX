@@ -7,13 +7,14 @@ import 'package:kazumi/services/sync/history_sync_service.dart';
 import 'package:kazumi/services/logging/logger.dart';
 import 'package:kazumi/services/storage/history_storage_coordinator.dart';
 
-typedef HistoryProgressSyncAppender = Future<void> Function({
-  required History history,
-  required int episode,
-  required int road,
-  required int progressMs,
-  required int updatedAt,
-});
+typedef HistoryProgressSyncAppender =
+    Future<void> Function({
+      required History history,
+      required int episode,
+      required int road,
+      required int progressMs,
+      required int updatedAt,
+    });
 
 typedef HistoryDeleteSyncAppender = Future<void> Function(History history);
 
@@ -116,12 +117,13 @@ class HistoryRepository implements IHistoryRepository {
     HistoryProgressSyncAppender? progressSyncAppender,
     HistoryDeleteSyncAppender? deleteSyncAppender,
     HistoryClearSyncAppender? clearSyncAppender,
-  })  : _historiesBox = historiesBox ?? GStorage.histories,
-        _privateModeReader = privateModeReader ??
-            (() => GStorage.getSetting(SettingsKeys.privateMode)),
-        _progressSyncAppender = progressSyncAppender ?? _appendProgressSync,
-        _deleteSyncAppender = deleteSyncAppender ?? _appendDeleteSync,
-        _clearSyncAppender = clearSyncAppender ?? _appendClearSync;
+  }) : _historiesBox = historiesBox ?? GStorage.histories,
+       _privateModeReader =
+           privateModeReader ??
+           (() => GStorage.getSetting(SettingsKeys.privateMode)),
+       _progressSyncAppender = progressSyncAppender ?? _appendProgressSync,
+       _deleteSyncAppender = deleteSyncAppender ?? _appendDeleteSync,
+       _clearSyncAppender = clearSyncAppender ?? _appendClearSync;
 
   final Box<History> _historiesBox;
   final bool Function() _privateModeReader;
@@ -221,7 +223,8 @@ class HistoryRepository implements IHistoryRepository {
     Duration duration = Duration.zero,
   }) async {
     // 距结尾过近视为已看完，归零保存，并标记完成
-    final reachedEnd = duration > Duration.zero &&
+    final reachedEnd =
+        duration > Duration.zero &&
         progress >= duration - nearEndWatchedThreshold;
     if (reachedEnd) {
       progress = Duration.zero;
@@ -245,14 +248,11 @@ class HistoryRepository implements IHistoryRepository {
         final legacyKey = History.legacyKey(adapterName, bangumiItem);
         final shouldMigrateLegacy =
             HistoryEntryKind.normalize(identity.entryKind) ==
-                HistoryEntryKind.online;
+            HistoryEntryKind.online;
 
         // 获取或创建历史记录
-        var history = _findHistory(
-              adapterName,
-              bangumiItem,
-              identity.entryKind,
-            ) ??
+        var history =
+            _findHistory(adapterName, bangumiItem, identity.entryKind) ??
             History(
               bangumiItem,
               episode,

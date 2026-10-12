@@ -5,10 +5,7 @@ import 'package:kazumi/bean/widget/error_widget.dart';
 import 'package:kazumi/bean/widget/state_presentation.dart';
 
 class RouteErrorPage extends StatelessWidget {
-  const RouteErrorPage({
-    super.key,
-    required this.message,
-  });
+  const RouteErrorPage({super.key, required this.message});
 
   final String message;
 

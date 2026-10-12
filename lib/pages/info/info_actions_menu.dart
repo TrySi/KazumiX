@@ -114,10 +114,7 @@ class _InfoActionsMenuState extends State<InfoActionsMenu> {
           onPressed: _title.trim().isEmpty ? null : _copyTitle,
           label: '复制标题',
         ),
-        KazumiMenuItem(
-          onPressed: _openExternally,
-          label: '外部打开',
-        ),
+        KazumiMenuItem(onPressed: _openExternally, label: '外部打开'),
       ],
       builder: (context, toggle) => IconButton(
         tooltip: '更多操作',

@@ -7,14 +7,14 @@ import 'package:skeletonizer/skeletonizer.dart';
 
 class UserCommentsCard extends StatefulWidget {
   UserCommentsCard.episode(EpisodeCommentItem item, {super.key})
-      : _source = item,
-        _comment = _fromEpisode(item.comment),
-        _replies = item.replies.map(_fromEpisode).toList();
+    : _source = item,
+      _comment = _fromEpisode(item.comment),
+      _replies = item.replies.map(_fromEpisode).toList();
 
   UserCommentsCard.character(CharacterCommentItem item, {super.key})
-      : _source = item,
-        _comment = _fromCharacter(item.comment),
-        _replies = item.replies.map(_fromCharacter).toList();
+    : _source = item,
+      _comment = _fromCharacter(item.comment),
+      _replies = item.replies.map(_fromCharacter).toList();
 
   final Object _source;
   final _CommentData _comment;
@@ -59,8 +59,10 @@ class _UserCommentsCardState extends State<UserCommentsCard> {
                 children: [
                   Icon(Icons.forum_outlined, size: 16, color: colors.primary),
                   const SizedBox(width: 8),
-                  Text('${replies.length} 条回复',
-                      style: type.labelLarge?.copyWith(color: colors.primary)),
+                  Text(
+                    '${replies.length} 条回复',
+                    style: type.labelLarge?.copyWith(color: colors.primary),
+                  ),
                 ],
               ),
             ),
@@ -82,7 +84,8 @@ class _UserCommentsCardState extends State<UserCommentsCard> {
                           borderRadius: BorderRadius.vertical(
                             top: Radius.circular(index == 0 ? 16 : 4),
                             bottom: Radius.circular(
-                                index == visibleCount - 1 ? 16 : 4),
+                              index == visibleCount - 1 ? 16 : 4,
+                            ),
                           ),
                         ),
                         child: Padding(
@@ -127,9 +130,11 @@ class _UserCommentsCardState extends State<UserCommentsCard> {
                           : const Duration(milliseconds: 200),
                       child: const Icon(Icons.expand_more_rounded, size: 20),
                     ),
-                    label: Text(_expanded
-                        ? '收起回复'
-                        : '展开其余 ${replies.length - _previewCount} 条回复'),
+                    label: Text(
+                      _expanded
+                          ? '收起回复'
+                          : '展开其余 ${replies.length - _previewCount} 条回复',
+                    ),
                   ),
                 ),
               ),
@@ -203,8 +208,10 @@ class _CommentBody extends StatelessWidget {
         height: 1.65,
       ),
       child: content.isEmpty
-          ? Text('该评论已被删除',
-              style: TextStyle(color: theme.colorScheme.onSurfaceVariant))
+          ? Text(
+              '该评论已被删除',
+              style: TextStyle(color: theme.colorScheme.onSurfaceVariant),
+            )
           : BBCodeWidget(
               bbcode: content,
               textScaler: MediaQuery.textScalerOf(context),
@@ -223,18 +230,20 @@ class UserCommentsCardBone extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Row(children: [
-              Bone.circle(size: 44),
-              SizedBox(width: 12),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Bone.text(width: 96),
-                  SizedBox(height: 2),
-                  Bone.text(width: 64, fontSize: 11),
-                ],
-              ),
-            ]),
+            Row(
+              children: [
+                Bone.circle(size: 44),
+                SizedBox(width: 12),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Bone.text(width: 96),
+                    SizedBox(height: 2),
+                    Bone.text(width: 64, fontSize: 11),
+                  ],
+                ),
+              ],
+            ),
             SizedBox(height: 16),
             Bone.multiText(lines: 2),
           ],
@@ -266,13 +275,13 @@ class _CommentSurface extends StatelessWidget {
 typedef _CommentData = ({User user, String content, int createdAt});
 
 _CommentData _fromEpisode(EpisodeComment comment) => (
-      user: comment.user,
-      content: comment.comment,
-      createdAt: comment.createdAt,
-    );
+  user: comment.user,
+  content: comment.comment,
+  createdAt: comment.createdAt,
+);
 
 _CommentData _fromCharacter(CharacterComment comment) => (
-      user: comment.user,
-      content: comment.comment,
-      createdAt: comment.createdAt,
-    );
+  user: comment.user,
+  content: comment.comment,
+  createdAt: comment.createdAt,
+);

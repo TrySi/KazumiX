@@ -68,11 +68,7 @@ void main() {
   ) async {
     await tester.pumpWidget(
       wrap(
-        listWith(
-          enabled: false,
-          header: const Text('不可用原因'),
-          onToggle: () {},
-        ),
+        listWith(enabled: false, header: const Text('不可用原因'), onToggle: () {}),
       ),
     );
 
@@ -80,10 +76,7 @@ void main() {
     // The header is rendered outside the dimmed subtree, so its reason is
     // still legible.
     expect(
-      find.ancestor(
-        of: find.text('不可用原因'),
-        matching: find.byType(Opacity),
-      ),
+      find.ancestor(of: find.text('不可用原因'), matching: find.byType(Opacity)),
       findsNothing,
     );
   });

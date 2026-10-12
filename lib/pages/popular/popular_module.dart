@@ -8,9 +8,8 @@ final popularModule = createModule(
     c.route(
       '/',
       transition: TransitionType.none,
-      child: (context, state) => PopularPage(
-        controller: inject<PopularController>(),
-      ),
+      child: (context, state) =>
+          PopularPage(controller: inject<PopularController>()),
     );
   },
 );

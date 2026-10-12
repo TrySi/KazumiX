@@ -10,8 +10,9 @@ class AsyncRateLimiter {
   /// Waits until the next allowed time slot and reserves the following slot.
   Future<void> acquire() async {
     final now = DateTime.now();
-    final scheduledTime =
-        _nextAllowedTime.isAfter(now) ? _nextAllowedTime : now;
+    final scheduledTime = _nextAllowedTime.isAfter(now)
+        ? _nextAllowedTime
+        : now;
     _nextAllowedTime = scheduledTime.add(period);
     final waitDuration = scheduledTime.difference(now);
     if (waitDuration > Duration.zero) {

@@ -54,7 +54,8 @@ class KazumiDialog {
       throw StateError('A dialog handle can only be used once.');
     }
     try {
-      final ctx = context ??
+      final ctx =
+          context ??
           rootNavigatorKey.currentContext ??
           observer.navigator?.context;
       if (ctx == null || !ctx.mounted || dialog._dismissed) return null;
@@ -63,7 +64,8 @@ class KazumiDialog {
         context: ctx,
         builder: builder,
         themes: InheritedTheme.capture(from: ctx, to: navigator.context),
-        barrierColor: DialogTheme.of(ctx).barrierColor ??
+        barrierColor:
+            DialogTheme.of(ctx).barrierColor ??
             Theme.of(ctx).dialogTheme.barrierColor ??
             Colors.black54,
         barrierDismissible: clickMaskDismiss,
@@ -95,8 +97,9 @@ class KazumiDialog {
   }) {
     final messenger = _resolveScaffoldMessenger(context);
     if (messenger != null && messenger.mounted) {
-      final toastContext =
-          context != null && context.mounted ? context : messenger.context;
+      final toastContext = context != null && context.mounted
+          ? context
+          : messenger.context;
       try {
         _toastRevision++;
         messenger
@@ -105,7 +108,8 @@ class KazumiDialog {
             SnackBar(
               content: Text(message),
               behavior: SnackBarBehavior.floating,
-              width: MediaQuery.sizeOf(toastContext).width >
+              width:
+                  MediaQuery.sizeOf(toastContext).width >
                       LayoutBreakpoint.medium['width']!
                   ? 600
                   : null,
@@ -129,14 +133,16 @@ class KazumiDialog {
       }
     } else {
       debugPrint(
-          'Kazumi Dialog Error: No ScaffoldMessenger available to show Toast');
+        'Kazumi Dialog Error: No ScaffoldMessenger available to show Toast',
+      );
     }
   }
 
   static void dismiss<T>({BuildContext? context, T? popWith}) {
     if (context != null && !context.mounted) return;
-    final route =
-        context == null ? observer._lastDialogRoute : ModalRoute.of(context);
+    final route = context == null
+        ? observer._lastDialogRoute
+        : ModalRoute.of(context);
     if (route != null && route.settings.name == routeSettings.name) {
       _dismissRoute(route, popWith);
     }

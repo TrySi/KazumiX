@@ -62,10 +62,10 @@ class _PlayerPanelHoldFocusRegionState
 
   @override
   Widget build(BuildContext context) => Focus(
-        canRequestFocus: false,
-        onFocusChange: _onFocusChange,
-        child: widget.child,
-      );
+    canRequestFocus: false,
+    onFocusChange: _onFocusChange,
+    child: widget.child,
+  );
 }
 
 /// Release hover holds when their controls unmount.

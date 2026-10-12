@@ -3,10 +3,7 @@ import 'package:flutter/material.dart';
 enum ExitDialogAction { exit, minimizeToTray }
 
 class ExitDialogResult {
-  const ExitDialogResult({
-    required this.action,
-    required this.rememberChoice,
-  });
+  const ExitDialogResult({required this.action, required this.rememberChoice});
 
   final ExitDialogAction action;
   final bool rememberChoice;
@@ -152,12 +149,10 @@ class _ExitConfirmationDialogState extends State<ExitConfirmationDialog> {
           onPressed: () => Navigator.of(context).pop(
             ExitDialogResult(action: _action, rememberChoice: _rememberChoice),
           ),
-          child: Text(
-            switch (_action) {
-              ExitDialogAction.minimizeToTray => '最小化至托盘',
-              ExitDialogAction.exit => '退出',
-            },
-          ),
+          child: Text(switch (_action) {
+            ExitDialogAction.minimizeToTray => '最小化至托盘',
+            ExitDialogAction.exit => '退出',
+          }),
         ),
       ],
     );
@@ -171,19 +166,20 @@ class _ExitConfirmationDialogState extends State<ExitConfirmationDialog> {
     final colors = theme.colorScheme;
     final (icon, title, description) = switch (action) {
       ExitDialogAction.minimizeToTray => (
-          Icons.minimize_rounded,
-          '最小化至托盘',
-          '隐藏窗口，继续在后台运行',
-        ),
+        Icons.minimize_rounded,
+        '最小化至托盘',
+        '隐藏窗口，继续在后台运行',
+      ),
       ExitDialogAction.exit => (
-          Icons.power_settings_new_rounded,
-          '退出 Kazumi',
-          '结束运行并关闭应用',
-        ),
+        Icons.power_settings_new_rounded,
+        '退出 Kazumi',
+        '结束运行并关闭应用',
+      ),
     };
     final selected = _action == action;
-    final foreground =
-        selected ? colors.onSecondaryContainer : colors.onSurface;
+    final foreground = selected
+        ? colors.onSecondaryContainer
+        : colors.onSurface;
 
     return Material(
       color: selected ? colors.secondaryContainer : colors.surfaceContainerLow,

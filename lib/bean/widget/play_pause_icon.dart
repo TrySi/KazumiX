@@ -5,8 +5,12 @@ class PlayPauseIcon extends StatefulWidget {
   final double iconSize;
   final Color? iconColor;
 
-  const PlayPauseIcon(
-      {super.key, required this.playing, this.iconSize = 25, this.iconColor});
+  const PlayPauseIcon({
+    super.key,
+    required this.playing,
+    this.iconSize = 25,
+    this.iconColor,
+  });
 
   @override
   State<PlayPauseIcon> createState() => _PlayPauseIconState();

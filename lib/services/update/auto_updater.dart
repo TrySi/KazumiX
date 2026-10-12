@@ -55,7 +55,9 @@ class UpdateInfo {
 }
 
 Map<String, dynamic>? getUpdateAssetForType(
-    List<dynamic> assets, InstallationType type) {
+  List<dynamic> assets,
+  InstallationType type,
+) {
   final patterns = getUpdateFilePatterns(type).map((p) => p.toLowerCase());
 
   try {
@@ -220,8 +222,9 @@ class AutoUpdater {
                   Container(
                     padding: const EdgeInsets.all(8),
                     decoration: BoxDecoration(
-                      color:
-                          Theme.of(context).colorScheme.surfaceContainerHighest,
+                      color: Theme.of(
+                        context,
+                      ).colorScheme.surfaceContainerHighest,
                       borderRadius: BorderRadius.circular(4),
                     ),
                     child: Column(
@@ -245,7 +248,9 @@ class AutoUpdater {
                                 },
                                 child: Container(
                                   padding: const EdgeInsets.symmetric(
-                                      horizontal: 12, vertical: 8),
+                                    horizontal: 12,
+                                    vertical: 8,
+                                  ),
                                   decoration: BoxDecoration(
                                     border: Border.all(
                                       color: Theme.of(context)
@@ -260,25 +265,25 @@ class AutoUpdater {
                                       Icon(
                                         Icons.download,
                                         size: 16,
-                                        color: Theme.of(context)
-                                            .colorScheme
-                                            .primary,
+                                        color: Theme.of(
+                                          context,
+                                        ).colorScheme.primary,
                                       ),
                                       const SizedBox(width: 8),
                                       Expanded(
                                         child: Text(
                                           _getInstallationTypeDescription(type),
-                                          style: Theme.of(context)
-                                              .textTheme
-                                              .bodySmall,
+                                          style: Theme.of(
+                                            context,
+                                          ).textTheme.bodySmall,
                                         ),
                                       ),
                                       Icon(
                                         Icons.arrow_forward_ios,
                                         size: 12,
-                                        color: Theme.of(context)
-                                            .colorScheme
-                                            .outline,
+                                        color: Theme.of(
+                                          context,
+                                        ).colorScheme.outline,
                                       ),
                                     ],
                                   ),
@@ -304,8 +309,9 @@ class AutoUpdater {
                 },
                 child: Text(
                   '关闭自动更新',
-                  style:
-                      TextStyle(color: Theme.of(context).colorScheme.outline),
+                  style: TextStyle(
+                    color: Theme.of(context).colorScheme.outline,
+                  ),
                 ),
               ),
             TextButton(
@@ -318,8 +324,10 @@ class AutoUpdater {
             if (updateInfo.releaseNotes.isNotEmpty)
               TextButton(
                 onPressed: () {
-                  launchUrl(Uri.parse(updateInfo.releaseNotes),
-                      mode: LaunchMode.externalApplication);
+                  launchUrl(
+                    Uri.parse(updateInfo.releaseNotes),
+                    mode: LaunchMode.externalApplication,
+                  );
                 },
                 child: const Text('查看详情'),
               ),
@@ -328,7 +336,9 @@ class AutoUpdater {
                 KazumiDialog.dismiss();
                 if (updateInfo.availableInstallationTypes.isNotEmpty) {
                   _downloadUpdateWithType(
-                      updateInfo, updateInfo.availableInstallationTypes.first);
+                    updateInfo,
+                    updateInfo.availableInstallationTypes.first,
+                  );
                 }
               },
               child: const Text('立即更新'),
@@ -361,7 +371,9 @@ class AutoUpdater {
   }
 
   Future<void> _downloadUpdateWithType(
-      UpdateInfo updateInfo, InstallationType selectedType) async {
+    UpdateInfo updateInfo,
+    InstallationType selectedType,
+  ) async {
     try {
       if (selectedType == InstallationType.ios ||
           selectedType == InstallationType.linuxDeb ||
@@ -378,8 +390,9 @@ class AutoUpdater {
       final downloadUrl = getUpdateDownloadUrlFromAsset(asset);
       if (asset == null || downloadUrl.isEmpty) {
         KazumiDialog.showToast(
-            message:
-                '没有找到 ${_getInstallationTypeDescription(selectedType)} 的下载链接');
+          message:
+              '没有找到 ${_getInstallationTypeDescription(selectedType)} 的下载链接',
+        );
         return;
       }
 
@@ -403,94 +416,103 @@ class AutoUpdater {
   }
 
   Future<void> _downloadUpdate(
-      UpdateInfo updateInfo, String expectedHash) async {
+    UpdateInfo updateInfo,
+    String expectedHash,
+  ) async {
     if (_downloadDialogs.isRunning) return;
-    await _downloadDialogs.run((task) async {
-      _downloadProgress.value = 0;
-      final cancelToken = CancelToken();
-      final downloadPath = await task.loading(
-        action: () => _downloadFile(updateInfo.downloadUrl, updateInfo.version,
-            expectedHash, cancelToken),
-        onCancel: cancelToken.cancel,
-        builder: (context) {
-          return AlertDialog(
-            title: const Text('正在下载更新'),
-            content: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                ValueListenableBuilder<double>(
-                  valueListenable: _downloadProgress,
-                  builder: (context, value, child) {
-                    return Column(
-                      children: [
-                        LinearProgressIndicator(value: value),
-                        const SizedBox(height: 8),
-                        Text('${(value * 100).toStringAsFixed(1)}%'),
-                      ],
-                    );
+    await _downloadDialogs.run(
+      (task) async {
+        _downloadProgress.value = 0;
+        final cancelToken = CancelToken();
+        final downloadPath = await task.loading(
+          action: () => _downloadFile(
+            updateInfo.downloadUrl,
+            updateInfo.version,
+            expectedHash,
+            cancelToken,
+          ),
+          onCancel: cancelToken.cancel,
+          builder: (context) {
+            return AlertDialog(
+              title: const Text('正在下载更新'),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  ValueListenableBuilder<double>(
+                    valueListenable: _downloadProgress,
+                    builder: (context, value, child) {
+                      return Column(
+                        children: [
+                          LinearProgressIndicator(value: value),
+                          const SizedBox(height: 8),
+                          Text('${(value * 100).toStringAsFixed(1)}%'),
+                        ],
+                      );
+                    },
+                  ),
+                ],
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => KazumiDialog.dismiss(context: context),
+                  child: const Text('取消'),
+                ),
+              ],
+            );
+          },
+        );
+
+        _showDownloadCompleteDialog(downloadPath, updateInfo);
+      },
+      onError: (e, _) {
+        String errorMessage = '下载失败';
+        if (e.toString().contains('Permission denied') ||
+            e.toString().contains('Operation not permitted')) {
+          errorMessage = '权限不足，文件已保存到应用临时目录';
+        } else if (e.toString().contains('No space left')) {
+          errorMessage = '磁盘空间不足';
+        } else if (e.toString().contains('Network')) {
+          errorMessage = '网络连接错误';
+        } else if (e.toString().contains('文件完整性验证失败')) {
+          errorMessage = '文件完整性验证失败，可能是网络传输错误';
+        }
+
+        KazumiDialog.show(
+          builder: (context) {
+            return AlertDialog(
+              title: const Text('下载失败'),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(errorMessage),
+                  const SizedBox(height: 8),
+                  Text(
+                    '错误详情: ${e.toString()}',
+                    style: Theme.of(context).textTheme.bodySmall,
+                  ),
+                ],
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => KazumiDialog.dismiss(context: context),
+                  child: const Text('确定'),
+                ),
+                TextButton(
+                  onPressed: () {
+                    KazumiDialog.dismiss(context: context);
+                    _downloadUpdate(updateInfo, expectedHash);
                   },
+                  child: const Text('重试'),
                 ),
               ],
-            ),
-            actions: [
-              TextButton(
-                onPressed: () => KazumiDialog.dismiss(context: context),
-                child: const Text('取消'),
-              ),
-            ],
-          );
-        },
-      );
+            );
+          },
+        );
 
-      _showDownloadCompleteDialog(downloadPath, updateInfo);
-    }, onError: (e, _) {
-      String errorMessage = '下载失败';
-      if (e.toString().contains('Permission denied') ||
-          e.toString().contains('Operation not permitted')) {
-        errorMessage = '权限不足，文件已保存到应用临时目录';
-      } else if (e.toString().contains('No space left')) {
-        errorMessage = '磁盘空间不足';
-      } else if (e.toString().contains('Network')) {
-        errorMessage = '网络连接错误';
-      } else if (e.toString().contains('文件完整性验证失败')) {
-        errorMessage = '文件完整性验证失败，可能是网络传输错误';
-      }
-
-      KazumiDialog.show(
-        builder: (context) {
-          return AlertDialog(
-            title: const Text('下载失败'),
-            content: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(errorMessage),
-                const SizedBox(height: 8),
-                Text(
-                  '错误详情: ${e.toString()}',
-                  style: Theme.of(context).textTheme.bodySmall,
-                ),
-              ],
-            ),
-            actions: [
-              TextButton(
-                onPressed: () => KazumiDialog.dismiss(context: context),
-                child: const Text('确定'),
-              ),
-              TextButton(
-                onPressed: () {
-                  KazumiDialog.dismiss(context: context);
-                  _downloadUpdate(updateInfo, expectedHash);
-                },
-                child: const Text('重试'),
-              ),
-            ],
-          );
-        },
-      );
-
-      KazumiLogger().e('Update: download update failed', error: e);
-    });
+        KazumiLogger().e('Update: download update failed', error: e);
+      },
+    );
   }
 
   final ValueNotifier<double> _downloadProgress = ValueNotifier(0.0);
@@ -513,9 +535,7 @@ class AutoUpdater {
                     size: 20,
                   ),
                   const SizedBox(width: 8),
-                  Expanded(
-                    child: Text('新版本 ${updateInfo.version} 已下载完成'),
-                  ),
+                  Expanded(child: Text('新版本 ${updateInfo.version} 已下载完成')),
                 ],
               ),
               const SizedBox(height: 12),
@@ -543,9 +563,9 @@ class AutoUpdater {
                     const SizedBox(height: 4),
                     SelectableText(
                       filePath,
-                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                            fontFamily: 'monospace',
-                          ),
+                      style: Theme.of(
+                        context,
+                      ).textTheme.bodySmall?.copyWith(fontFamily: 'monospace'),
                     ),
                   ],
                 ),
@@ -572,7 +592,9 @@ class AutoUpdater {
               onPressed: () {
                 KazumiDialog.dismiss();
                 _installUpdate(
-                    filePath, updateInfo.recommendedInstallationType);
+                  filePath,
+                  updateInfo.recommendedInstallationType,
+                );
               },
               child: const Text('立即安装'),
             ),
@@ -582,8 +604,12 @@ class AutoUpdater {
     );
   }
 
-  Future<String> _downloadFile(String url, String version, String expectedHash,
-      CancelToken cancelToken) async {
+  Future<String> _downloadFile(
+    String url,
+    String version,
+    String expectedHash,
+    CancelToken cancelToken,
+  ) async {
     // Dio cancellation does not cover filesystem preparation or hash checks.
     void checkCancelled() {
       if (cancelToken.isCancelled) throw cancelToken.cancelError!;
@@ -601,19 +627,22 @@ class AutoUpdater {
         checkCancelled();
         if (localHash == expectedHash) {
           KazumiLogger().i(
-              'Update: file already exists and hash verified, skipping download: $filePath');
+            'Update: file already exists and hash verified, skipping download: $filePath',
+          );
           _downloadProgress.value = 1.0;
           return filePath;
         } else {
           KazumiLogger().i(
-              'Update: file hash mismatch detected (local: $localHash, expected: $expectedHash), deleting and re-downloading');
+            'Update: file hash mismatch detected (local: $localHash, expected: $expectedHash), deleting and re-downloading',
+          );
           await file.delete();
         }
       } catch (e) {
         checkCancelled();
         KazumiLogger().w(
-            'Update: file verification failed, deleting and re-downloading',
-            error: e);
+          'Update: file verification failed, deleting and re-downloading',
+          error: e,
+        );
         if (await file.exists()) {
           await file.delete();
         }
@@ -644,7 +673,9 @@ class AutoUpdater {
   }
 
   void _installUpdate(
-      String filePath, InstallationType installationType) async {
+    String filePath,
+    InstallationType installationType,
+  ) async {
     try {
       KazumiDialog.showToast(message: '准备安装更新，应用即将退出...');
 
@@ -699,9 +730,9 @@ class AutoUpdater {
           final arg = '/select,${filePath.replaceAll('/', r'\')}';
           await Process.start('explorer.exe', [arg], runInShell: true);
         } else {
-          await Process.start(
-              'explorer.exe', [targetDirOrFile.replaceAll('/', r'\')],
-              runInShell: true);
+          await Process.start('explorer.exe', [
+            targetDirOrFile.replaceAll('/', r'\'),
+          ], runInShell: true);
         }
       } else if (Platform.isMacOS) {
         if (type == FileSystemEntityType.file) {

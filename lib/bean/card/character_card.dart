@@ -5,19 +5,14 @@ import 'package:kazumi/modules/characters/character_item.dart';
 import 'package:kazumi/pages/info/character_page.dart';
 
 class CharacterCard extends StatelessWidget {
-  const CharacterCard({
-    super.key,
-    required this.characterItem,
-  });
+  const CharacterCard({super.key, required this.characterItem});
 
   final CharacterItem characterItem;
 
   @override
   Widget build(BuildContext context) {
     return ListTile(
-      leading: BangumiAvatar(
-        imageUrl: characterItem.avator.grid,
-      ),
+      leading: BangumiAvatar(imageUrl: characterItem.avator.grid),
       title: Text(
         characterItem.name,
         overflow: TextOverflow.ellipsis,

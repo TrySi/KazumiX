@@ -71,11 +71,7 @@ class _ProxyEditorPageState extends State<ProxyEditorPage> {
           enableLog: false,
         ),
       );
-      await dio
-          .get(
-            testUrl,
-          )
-          .timeout(const Duration(seconds: 15));
+      await dio.get(testUrl).timeout(const Duration(seconds: 15));
       await GStorage.putSetting(SettingsKeys.proxyConfigured, true);
       KazumiDialog.showToast(message: '测试成功');
     } catch (e) {

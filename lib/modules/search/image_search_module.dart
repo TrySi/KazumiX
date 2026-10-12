@@ -14,16 +14,16 @@ class ImageSearchItem {
       result: json['result'] == null
           ? null
           : (json['result'] as List)
-              .map((e) => ResultItem.fromJson(e as Map<String, dynamic>))
-              .toList(),
+                .map((e) => ResultItem.fromJson(e as Map<String, dynamic>))
+                .toList(),
     );
   }
 
   Map<String, dynamic> toJson() => {
-        'frameCount': frameCount,
-        'error': error,
-        'result': result?.map((e) => e.toJson()).toList(),
-      };
+    'frameCount': frameCount,
+    'error': error,
+    'result': result?.map((e) => e.toJson()).toList(),
+  };
 
   @override
   String toString() => jsonEncode(toJson());
@@ -79,17 +79,17 @@ class ResultItem {
   }
 
   Map<String, dynamic> toJson() => {
-        'anilist': anilist?.toJson(),
-        'filename': filename,
-        'episode': episode,
-        'from': from,
-        'at': at,
-        'to': to,
-        'duration': duration,
-        'similarity': similarity,
-        'video': video,
-        'image': image,
-      };
+    'anilist': anilist?.toJson(),
+    'filename': filename,
+    'episode': episode,
+    'from': from,
+    'at': at,
+    'to': to,
+    'duration': duration,
+    'similarity': similarity,
+    'video': video,
+    'image': image,
+  };
 }
 
 class Anilist {
@@ -193,8 +193,8 @@ class Anilist {
       externalLinks: json['externalLinks'] == null
           ? null
           : (json['externalLinks'] as List)
-              .map((e) => ExternalLink.fromJson(e as Map<String, dynamic>))
-              .toList(),
+                .map((e) => ExternalLink.fromJson(e as Map<String, dynamic>))
+                .toList(),
       countryOfOrigin: json['countryOfOrigin'] as String?,
       synonymsChinese: json['synonyms_chinese'] == null
           ? null
@@ -203,33 +203,33 @@ class Anilist {
   }
 
   Map<String, dynamic> toJson() => {
-        'id': id,
-        'type': type,
-        'idMal': idMal,
-        'title': title?.toJson(),
-        'format': format,
-        'genres': genres,
-        'season': season,
-        'source': source,
-        'status': status,
-        'endDate': endDate?.toJson(),
-        'startDate': startDate?.toJson(),
-        'isAdult': isAdult,
-        'siteUrl': siteUrl,
-        'studios': studios?.toJson(),
-        'duration': duration,
-        'episodes': episodes,
-        'synonyms': synonyms,
-        'relations': relations?.toJson(),
-        'seasonInt': seasonInt,
-        'coverImage': coverImage?.toJson(),
-        'popularity': popularity,
-        'seasonYear': seasonYear,
-        'bannerImage': bannerImage,
-        'externalLinks': externalLinks?.map((e) => e.toJson()).toList(),
-        'countryOfOrigin': countryOfOrigin,
-        'synonyms_chinese': synonymsChinese,
-      };
+    'id': id,
+    'type': type,
+    'idMal': idMal,
+    'title': title?.toJson(),
+    'format': format,
+    'genres': genres,
+    'season': season,
+    'source': source,
+    'status': status,
+    'endDate': endDate?.toJson(),
+    'startDate': startDate?.toJson(),
+    'isAdult': isAdult,
+    'siteUrl': siteUrl,
+    'studios': studios?.toJson(),
+    'duration': duration,
+    'episodes': episodes,
+    'synonyms': synonyms,
+    'relations': relations?.toJson(),
+    'seasonInt': seasonInt,
+    'coverImage': coverImage?.toJson(),
+    'popularity': popularity,
+    'seasonYear': seasonYear,
+    'bannerImage': bannerImage,
+    'externalLinks': externalLinks?.map((e) => e.toJson()).toList(),
+    'countryOfOrigin': countryOfOrigin,
+    'synonyms_chinese': synonymsChinese,
+  };
 }
 
 class AnilistTitle {
@@ -241,18 +241,18 @@ class AnilistTitle {
   AnilistTitle({this.native, this.romaji, this.chinese, this.english});
 
   factory AnilistTitle.fromJson(Map<String, dynamic> json) => AnilistTitle(
-        native: json['native'] as String?,
-        romaji: json['romaji'] as String?,
-        chinese: json['chinese'] as String?,
-        english: json['english'] as String?,
-      );
+    native: json['native'] as String?,
+    romaji: json['romaji'] as String?,
+    chinese: json['chinese'] as String?,
+    english: json['english'] as String?,
+  );
 
   Map<String, dynamic> toJson() => {
-        'native': native,
-        'romaji': romaji,
-        'chinese': chinese,
-        'english': english,
-      };
+    'native': native,
+    'romaji': romaji,
+    'chinese': chinese,
+    'english': english,
+  };
 }
 
 class DateInfo {
@@ -263,10 +263,10 @@ class DateInfo {
   DateInfo({this.day, this.year, this.month});
 
   factory DateInfo.fromJson(Map<String, dynamic> json) => DateInfo(
-        day: json['day'] as int?,
-        year: json['year'] as int?,
-        month: json['month'] as int?,
-      );
+    day: json['day'] as int?,
+    year: json['year'] as int?,
+    month: json['month'] as int?,
+  );
 
   Map<String, dynamic> toJson() => {'day': day, 'year': year, 'month': month};
 }
@@ -280,18 +280,18 @@ class CoverImage {
   CoverImage({this.color, this.large, this.medium, this.extraLarge});
 
   factory CoverImage.fromJson(Map<String, dynamic> json) => CoverImage(
-        color: json['color'] as String?,
-        large: json['large'] as String?,
-        medium: json['medium'] as String?,
-        extraLarge: json['extraLarge'] as String?,
-      );
+    color: json['color'] as String?,
+    large: json['large'] as String?,
+    medium: json['medium'] as String?,
+    extraLarge: json['extraLarge'] as String?,
+  );
 
   Map<String, dynamic> toJson() => {
-        'color': color,
-        'large': large,
-        'medium': medium,
-        'extraLarge': extraLarge
-      };
+    'color': color,
+    'large': large,
+    'medium': medium,
+    'extraLarge': extraLarge,
+  };
 }
 
 class Studios {
@@ -300,15 +300,16 @@ class Studios {
   Studios({this.edges});
 
   factory Studios.fromJson(Map<String, dynamic> json) => Studios(
-        edges: json['edges'] == null
-            ? null
-            : (json['edges'] as List)
-                .map((e) => StudioEdge.fromJson(e as Map<String, dynamic>))
-                .toList(),
-      );
+    edges: json['edges'] == null
+        ? null
+        : (json['edges'] as List)
+              .map((e) => StudioEdge.fromJson(e as Map<String, dynamic>))
+              .toList(),
+  );
 
-  Map<String, dynamic> toJson() =>
-      {'edges': edges?.map((e) => e.toJson()).toList()};
+  Map<String, dynamic> toJson() => {
+    'edges': edges?.map((e) => e.toJson()).toList(),
+  };
 }
 
 class StudioEdge {
@@ -318,11 +319,11 @@ class StudioEdge {
   StudioEdge({this.node, this.isMain});
 
   factory StudioEdge.fromJson(Map<String, dynamic> json) => StudioEdge(
-        node: json['node'] == null
-            ? null
-            : StudioNode.fromJson(json['node'] as Map<String, dynamic>),
-        isMain: json['isMain'] as bool?,
-      );
+    node: json['node'] == null
+        ? null
+        : StudioNode.fromJson(json['node'] as Map<String, dynamic>),
+    isMain: json['isMain'] as bool?,
+  );
 
   Map<String, dynamic> toJson() => {'node': node?.toJson(), 'isMain': isMain};
 }
@@ -335,10 +336,10 @@ class StudioNode {
   StudioNode({this.id, this.name, this.siteUrl});
 
   factory StudioNode.fromJson(Map<String, dynamic> json) => StudioNode(
-        id: json['id'] as int?,
-        name: json['name'] as String?,
-        siteUrl: json['siteUrl'] as String?,
-      );
+    id: json['id'] as int?,
+    name: json['name'] as String?,
+    siteUrl: json['siteUrl'] as String?,
+  );
 
   Map<String, dynamic> toJson() => {'id': id, 'name': name, 'siteUrl': siteUrl};
 }
@@ -349,15 +350,16 @@ class Relations {
   Relations({this.edges});
 
   factory Relations.fromJson(Map<String, dynamic> json) => Relations(
-        edges: json['edges'] == null
-            ? null
-            : (json['edges'] as List)
-                .map((e) => RelationEdge.fromJson(e as Map<String, dynamic>))
-                .toList(),
-      );
+    edges: json['edges'] == null
+        ? null
+        : (json['edges'] as List)
+              .map((e) => RelationEdge.fromJson(e as Map<String, dynamic>))
+              .toList(),
+  );
 
-  Map<String, dynamic> toJson() =>
-      {'edges': edges?.map((e) => e.toJson()).toList()};
+  Map<String, dynamic> toJson() => {
+    'edges': edges?.map((e) => e.toJson()).toList(),
+  };
 }
 
 class RelationEdge {
@@ -367,14 +369,16 @@ class RelationEdge {
   RelationEdge({this.node, this.relationType});
 
   factory RelationEdge.fromJson(Map<String, dynamic> json) => RelationEdge(
-        node: json['node'] == null
-            ? null
-            : RelationNode.fromJson(json['node'] as Map<String, dynamic>),
-        relationType: json['relationType'] as String?,
-      );
+    node: json['node'] == null
+        ? null
+        : RelationNode.fromJson(json['node'] as Map<String, dynamic>),
+    relationType: json['relationType'] as String?,
+  );
 
-  Map<String, dynamic> toJson() =>
-      {'node': node?.toJson(), 'relationType': relationType};
+  Map<String, dynamic> toJson() => {
+    'node': node?.toJson(),
+    'relationType': relationType,
+  };
 }
 
 class RelationNode {
@@ -384,11 +388,11 @@ class RelationNode {
   RelationNode({this.id, this.title});
 
   factory RelationNode.fromJson(Map<String, dynamic> json) => RelationNode(
-        id: json['id'] as int?,
-        title: json['title'] == null
-            ? null
-            : AnilistTitle.fromJson(json['title'] as Map<String, dynamic>),
-      );
+    id: json['id'] as int?,
+    title: json['title'] == null
+        ? null
+        : AnilistTitle.fromJson(json['title'] as Map<String, dynamic>),
+  );
 
   Map<String, dynamic> toJson() => {'id': id, 'title': title?.toJson()};
 }
@@ -401,10 +405,10 @@ class ExternalLink {
   ExternalLink({this.id, this.url, this.site});
 
   factory ExternalLink.fromJson(Map<String, dynamic> json) => ExternalLink(
-        id: json['id'] as int?,
-        url: json['url'] as String?,
-        site: json['site'] as String?,
-      );
+    id: json['id'] as int?,
+    url: json['url'] as String?,
+    site: json['site'] as String?,
+  );
 
   Map<String, dynamic> toJson() => {'id': id, 'url': url, 'site': site};
 }

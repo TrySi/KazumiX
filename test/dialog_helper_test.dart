@@ -7,49 +7,60 @@ import 'package:kazumi/navigation.dart';
 import 'package:kazumi/services/player/timed_shutdown_service.dart';
 
 Future<void> mountApp(WidgetTester tester) async {
-  await tester.pumpWidget(MaterialApp(
-    navigatorKey: rootNavigatorKey,
-    scaffoldMessengerKey: rootScaffoldMessengerKey,
-    navigatorObservers: [KazumiDialog.observer],
-    home: const Scaffold(body: Text('home')),
-  ));
+  await tester.pumpWidget(
+    MaterialApp(
+      navigatorKey: rootNavigatorKey,
+      scaffoldMessengerKey: rootScaffoldMessengerKey,
+      navigatorObservers: [KazumiDialog.observer],
+      home: const Scaffold(body: Text('home')),
+    ),
+  );
   await tester.pumpAndSettle();
 }
 
 Future<void> pushPage(WidgetTester tester) async {
-  unawaited(rootNavigatorKey.currentState!.push<void>(MaterialPageRoute(
-    builder: (_) => const Scaffold(body: Text('new page')),
-  )));
+  unawaited(
+    rootNavigatorKey.currentState!.push<void>(
+      MaterialPageRoute(builder: (_) => const Scaffold(body: Text('new page'))),
+    ),
+  );
   await tester.pumpAndSettle();
 }
 
 void main() {
-  testWidgets('observer navigation and scoped toasts work without global keys',
-      (tester) async {
-    late BuildContext pageContext;
-    await tester.pumpWidget(MaterialApp(
-      navigatorObservers: [KazumiDialog.observer],
-      home: Builder(builder: (context) {
-        pageContext = context;
-        return const Scaffold(body: Text('home'));
-      }),
-    ));
-    await tester.pumpAndSettle();
-    final result = KazumiDialog.show<bool>(
-      builder: (_) => const AlertDialog(title: Text('operation')),
-    );
-    await tester.pumpAndSettle();
-    expect(find.text('operation'), findsOneWidget);
-    KazumiDialog.dismiss(popWith: true);
-    await tester.pumpAndSettle();
-    expect(await result, isTrue);
-    KazumiDialog.showToast(context: pageContext, message: 'scoped result');
-    await tester.pumpAndSettle();
-    expect(find.text('scoped result'), findsOneWidget);
-  });
+  testWidgets(
+    'observer navigation and scoped toasts work without global keys',
+    (tester) async {
+      late BuildContext pageContext;
+      await tester.pumpWidget(
+        MaterialApp(
+          navigatorObservers: [KazumiDialog.observer],
+          home: Builder(
+            builder: (context) {
+              pageContext = context;
+              return const Scaffold(body: Text('home'));
+            },
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      final result = KazumiDialog.show<bool>(
+        builder: (_) => const AlertDialog(title: Text('operation')),
+      );
+      await tester.pumpAndSettle();
+      expect(find.text('operation'), findsOneWidget);
+      KazumiDialog.dismiss(popWith: true);
+      await tester.pumpAndSettle();
+      expect(await result, isTrue);
+      KazumiDialog.showToast(context: pageContext, message: 'scoped result');
+      await tester.pumpAndSettle();
+      expect(find.text('scoped result'), findsOneWidget);
+    },
+  );
 
-  testWidgets('dismiss removes the tracked dialog beneath a newer page',
-      (tester) async {
+  testWidgets('dismiss removes the tracked dialog beneath a newer page', (
+    tester,
+  ) async {
     await mountApp(tester);
     final result = KazumiDialog.show<bool>(
       builder: (_) => const AlertDialog(title: Text('operation')),
@@ -67,8 +78,9 @@ void main() {
     await tester.pumpAndSettle();
   });
 
-  testWidgets('handles preserve another dialog and return the correct type',
-      (tester) async {
+  testWidgets('handles preserve another dialog and return the correct type', (
+    tester,
+  ) async {
     await mountApp(tester);
     final first = KazumiDialogHandle<bool>();
     final firstResult = KazumiDialog.show<bool>(
@@ -95,8 +107,9 @@ void main() {
     expect(await secondResult, 42);
   });
 
-  testWidgets('a dialog can finish before its builder is first called',
-      (tester) async {
+  testWidgets('a dialog can finish before its builder is first called', (
+    tester,
+  ) async {
     await mountApp(tester);
     final dialog = KazumiDialogHandle<int>();
     final result = KazumiDialog.show<int>(
@@ -111,14 +124,17 @@ void main() {
     expect(find.text('fast operation'), findsNothing);
   });
 
-  testWidgets('context dismissal targets its own dialog beneath another',
-      (tester) async {
+  testWidgets('context dismissal targets its own dialog beneath another', (
+    tester,
+  ) async {
     await mountApp(tester);
     late BuildContext firstContext;
-    final first = KazumiDialog.show<bool>(builder: (context) {
-      firstContext = context;
-      return const AlertDialog(title: Text('first'));
-    });
+    final first = KazumiDialog.show<bool>(
+      builder: (context) {
+        firstContext = context;
+        return const AlertDialog(title: Text('first'));
+      },
+    );
     await tester.pumpAndSettle();
     final second = KazumiDialogHandle<int>();
     final secondResult = KazumiDialog.show<int>(
@@ -135,8 +151,9 @@ void main() {
     await secondResult;
   });
 
-  testWidgets('back invalidates a handle immediately and awaits cleanup once',
-      (tester) async {
+  testWidgets('back invalidates a handle immediately and awaits cleanup once', (
+    tester,
+  ) async {
     await mountApp(tester);
     final dialog = KazumiDialogHandle<void>();
     final cleanup = Completer<void>();
@@ -163,8 +180,9 @@ void main() {
     expect(cleanupCalls, 1);
   });
 
-  testWidgets('reusing an active handle does not orphan the first dialog',
-      (tester) async {
+  testWidgets('reusing an active handle does not orphan the first dialog', (
+    tester,
+  ) async {
     await mountApp(tester);
     final dialog = KazumiDialogHandle<void>();
     final result = KazumiDialog.show<void>(
@@ -182,8 +200,9 @@ void main() {
     await result;
   });
 
-  testWidgets('a toast posted after closing a dialog remains visible',
-      (tester) async {
+  testWidgets('a toast posted after closing a dialog remains visible', (
+    tester,
+  ) async {
     await mountApp(tester);
     final dialog = KazumiDialog.show<void>(
       builder: (_) => const AlertDialog(title: Text('share rule')),
@@ -206,8 +225,9 @@ void main() {
     expect(find.text('old page'), findsNothing);
   });
 
-  testWidgets('page pop preserves a toast posted after navigation',
-      (tester) async {
+  testWidgets('page pop preserves a toast posted after navigation', (
+    tester,
+  ) async {
     await mountApp(tester);
     await pushPage(tester);
     KazumiDialog.showToast(message: 'old page');
@@ -218,8 +238,9 @@ void main() {
     expect(find.text('new result'), findsOneWidget);
   });
 
-  testWidgets('an action can replace its toast with progress feedback',
-      (tester) async {
+  testWidgets('an action can replace its toast with progress feedback', (
+    tester,
+  ) async {
     await mountApp(tester);
     KazumiDialog.showToast(
       message: 'updates available',
@@ -233,8 +254,9 @@ void main() {
     expect(find.text('updating'), findsOneWidget);
   });
 
-  testWidgets('cancelling a timer only closes its own expiry dialog',
-      (tester) async {
+  testWidgets('cancelling a timer only closes its own expiry dialog', (
+    tester,
+  ) async {
     await mountApp(tester);
     final timer = TimedShutdownService();
     timer.start(1);
@@ -257,26 +279,28 @@ void main() {
     await result;
   });
 
-  testWidgets('repeating the timer preserves its duration and expiry callback',
-      (tester) async {
-    await mountApp(tester);
-    final timer = TimedShutdownService();
-    addTearDown(timer.cancel);
-    var expirations = 0;
-    timer.start(1, onExpired: () => expirations++);
-    await tester.pump(const Duration(minutes: 1));
-    await tester.pumpAndSettle();
-    expect(expirations, 1);
-    await tester.tap(find.text('重复'));
-    await tester.pumpAndSettle();
-    expect(timer.isActive, isTrue);
-    expect(timer.setMinutes, 1);
-    expect(find.text('重复'), findsNothing);
-    await tester.pump(const Duration(minutes: 1));
-    await tester.pumpAndSettle();
-    expect(expirations, 2);
-    expect(find.text('重复'), findsOneWidget);
-    timer.cancel();
-    await tester.pumpAndSettle();
-  });
+  testWidgets(
+    'repeating the timer preserves its duration and expiry callback',
+    (tester) async {
+      await mountApp(tester);
+      final timer = TimedShutdownService();
+      addTearDown(timer.cancel);
+      var expirations = 0;
+      timer.start(1, onExpired: () => expirations++);
+      await tester.pump(const Duration(minutes: 1));
+      await tester.pumpAndSettle();
+      expect(expirations, 1);
+      await tester.tap(find.text('重复'));
+      await tester.pumpAndSettle();
+      expect(timer.isActive, isTrue);
+      expect(timer.setMinutes, 1);
+      expect(find.text('重复'), findsNothing);
+      await tester.pump(const Duration(minutes: 1));
+      await tester.pumpAndSettle();
+      expect(expirations, 2);
+      expect(find.text('重复'), findsOneWidget);
+      timer.cancel();
+      await tester.pumpAndSettle();
+    },
+  );
 }

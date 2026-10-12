@@ -13,9 +13,7 @@ class StorageErrorPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('内部错误'),
-      ),
+      appBar: AppBar(title: const Text('内部错误')),
       body: FutureBuilder<Directory>(
         future: getApplicationSupportDirectory(),
         builder: (context, snapshot) {

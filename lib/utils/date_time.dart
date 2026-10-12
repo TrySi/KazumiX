@@ -1,6 +1,7 @@
 String formatTimestampToRelativeTime(int timeStamp) {
-  final difference = DateTime.now()
-      .difference(DateTime.fromMillisecondsSinceEpoch(timeStamp * 1000));
+  final difference = DateTime.now().difference(
+    DateTime.fromMillisecondsSinceEpoch(timeStamp * 1000),
+  );
 
   if (difference.inDays > 365) {
     return '${difference.inDays ~/ 365}年前';
@@ -61,8 +62,9 @@ String _customTimestampString({
   String? formatType,
 }) {
   timestamp ??= (DateTime.now().millisecondsSinceEpoch / 1000).round();
-  final timeStr =
-      DateTime.fromMillisecondsSinceEpoch(timestamp * 1000).toString();
+  final timeStr = DateTime.fromMillisecondsSinceEpoch(
+    timestamp * 1000,
+  ).toString();
   final dateArr = timeStr.split(' ')[0];
   final timeArr = timeStr.split(' ')[1];
 

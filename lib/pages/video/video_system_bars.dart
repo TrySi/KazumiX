@@ -65,10 +65,12 @@ class _VideoSystemBarsState extends State<VideoSystemBars> with RouteAware {
       // PiP keeps the full-window preference until its original metrics return.
       final landscape =
           MediaQuery.orientationOf(context) == Orientation.landscape;
-      unawaited(DisplayModeService.setSystemBarsHidden(
-        owner: this,
-        hidden: widget.fullscreen || landscape,
-      ));
+      unawaited(
+        DisplayModeService.setSystemBarsHidden(
+          owner: this,
+          hidden: widget.fullscreen || landscape,
+        ),
+      );
     }
   }
 

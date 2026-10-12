@@ -4,10 +4,7 @@ import 'package:kazumi/bean/dialog/adaptive_bottom_sheet.dart';
 import 'package:kazumi/bean/dialog/material_bottom_sheet.dart';
 import 'package:kazumi/bean/widget/split_list_row.dart';
 
-enum DanmakuDestination {
-  chatRoom,
-  remoteDanmaku,
-}
+enum DanmakuDestination { chatRoom, remoteDanmaku }
 
 Future<DanmakuDestination?> showDanmakuDestinationSheet(BuildContext context) {
   return showAdaptiveBottomSheet<DanmakuDestination>(
@@ -35,8 +32,9 @@ Future<DanmakuDestination?> showDanmakuDestinationSheet(BuildContext context) {
                   leading: const Icon(Icons.subtitles_outlined),
                   title: const Text('视频弹幕'),
                   subtitle: const Text('发送至远程弹幕库'),
-                  onTap: () => Navigator.of(context)
-                      .pop(DanmakuDestination.remoteDanmaku),
+                  onTap: () => Navigator.of(
+                    context,
+                  ).pop(DanmakuDestination.remoteDanmaku),
                 ),
               ],
             ),

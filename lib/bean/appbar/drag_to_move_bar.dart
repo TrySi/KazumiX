@@ -21,10 +21,7 @@ import 'package:kazumi/utils/device.dart';
 /// ```
 /// {@end-tool}
 class DragToMoveArea extends StatelessWidget {
-  const DragToMoveArea({
-    super.key,
-    required this.child,
-  });
+  const DragToMoveArea({super.key, required this.child});
 
   final Widget child;
 

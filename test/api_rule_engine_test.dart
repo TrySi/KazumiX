@@ -41,10 +41,7 @@ void main() {
         headers: {'X-Keyword': '@keyword'},
         query: {'q': '@keyword', 'page': 1},
         bodyType: ApiBodyType.json,
-        body: {
-          'source': '@source',
-          'label': 'video-@source',
-        },
+        body: {'source': '@source', 'label': 'video-@source'},
       ),
       {'source': 'a/b', 'keyword': '测试'},
     );
@@ -145,10 +142,7 @@ void main() {
       variables: {'slug': r'$.data.slug'},
       episodePage: ApiEpisodePageConfig(
         url: 'https://www.tvtfun.net/video/@slug/play',
-        query: {
-          'source': '@roadIndex',
-          'episode': '@episodeIndex',
-        },
+        query: {'source': '@roadIndex', 'episode': '@episodeIndex'},
       ),
     );
     final roads = engine.parseChapters(
@@ -226,40 +220,42 @@ void main() {
     expect(roads.diagnostics, hasLength(1));
   });
 
-  test('keeps default nested road names gapless without changing source index',
-      () {
-    final raw = jsonEncode({
-      'data': {
-        'roads': [
-          {'episodes': <Object>[]},
-          {
-            'episodes': [
-              {'name': '第01集'},
-            ],
-          },
-        ],
-      },
-    });
-    final result = engine.parseChapters(
-      raw,
-      ApiChapterConfig(
-        roadNamePath: '',
-        episodeUrlPath: '',
-        episodePage: ApiEpisodePageConfig(
-          url: '/play',
-          query: {'source': '@roadIndex'},
+  test(
+    'keeps default nested road names gapless without changing source index',
+    () {
+      final raw = jsonEncode({
+        'data': {
+          'roads': [
+            {'episodes': <Object>[]},
+            {
+              'episodes': [
+                {'name': '第01集'},
+              ],
+            },
+          ],
+        },
+      });
+      final result = engine.parseChapters(
+        raw,
+        ApiChapterConfig(
+          roadNamePath: '',
+          episodeUrlPath: '',
+          episodePage: ApiEpisodePageConfig(
+            url: '/play',
+            query: {'source': '@roadIndex'},
+          ),
         ),
-      ),
-      source: 'id',
-      baseUrl: 'https://example.com/',
-    );
+        source: 'id',
+        baseUrl: 'https://example.com/',
+      );
 
-    expect(result.roads.single.name, '播放线路1');
-    expect(
-      result.roads.single.data.single,
-      'https://example.com/play?source=1',
-    );
-  });
+      expect(result.roads.single.name, '播放线路1');
+      expect(
+        result.roads.single.data.single,
+        'https://example.com/play?source=1',
+      );
+    },
+  );
 
   test('keeps default delimited road names gapless', () {
     const raw = r'''

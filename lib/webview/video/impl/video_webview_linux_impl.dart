@@ -18,17 +18,20 @@ class VideoWebviewLinuxImpl extends VideoWebviewController<Webview> {
         proxy: proxyConfig,
         userScripts: const [
           UserScript(
-              source: blobScript,
-              injectionTime: UserScriptInjectionTime.documentStart,
-              forAllFrames: true),
+            source: blobScript,
+            injectionTime: UserScriptInjectionTime.documentStart,
+            forAllFrames: true,
+          ),
           UserScript(
-              source: iframeScript,
-              injectionTime: UserScriptInjectionTime.documentEnd,
-              forAllFrames: true),
+            source: iframeScript,
+            injectionTime: UserScriptInjectionTime.documentEnd,
+            forAllFrames: true,
+          ),
           UserScript(
-              source: videoScript,
-              injectionTime: UserScriptInjectionTime.documentEnd,
-              forAllFrames: true)
+            source: videoScript,
+            injectionTime: UserScriptInjectionTime.documentEnd,
+            forAllFrames: true,
+          ),
         ],
       ),
     );
@@ -59,8 +62,11 @@ class VideoWebviewLinuxImpl extends VideoWebviewController<Webview> {
   }
 
   @override
-  Future<void> loadUrl(String url, bool useLegacyParser,
-      {int offset = 0}) async {
+  Future<void> loadUrl(
+    String url,
+    bool useLegacyParser, {
+    int offset = 0,
+  }) async {
     await unloadPage();
     if (!bridgeInited) {
       await initBridge(useLegacyParser);
@@ -89,10 +95,12 @@ class VideoWebviewLinuxImpl extends VideoWebviewController<Webview> {
   Future<void> initJSBridge(bool useLegacyParser) async {
     webviewController!.addOnWebMessageReceivedCallback((message) async {
       if (message.contains('iframeMessage:')) {
-        String messageItem =
-            Uri.encodeFull(message.replaceFirst('iframeMessage:', ''));
-        logEventController
-            .add('Callback received: [iframe] ${Uri.decodeFull(messageItem)}');
+        String messageItem = Uri.encodeFull(
+          message.replaceFirst('iframeMessage:', ''),
+        );
+        logEventController.add(
+          'Callback received: [iframe] ${Uri.decodeFull(messageItem)}',
+        );
         if ((messageItem.contains('http') || messageItem.startsWith('//')) &&
             !messageItem.contains('googleads') &&
             !messageItem.contains('googlesyndication.com') &&
@@ -105,8 +113,9 @@ class VideoWebviewLinuxImpl extends VideoWebviewController<Webview> {
             isIframeLoaded = true;
             isVideoSourceLoaded = true;
             videoLoadingEventController.add(false);
-            logEventController
-                .add('Loading video source ${decodeVideoSource(messageItem)}');
+            logEventController.add(
+              'Loading video source ${decodeVideoSource(messageItem)}',
+            );
             unloadPage();
             final videoUrl = decodeVideoSource(messageItem);
             notifyVideoSourceResolved(videoUrl);
@@ -114,10 +123,12 @@ class VideoWebviewLinuxImpl extends VideoWebviewController<Webview> {
         }
       }
       if (message.contains('videoMessage:')) {
-        String messageItem =
-            Uri.encodeFull(message.replaceFirst('videoMessage:', ''));
-        logEventController
-            .add('Callback received: [video] ${Uri.decodeFull(messageItem)}');
+        String messageItem = Uri.encodeFull(
+          message.replaceFirst('videoMessage:', ''),
+        );
+        logEventController.add(
+          'Callback received: [video] ${Uri.decodeFull(messageItem)}',
+        );
         if (messageItem.contains('http')) {
           String videoUrl = Uri.decodeFull(messageItem);
           logEventController.add('Loading video source: $videoUrl');

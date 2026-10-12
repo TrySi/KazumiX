@@ -19,10 +19,7 @@ abstract class _SearchPageController with Store {
   static const int _searchPageSize = 20;
   static const int _maxPagesPerSearch = 3;
 
-  _SearchPageController(
-    this._collectRepository,
-    this._searchHistoryRepository,
-  );
+  _SearchPageController(this._collectRepository, this._searchHistoryRepository);
 
   final ICollectRepository _collectRepository;
   final ISearchHistoryRepository _searchHistoryRepository;
@@ -101,15 +98,17 @@ abstract class _SearchPageController with Store {
     }
     var pagesFetched = 0;
     do {
-      final page = await BangumiApi.bangumiSearch(filterState.keyword,
-          tags: filterState.tags,
-          limit: _searchPageSize,
-          offset: _searchOffset,
-          sort: filterState.sort,
-          dateRange: filterState.effectiveDateRange,
-          rankRange: filterState.rankRange,
-          scoreRange: filterState.scoreRange,
-          weekdays: filterState.weekdays);
+      final page = await BangumiApi.bangumiSearch(
+        filterState.keyword,
+        tags: filterState.tags,
+        limit: _searchPageSize,
+        offset: _searchOffset,
+        sort: filterState.sort,
+        dateRange: filterState.effectiveDateRange,
+        rankRange: filterState.rankRange,
+        scoreRange: filterState.scoreRange,
+        weekdays: filterState.weekdays,
+      );
       // Discard stale responses before mutating the current search.
       if (generation != _searchGeneration) return;
       if (page == null) {
@@ -119,8 +118,9 @@ abstract class _SearchPageController with Store {
       _searchOffset += page.rawCount;
       hasMoreSearchResults = page.rawCount == _searchPageSize;
       final existingIds = bangumiList.map((item) => item.id).toSet();
-      final newItems =
-          page.items.where((item) => existingIds.add(item.id)).toList();
+      final newItems = page.items
+          .where((item) => existingIds.add(item.id))
+          .toList();
       if (newItems.isNotEmpty) {
         bangumiList.addAll(newItems);
         break;

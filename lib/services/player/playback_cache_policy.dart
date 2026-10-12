@@ -10,8 +10,8 @@ class PlaybackCachePolicy {
   PlaybackCachePolicy({
     required bool Function() isLocalPlayback,
     required Player? Function() currentPlayer,
-  })  : _isLocalPlayback = isLocalPlayback,
-        _currentPlayer = currentPlayer;
+  }) : _isLocalPlayback = isLocalPlayback,
+       _currentPlayer = currentPlayer;
 
   static const int _lowMemoryBufferSize = 2 * 1024 * 1024;
   static const int _defaultBufferSize = 1500 * 1024 * 1024;
@@ -27,12 +27,13 @@ class PlaybackCachePolicy {
       !_isLocalPlayback() &&
       MeteredNetworkService.isMetered;
 
-  int get bufferSize => LowMemoryMode.current.isEnabled(
+  int get bufferSize =>
+      LowMemoryMode.current.isEnabled(
         isMetered: MeteredNetworkService.isMetered,
         isLocalPlayback: _isLocalPlayback(),
       )
-          ? _lowMemoryBufferSize
-          : _defaultBufferSize;
+      ? _lowMemoryBufferSize
+      : _defaultBufferSize;
 
   void startWatching() {
     if (_settingsSubscription != null) {

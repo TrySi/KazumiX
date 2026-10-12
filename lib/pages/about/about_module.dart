@@ -9,9 +9,8 @@ final aboutModule = createModule(
     c
       ..route(
         '/',
-        child: (context, state) => AboutPage(
-          onCheckUpdate: inject<MyController>().checkUpdate,
-        ),
+        child: (context, state) =>
+            AboutPage(onCheckUpdate: inject<MyController>().checkUpdate),
       )
       ..route('/credits', child: (context, state) => const CreditsPage());
   },

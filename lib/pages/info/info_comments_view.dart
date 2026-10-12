@@ -65,95 +65,102 @@ class InfoCommentsView extends StatelessWidget {
     return SafeArea(
       top: false,
       bottom: false,
-      child: LayoutBuilder(builder: (context, constraints) {
-        final gutter = ((constraints.maxWidth - _maxWidth) / 2)
-            .clamp(16.0, double.infinity);
-        return NotificationListener<ScrollEndNotification>(
-          onNotification: _onScrollEnd,
-          child: CustomScrollView(
-            key: const PageStorageKey<String>('吐槽'),
-            scrollBehavior: const ScrollBehavior().copyWith(scrollbars: false),
-            slivers: [
-              SliverOverlapInjector(
-                handle:
-                    NestedScrollView.sliverOverlapAbsorberHandleFor(context),
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final gutter = ((constraints.maxWidth - _maxWidth) / 2).clamp(
+            16.0,
+            double.infinity,
+          );
+          return NotificationListener<ScrollEndNotification>(
+            onNotification: _onScrollEnd,
+            child: CustomScrollView(
+              key: const PageStorageKey<String>('吐槽'),
+              scrollBehavior: const ScrollBehavior().copyWith(
+                scrollbars: false,
               ),
-              if (ownComment == null && !showEmpty)
-                SliverPadding(
-                  padding: EdgeInsets.fromLTRB(gutter, 12, gutter, 8),
-                  sliver: SliverToBoxAdapter(
-                    child: _reviewEntry(context, editing: hasReview),
+              slivers: [
+                SliverOverlapInjector(
+                  handle: NestedScrollView.sliverOverlapAbsorberHandleFor(
+                    context,
                   ),
                 ),
-              if (ownComment != null || comments.isNotEmpty)
-                SliverPadding(
-                  padding: EdgeInsets.symmetric(horizontal: gutter),
-                  sliver: SliverList.separated(
-                    addAutomaticKeepAlives: false,
-                    itemCount: comments.length + (ownComment == null ? 0 : 1),
-                    itemBuilder: (context, index) {
-                      if (ownComment != null && index == 0) {
-                        return _ownReview(ownComment);
-                      }
-                      return CommentsCard(
-                        commentItem:
-                            comments[index - (ownComment == null ? 0 : 1)],
-                      );
-                    },
-                    separatorBuilder: (_, __) => const Divider(
-                      thickness: 0.5,
-                      indent: 10,
-                      endIndent: 10,
+                if (ownComment == null && !showEmpty)
+                  SliverPadding(
+                    padding: EdgeInsets.fromLTRB(gutter, 12, gutter, 8),
+                    sliver: SliverToBoxAdapter(
+                      child: _reviewEntry(context, editing: hasReview),
                     ),
                   ),
-                )
-              else if (hasError)
-                SliverFillRemaining(
-                  hasScrollBody: false,
-                  child: GeneralErrorWidget(
-                    title: '评论加载失败',
-                    errMsg: '请检查网络连接后重试。',
-                    onRetry: onRetry,
-                  ),
-                )
-              else if (showEmpty)
-                SliverFillRemaining(
-                  hasScrollBody: false,
-                  child: GeneralEmptyState(
-                    icon: Icons.chat_bubble_outline_rounded,
-                    title: '暂无吐槽',
-                    actions: [
-                      TextButton(
-                        onPressed: onReviewTap,
-                        style: TextButton.styleFrom(
-                          minimumSize: const Size(48, 48),
-                        ),
-                        child: const Text(_writeReviewLabel),
+                if (ownComment != null || comments.isNotEmpty)
+                  SliverPadding(
+                    padding: EdgeInsets.symmetric(horizontal: gutter),
+                    sliver: SliverList.separated(
+                      addAutomaticKeepAlives: false,
+                      itemCount: comments.length + (ownComment == null ? 0 : 1),
+                      itemBuilder: (context, index) {
+                        if (ownComment != null && index == 0) {
+                          return _ownReview(ownComment);
+                        }
+                        return CommentsCard(
+                          commentItem:
+                              comments[index - (ownComment == null ? 0 : 1)],
+                        );
+                      },
+                      separatorBuilder: (_, __) => const Divider(
+                        thickness: 0.5,
+                        indent: 10,
+                        endIndent: 10,
                       ),
-                    ],
-                  ),
-                )
-              else if (isLoading || !hasLoaded)
-                SliverPadding(
-                  padding: EdgeInsets.symmetric(horizontal: gutter),
-                  sliver: SliverList.builder(
-                    itemCount: 4,
-                    itemBuilder: (_, __) => const Padding(
-                      padding: EdgeInsets.symmetric(vertical: 16),
-                      child: CommentsCard.bone(),
+                    ),
+                  )
+                else if (hasError)
+                  SliverFillRemaining(
+                    hasScrollBody: false,
+                    child: GeneralErrorWidget(
+                      title: '评论加载失败',
+                      errMsg: '请检查网络连接后重试。',
+                      onRetry: onRetry,
+                    ),
+                  )
+                else if (showEmpty)
+                  SliverFillRemaining(
+                    hasScrollBody: false,
+                    child: GeneralEmptyState(
+                      icon: Icons.chat_bubble_outline_rounded,
+                      title: '暂无吐槽',
+                      actions: [
+                        TextButton(
+                          onPressed: onReviewTap,
+                          style: TextButton.styleFrom(
+                            minimumSize: const Size(48, 48),
+                          ),
+                          child: const Text(_writeReviewLabel),
+                        ),
+                      ],
+                    ),
+                  )
+                else if (isLoading || !hasLoaded)
+                  SliverPadding(
+                    padding: EdgeInsets.symmetric(horizontal: gutter),
+                    sliver: SliverList.builder(
+                      itemCount: 4,
+                      itemBuilder: (_, __) => const Padding(
+                        padding: EdgeInsets.symmetric(vertical: 16),
+                        child: CommentsCard.bone(),
+                      ),
                     ),
                   ),
-                ),
-              if (ownComment != null || comments.isNotEmpty)
-                SliverToBoxAdapter(
-                  child: SizedBox(
-                    height: 96 + MediaQuery.paddingOf(context).bottom,
+                if (ownComment != null || comments.isNotEmpty)
+                  SliverToBoxAdapter(
+                    child: SizedBox(
+                      height: 96 + MediaQuery.paddingOf(context).bottom,
+                    ),
                   ),
-                ),
-            ],
-          ),
-        );
-      }),
+              ],
+            ),
+          );
+        },
+      ),
     );
   }
 
@@ -168,31 +175,36 @@ class InfoCommentsView extends StatelessWidget {
         foregroundColor: colors.onSurfaceVariant,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       ),
-      child: Row(children: [
-        Expanded(child: Text(editing ? '编辑' : _writeReviewLabel)),
-        const SizedBox(width: 8),
-        const Icon(Icons.chevron_right_rounded, size: 20),
-      ]),
+      child: Row(
+        children: [
+          Expanded(child: Text(editing ? '编辑' : _writeReviewLabel)),
+          const SizedBox(width: 8),
+          const Icon(Icons.chevron_right_rounded, size: 20),
+        ],
+      ),
     );
   }
 
   Widget _ownReview(CommentItem comment) {
     return Card.filled(
       margin: const EdgeInsets.symmetric(vertical: 12),
-      child: Column(mainAxisSize: MainAxisSize.min, children: [
-        CommentsCard.own(commentItem: comment),
-        Padding(
-          padding: const EdgeInsets.fromLTRB(8, 0, 8, 8),
-          child: Align(
-            alignment: Alignment.centerRight,
-            child: TextButton(
-              onPressed: onReviewTap,
-              style: TextButton.styleFrom(minimumSize: const Size(48, 48)),
-              child: const Text('编辑'),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          CommentsCard.own(commentItem: comment),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(8, 0, 8, 8),
+            child: Align(
+              alignment: Alignment.centerRight,
+              child: TextButton(
+                onPressed: onReviewTap,
+                style: TextButton.styleFrom(minimumSize: const Size(48, 48)),
+                child: const Text('编辑'),
+              ),
             ),
           ),
-        ),
-      ]),
+        ],
+      ),
     );
   }
 }

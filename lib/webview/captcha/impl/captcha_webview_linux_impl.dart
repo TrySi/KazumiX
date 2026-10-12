@@ -18,10 +18,7 @@ class CaptchaWebviewLinuxImpl extends CaptchaWebviewController<Webview> {
   Future<void> init() async {
     final proxyConfig = _getProxyConfiguration();
     webviewController ??= await WebviewWindow.create(
-      configuration: CreateConfiguration(
-        headless: true,
-        proxy: proxyConfig,
-      ),
+      configuration: CreateConfiguration(headless: true, proxy: proxyConfig),
     );
     _initMessageBridge();
     _initNavigationListener();
@@ -60,8 +57,9 @@ class CaptchaWebviewLinuxImpl extends CaptchaWebviewController<Webview> {
           captchaDisappearedController.add(null);
         }
       } else if (msg.startsWith('captchaLog:')) {
-        logEventController
-            .add('[Captcha WebView JS] ${msg.replaceFirst('captchaLog:', '')}');
+        logEventController.add(
+          '[Captcha WebView JS] ${msg.replaceFirst('captchaLog:', '')}',
+        );
       }
     });
   }
@@ -93,8 +91,9 @@ class CaptchaWebviewLinuxImpl extends CaptchaWebviewController<Webview> {
       if (captchaWasFound) {
         final present = await _isCaptchaPresent();
         if (!present && !captchaDisappearedController.isClosed) {
-          logEventController
-              .add('[Captcha WebView] Captcha gone after navigation');
+          logEventController.add(
+            '[Captcha WebView] Captcha gone after navigation',
+          );
           captchaWasFound = false;
           captchaDisappearedController.add(null);
         }
@@ -102,7 +101,8 @@ class CaptchaWebviewLinuxImpl extends CaptchaWebviewController<Webview> {
       // Automated verification marked a click; page navigation confirms success.
       if (buttonWasClicked && !captchaDisappearedController.isClosed) {
         logEventController.add(
-            '[Captcha WebView] Button click and page navigated, verification done');
+          '[Captcha WebView] Button click and page navigated, verification done',
+        );
         buttonWasClicked = false;
         captchaDisappearedController.add(null);
       }
@@ -139,7 +139,8 @@ class CaptchaWebviewLinuxImpl extends CaptchaWebviewController<Webview> {
         .replaceAll('\\', '\\\\')
         .replaceAll("'", "\\'");
 
-    final script = '''
+    final script =
+        '''
 (function() {
   window.webkit.messageHandlers.msgToNative.postMessage(
     'captchaLog:CaptchaScript injected on ' + window.location.href);
@@ -222,8 +223,11 @@ class CaptchaWebviewLinuxImpl extends CaptchaWebviewController<Webview> {
   }
 
   @override
-  Future<void> loadPage(String url, String captchaXpath,
-      {String? inputXpath}) async {
+  Future<void> loadPage(
+    String url,
+    String captchaXpath, {
+    String? inputXpath,
+  }) async {
     _currentCaptchaImageXpath = captchaXpath;
     _buttonXpath = '';
     _customScript = null;
@@ -254,7 +258,8 @@ class CaptchaWebviewLinuxImpl extends CaptchaWebviewController<Webview> {
 
   Future<void> _injectCustomScript(String script) async {
     logEventController.add('[Captcha WebView] Injecting custom script');
-    final wrappedScript = '''
+    final wrappedScript =
+        '''
 (function() {
   try {
     window.KazumiCaptcha = {
@@ -289,18 +294,21 @@ $script
 ''';
     try {
       final result = await webviewController?.evaluateJavaScript(wrappedScript);
-      logEventController
-          .add('[Captcha WebView] Custom script execute result: $result');
+      logEventController.add(
+        '[Captcha WebView] Custom script execute result: $result',
+      );
     } catch (e) {
       KazumiLogger().e('[Captcha WebView] injectCustomScript error: $e');
-      logEventController
-          .add('[Captcha WebView] Custom script inject error: $e');
+      logEventController.add(
+        '[Captcha WebView] Custom script inject error: $e',
+      );
     }
   }
 
   Future<void> _injectButtonClickScript(String buttonXpath) async {
     final escaped = buttonXpath.replaceAll('\\', '\\\\').replaceAll("'", "\\'");
-    final script = '''
+    final script =
+        '''
 (function() {
   window.webkit.messageHandlers.msgToNative.postMessage(
     'captchaLog:ButtonClickScript injected on ' + window.location.href);
@@ -359,16 +367,24 @@ $script
 
   @override
   Future<void> submitCaptchaInteract(
-      String captchaCode, String inputXpath, String buttonXpath) async {
-    logEventController
-        .add('[Captcha WebView] Filling input and clicking button');
-    final escapedCode =
-        captchaCode.replaceAll('\\', '\\\\').replaceAll("'", "\\'");
-    final escapedInput =
-        inputXpath.replaceAll('\\', '\\\\').replaceAll("'", "\\'");
-    final escapedButton =
-        buttonXpath.replaceAll('\\', '\\\\').replaceAll("'", "\\'");
-    final script = '''
+    String captchaCode,
+    String inputXpath,
+    String buttonXpath,
+  ) async {
+    logEventController.add(
+      '[Captcha WebView] Filling input and clicking button',
+    );
+    final escapedCode = captchaCode
+        .replaceAll('\\', '\\\\')
+        .replaceAll("'", "\\'");
+    final escapedInput = inputXpath
+        .replaceAll('\\', '\\\\')
+        .replaceAll("'", "\\'");
+    final escapedButton = buttonXpath
+        .replaceAll('\\', '\\\\')
+        .replaceAll("'", "\\'");
+    final script =
+        '''
 (function() {
   function evalXpath(xpath) {
     try {
@@ -409,8 +425,9 @@ $script
   Future<String> getCookieString(String pageUrl) async {
     try {
       final cookies = await webviewController?.getAllCookies() ?? [];
-      final cookieString =
-          cookies.map((c) => '${c.name}=${c.value}').join('; ');
+      final cookieString = cookies
+          .map((c) => '${c.name}=${c.value}')
+          .join('; ');
       logEventController.add('[Captcha WebView] Cookies: $cookieString');
       return cookieString;
     } catch (e) {
@@ -440,7 +457,8 @@ $script
   Future<String> getUserAgent() async {
     try {
       final result = await webviewController?.evaluateJavaScript(
-          '(function() { return navigator.userAgent; })();');
+        '(function() { return navigator.userAgent; })();',
+      );
       return _decodeJsString(result);
     } catch (e) {
       KazumiLogger().d('[Captcha WebView] getUserAgent error: $e');

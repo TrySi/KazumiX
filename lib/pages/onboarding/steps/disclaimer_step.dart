@@ -58,22 +58,31 @@ class _DisclaimerStepState extends State<DisclaimerStep> {
             : Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Row(children: [
-                    Icon(Icons.description_outlined,
-                        color: Theme.of(context).colorScheme.primary),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Text('免责声明',
-                          style: textTheme.titleLarge
-                              ?.copyWith(fontWeight: FontWeight.w600)),
-                    ),
-                  ]),
+                  Row(
+                    children: [
+                      Icon(
+                        Icons.description_outlined,
+                        color: Theme.of(context).colorScheme.primary,
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Text(
+                          '免责声明',
+                          style: textTheme.titleLarge?.copyWith(
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
                   const SizedBox(height: 20),
                   for (final paragraph in _statementsText!.trim().split('\n'))
                     Padding(
                       padding: const EdgeInsets.only(bottom: 12),
-                      child: Text(paragraph.trim(),
-                          style: textTheme.bodyMedium?.copyWith(height: 1.7)),
+                      child: Text(
+                        paragraph.trim(),
+                        style: textTheme.bodyMedium?.copyWith(height: 1.7),
+                      ),
                     ),
                 ],
               ),

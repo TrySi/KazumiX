@@ -19,17 +19,17 @@ class StateIconBadge extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => ExcludeSemantics(
-        child: ClipPath(
-          clipper: const _StateShapeClipper(),
-          child: ColoredBox(
-            color: backgroundColor,
-            child: SizedBox.square(
-              dimension: size,
-              child: Icon(icon, size: iconSize, color: foregroundColor),
-            ),
-          ),
+    child: ClipPath(
+      clipper: const _StateShapeClipper(),
+      child: ColoredBox(
+        color: backgroundColor,
+        child: SizedBox.square(
+          dimension: size,
+          child: Icon(icon, size: iconSize, color: foregroundColor),
         ),
-      );
+      ),
+    ),
+  );
 }
 
 class _StateShapeClipper extends CustomClipper<Path> {
@@ -38,8 +38,9 @@ class _StateShapeClipper extends CustomClipper<Path> {
   static final _path = MaterialShapes.cookie4Sided.toPath();
 
   @override
-  Path getClip(Size size) => _path
-      .transform(Matrix4.diagonal3Values(size.width, size.height, 1).storage);
+  Path getClip(Size size) => _path.transform(
+    Matrix4.diagonal3Values(size.width, size.height, 1).storage,
+  );
 
   @override
   bool shouldReclip(_StateShapeClipper oldClipper) => false;
@@ -74,11 +75,15 @@ class StateActionButton extends StatelessWidget {
     return ButtonStyle(
       minimumSize: const WidgetStatePropertyAll(Size(64, 48)),
       padding: const WidgetStatePropertyAll(
-          EdgeInsets.symmetric(horizontal: 24, vertical: 12)),
-      shape: WidgetStateProperty.resolveWith((states) => RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(
-                states.contains(WidgetState.pressed) ? 16 : 28),
-          )),
+        EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+      ),
+      shape: WidgetStateProperty.resolveWith(
+        (states) => RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(
+            states.contains(WidgetState.pressed) ? 16 : 28,
+          ),
+        ),
+      ),
       animationDuration: MediaQuery.disableAnimationsOf(context)
           ? Duration.zero
           : const Duration(milliseconds: 200),

@@ -32,8 +32,9 @@ class KazumiLogPrinter extends LogPrinter {
     final time = _formatTime(event.time);
     final level = _colorizeLevel(event.level);
     final message = _singleLineLogText(_stringifyMessage(event.message));
-    final error =
-        event.error == null ? '' : ' | ${_singleLineLogText(event.error)}';
+    final error = event.error == null
+        ? ''
+        : ' | ${_singleLineLogText(event.error)}';
     final lines = <String>['$time $level $message$error'];
 
     if (event.level == Level.fatal) {
@@ -69,10 +70,7 @@ class KazumiLogPrinter extends LogPrinter {
     final value = message is Function ? message() : message;
     if (value is Map || value is Iterable) {
       try {
-        return jsonEncode(
-          value,
-          toEncodable: (object) => object.toString(),
-        );
+        return jsonEncode(value, toEncodable: (object) => object.toString());
       } catch (_) {
         return value.toString();
       }
@@ -84,10 +82,12 @@ class KazumiLogPrinter extends LogPrinter {
     return stackTrace
         .toString()
         .split('\n')
-        .where((line) =>
-            line.trim().isNotEmpty &&
-            !line.contains('package:logger/') &&
-            !line.contains('package:kazumi/services/logging/logger.dart'))
+        .where(
+          (line) =>
+              line.trim().isNotEmpty &&
+              !line.contains('package:logger/') &&
+              !line.contains('package:kazumi/services/logging/logger.dart'),
+        )
         .take(_fatalStackFrameLimit)
         .map((line) => '  ${line.trim()}');
   }
@@ -175,38 +175,62 @@ class KazumiLogger {
   }
 
   /// Trace log - lowest level, very detailed information
-  void t(dynamic message,
-      {Object? error, StackTrace? stackTrace, bool forceLog = false}) {
+  void t(
+    dynamic message, {
+    Object? error,
+    StackTrace? stackTrace,
+    bool forceLog = false,
+  }) {
     _log(() => _logger.t(message, error: error), forceLog);
   }
 
   /// Debug log - detailed information for debugging
-  void d(dynamic message,
-      {Object? error, StackTrace? stackTrace, bool forceLog = false}) {
+  void d(
+    dynamic message, {
+    Object? error,
+    StackTrace? stackTrace,
+    bool forceLog = false,
+  }) {
     _log(() => _logger.d(message, error: error), forceLog);
   }
 
   /// Info log - informational messages
-  void i(dynamic message,
-      {Object? error, StackTrace? stackTrace, bool forceLog = false}) {
+  void i(
+    dynamic message, {
+    Object? error,
+    StackTrace? stackTrace,
+    bool forceLog = false,
+  }) {
     _log(() => _logger.i(message, error: error), forceLog);
   }
 
   /// Warning log - potentially harmful situations
-  void w(dynamic message,
-      {Object? error, StackTrace? stackTrace, bool forceLog = false}) {
+  void w(
+    dynamic message, {
+    Object? error,
+    StackTrace? stackTrace,
+    bool forceLog = false,
+  }) {
     _log(() => _logger.w(message, error: error), forceLog);
   }
 
   /// Error log - error events that might still allow the app to continue
-  void e(dynamic message,
-      {Object? error, StackTrace? stackTrace, bool forceLog = false}) {
+  void e(
+    dynamic message, {
+    Object? error,
+    StackTrace? stackTrace,
+    bool forceLog = false,
+  }) {
     _log(() => _logger.e(message, error: error), forceLog);
   }
 
   /// Fatal log - very severe error events that may cause the app to abort.
-  void f(dynamic message,
-      {Object? error, StackTrace? stackTrace, bool forceLog = false}) {
+  void f(
+    dynamic message, {
+    Object? error,
+    StackTrace? stackTrace,
+    bool forceLog = false,
+  }) {
     _log(
       () => _logger.f(
         message,

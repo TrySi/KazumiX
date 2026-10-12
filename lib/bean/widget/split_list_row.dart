@@ -64,21 +64,27 @@ class _SplitListRowState extends State<SplitListRow> {
         color: colors.surfaceContainerLow,
         borderRadius: BorderRadius.vertical(
           top: Radius.circular(
-              _pressed ? widget.pressedRadius : widget.topRadius),
+            _pressed ? widget.pressedRadius : widget.topRadius,
+          ),
           bottom: Radius.circular(
-              _pressed ? widget.pressedRadius : widget.bottomRadius),
+            _pressed ? widget.pressedRadius : widget.bottomRadius,
+          ),
         ),
       ),
       child: Material(
         type: MaterialType.transparency,
         child: ListTileTheme(
           data: theme.listTileTheme.copyWith(
-            contentPadding:
-                const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-            titleTextStyle:
-                theme.textTheme.bodyLarge?.copyWith(color: colors.onSurface),
-            subtitleTextStyle: theme.textTheme.bodyMedium
-                ?.copyWith(color: colors.onSurfaceVariant),
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: 16,
+              vertical: 4,
+            ),
+            titleTextStyle: theme.textTheme.bodyLarge?.copyWith(
+              color: colors.onSurface,
+            ),
+            subtitleTextStyle: theme.textTheme.bodyMedium?.copyWith(
+              color: colors.onSurfaceVariant,
+            ),
           ),
           child: _SplitRowScope(onPressChanged: _reportPress, child: child),
         ),
@@ -117,8 +123,9 @@ class SplitListGroup extends StatelessWidget {
           if (i > 0) const SizedBox(height: splitListRowGap),
           SplitListRow(
             topRadius: i == 0 ? outerRadius : splitListInnerRadius,
-            bottomRadius:
-                i == children.length - 1 ? outerRadius : splitListInnerRadius,
+            bottomRadius: i == children.length - 1
+                ? outerRadius
+                : splitListInnerRadius,
             pressedRadius: outerRadius,
             child: children[i],
           ),

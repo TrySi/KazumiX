@@ -1,10 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:kazumi/utils/format.dart';
 
-enum PlayerAdjustmentHudType {
-  brightness,
-  volume,
-}
+enum PlayerAdjustmentHudType { brightness, volume }
 
 class PlayerAdjustmentHud extends StatefulWidget {
   const PlayerAdjustmentHud({
@@ -282,7 +279,7 @@ class _HudSliderTrackShape extends SliderTrackShape {
   }) {
     final thumbWidth =
         sliderTheme.thumbShape?.getPreferredSize(isEnabled, isDiscrete).width ??
-            0;
+        0;
     final trackHeight = sliderTheme.trackHeight ?? 0;
     final trackLeft = offset.dx + thumbWidth / 2;
     final trackTop = offset.dy + (parentBox.size.height - trackHeight) / 2;
@@ -344,12 +341,14 @@ class _HudSliderTrackShape extends SliderTrackShape {
       isDiscrete: isDiscrete,
     );
 
-    final activeColor = ColorTween(
+    final activeColor =
+        ColorTween(
           begin: sliderTheme.disabledActiveTrackColor,
           end: sliderTheme.activeTrackColor,
         ).evaluate(enableAnimation) ??
         Colors.transparent;
-    final inactiveColor = ColorTween(
+    final inactiveColor =
+        ColorTween(
           begin: sliderTheme.disabledInactiveTrackColor,
           end: sliderTheme.inactiveTrackColor,
         ).evaluate(enableAnimation) ??
@@ -391,10 +390,12 @@ class _HudSliderTrackShape extends SliderTrackShape {
       baseTrackRect.bottom,
     );
 
-    final leftColor =
-        textDirection == TextDirection.ltr ? activeColor : inactiveColor;
-    final rightColor =
-        textDirection == TextDirection.ltr ? inactiveColor : activeColor;
+    final leftColor = textDirection == TextDirection.ltr
+        ? activeColor
+        : inactiveColor;
+    final rightColor = textDirection == TextDirection.ltr
+        ? inactiveColor
+        : activeColor;
     final hasLeftSegment = leftRect.width > 0;
     final hasRightSegment = rightRect.width > 0;
 
@@ -498,7 +499,8 @@ class _HudSliderThumbShape extends SliderComponentShape {
     required double textScaleFactor,
     required Size sizeWithOverflow,
   }) {
-    final thumbColor = ColorTween(
+    final thumbColor =
+        ColorTween(
           begin: sliderTheme.disabledThumbColor,
           end: sliderTheme.thumbColor,
         ).evaluate(enableAnimation) ??
@@ -512,10 +514,7 @@ class _HudSliderThumbShape extends SliderComponentShape {
     );
 
     canvas.drawRRect(
-      RRect.fromRectAndRadius(
-        thumbRect,
-        Radius.circular(cornerRadius),
-      ),
+      RRect.fromRectAndRadius(thumbRect, Radius.circular(cornerRadius)),
       Paint()..color = thumbColor,
     );
   }
@@ -579,8 +578,9 @@ class _PlayerSeekHudState extends State<PlayerSeekHud> {
   }
 
   int get _effectiveDirection {
-    final positionDirection =
-        _displayCurrentPosition.compareTo(_displayPlayerPosition);
+    final positionDirection = _displayCurrentPosition.compareTo(
+      _displayPlayerPosition,
+    );
     if (positionDirection != 0) {
       return positionDirection;
     }
@@ -590,9 +590,10 @@ class _PlayerSeekHudState extends State<PlayerSeekHud> {
   bool get _isForward => _effectiveDirection >= 0;
 
   String get _offsetText {
-    final offsetMs = (_displayCurrentPosition.inMilliseconds -
-            _displayPlayerPosition.inMilliseconds)
-        .abs();
+    final offsetMs =
+        (_displayCurrentPosition.inMilliseconds -
+                _displayPlayerPosition.inMilliseconds)
+            .abs();
     final sign = _isForward ? '+' : '-';
     return '$sign${durationToString(Duration(milliseconds: offsetMs))}';
   }
@@ -623,8 +624,8 @@ class _PlayerSeekHudState extends State<PlayerSeekHud> {
     final icon = _displayCancelPending
         ? Icons.close_rounded
         : _isForward
-            ? Icons.fast_forward_rounded
-            : Icons.fast_rewind_rounded;
+        ? Icons.fast_forward_rounded
+        : Icons.fast_rewind_rounded;
 
     if (snapProgress) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -742,9 +743,7 @@ class _PlayerSeekHudState extends State<PlayerSeekHud> {
                                   _displayCancelPending ? '松开取消' : _offsetText,
                                   maxLines: 1,
                                   overflow: TextOverflow.ellipsis,
-                                  style: Theme.of(context)
-                                      .textTheme
-                                      .labelLarge
+                                  style: Theme.of(context).textTheme.labelLarge
                                       ?.copyWith(
                                         color: colorScheme.onSurface,
                                         fontWeight: FontWeight.w600,
@@ -757,9 +756,7 @@ class _PlayerSeekHudState extends State<PlayerSeekHud> {
                                       : '${durationToString(_displayCurrentPosition)} / ${durationToString(_displayDuration)}',
                                   maxLines: 1,
                                   overflow: TextOverflow.ellipsis,
-                                  style: Theme.of(context)
-                                      .textTheme
-                                      .bodySmall
+                                  style: Theme.of(context).textTheme.bodySmall
                                       ?.copyWith(
                                         color: colorScheme.onSurfaceVariant,
                                       ),
@@ -782,10 +779,7 @@ class _PlayerSeekHudState extends State<PlayerSeekHud> {
 }
 
 class _SeekProgressBackground extends StatelessWidget {
-  const _SeekProgressBackground({
-    required this.progress,
-    required this.color,
-  });
+  const _SeekProgressBackground({required this.progress, required this.color});
 
   final double progress;
   final Color color;
@@ -797,10 +791,7 @@ class _SeekProgressBackground extends StatelessWidget {
         final width = constraints.maxWidth * progress.clamp(0.0, 1.0);
         return Align(
           alignment: Alignment.centerLeft,
-          child: Container(
-            width: width,
-            color: color,
-          ),
+          child: Container(width: width, color: color),
         );
       },
     );
@@ -912,11 +903,11 @@ class _PlayerSpeedHudState extends State<PlayerSpeedHud> {
                         _speedText,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
-                        style:
-                            Theme.of(context).textTheme.labelMedium?.copyWith(
-                                  color: colorScheme.onSurface,
-                                  fontWeight: FontWeight.w700,
-                                ),
+                        style: Theme.of(context).textTheme.labelMedium
+                            ?.copyWith(
+                              color: colorScheme.onSurface,
+                              fontWeight: FontWeight.w700,
+                            ),
                       ),
                     ),
                   ],

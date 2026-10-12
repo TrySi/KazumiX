@@ -540,7 +540,9 @@ abstract class _VideoPageController with Store implements Disposable {
       return;
     }
 
-    final episodePlugin = _offlinePluginFor(resolvedEpisode.historyEpisodeNumber);
+    final episodePlugin = _offlinePluginFor(
+      resolvedEpisode.historyEpisodeNumber,
+    );
     final localPath = _getLocalVideoPath(
       bangumiItem.id,
       episodePlugin,
@@ -876,9 +878,7 @@ OfflineRoadListSnapshot buildOfflineRoadListSnapshot(
     roads: roads,
     episodesByNumber: episodesByNumber,
     displayRoadToOriginalRoad: const {0: 0},
-    originalRoadToDisplayRoad: {
-      for (final episode in ordered) episode.road: 0,
-    },
+    originalRoadToDisplayRoad: {for (final episode in ordered) episode.road: 0},
   );
 }
 

@@ -21,8 +21,11 @@ class PluginCookieManager {
   }
 
   Future<void> saveFromWebView(
-      String pluginName, String pageUrl, String cookieString,
-      {String? userAgent}) async {
+    String pluginName,
+    String pageUrl,
+    String cookieString, {
+    String? userAgent,
+  }) async {
     if (userAgent != null && userAgent.trim().isNotEmpty) {
       _userAgents[pluginName] = userAgent.trim();
     }
@@ -36,7 +39,8 @@ class PluginCookieManager {
 
     await jar.saveFromResponse(uri, cookies);
     KazumiLogger().i(
-        '[PluginCookieManager] Saved ${cookies.length} cookies for $pluginName');
+      '[PluginCookieManager] Saved ${cookies.length} cookies for $pluginName',
+    );
   }
 
   /// 解析字符串为 [Cookie] 列表
@@ -59,10 +63,7 @@ class PluginCookieManager {
     return cookies;
   }
 
-  Future<List<Cookie>> loadForRequest(
-    String pluginName,
-    Uri uri,
-  ) async {
+  Future<List<Cookie>> loadForRequest(String pluginName, Uri uri) async {
     final jar = _jars[pluginName];
     if (jar == null) return <Cookie>[];
     return jar.loadForRequest(uri);

@@ -100,8 +100,9 @@ class CollectRepository implements ICollectRepository {
   @override
   bool getTimelineNotShowAbandonedBangumis() {
     try {
-      final value =
-          GStorage.getSetting(SettingsKeys.timelineNotShowAbandonedBangumis);
+      final value = GStorage.getSetting(
+        SettingsKeys.timelineNotShowAbandonedBangumis,
+      );
       return value;
     } catch (e, stackTrace) {
       KazumiLogger().e(
@@ -117,7 +118,9 @@ class CollectRepository implements ICollectRepository {
   Future<void> updateTimelineNotShowAbandonedBangumis(bool value) async {
     try {
       await GStorage.putSetting(
-          SettingsKeys.timelineNotShowAbandonedBangumis, value);
+        SettingsKeys.timelineNotShowAbandonedBangumis,
+        value,
+      );
     } catch (e, stackTrace) {
       KazumiLogger().e(
         'GStorage: update timeline not show abandoned bangumis setting failed. value=$value',
@@ -130,8 +133,9 @@ class CollectRepository implements ICollectRepository {
   @override
   bool getTimelineNotShowWatchedBangumis() {
     try {
-      final value =
-          GStorage.getSetting(SettingsKeys.timelineNotShowWatchedBangumis);
+      final value = GStorage.getSetting(
+        SettingsKeys.timelineNotShowWatchedBangumis,
+      );
       return value;
     } catch (e, stackTrace) {
       KazumiLogger().e(
@@ -147,7 +151,9 @@ class CollectRepository implements ICollectRepository {
   Future<void> updateTimelineNotShowWatchedBangumis(bool value) async {
     try {
       await GStorage.putSetting(
-          SettingsKeys.timelineNotShowWatchedBangumis, value);
+        SettingsKeys.timelineNotShowWatchedBangumis,
+        value,
+      );
     } catch (e, stackTrace) {
       KazumiLogger().e(
         'GStorage: update timeline not show watched bangumis setting failed. value=$value',
@@ -160,8 +166,9 @@ class CollectRepository implements ICollectRepository {
   @override
   bool getTimelineOnlyShowWatchingBangumis() {
     try {
-      final value =
-          GStorage.getSetting(SettingsKeys.timelineOnlyShowWatchingBangumis);
+      final value = GStorage.getSetting(
+        SettingsKeys.timelineOnlyShowWatchingBangumis,
+      );
       return value;
     } catch (e, stackTrace) {
       KazumiLogger().e(
@@ -177,7 +184,9 @@ class CollectRepository implements ICollectRepository {
   Future<void> updateTimelineOnlyShowWatchingBangumis(bool value) async {
     try {
       await GStorage.putSetting(
-          SettingsKeys.timelineOnlyShowWatchingBangumis, value);
+        SettingsKeys.timelineOnlyShowWatchingBangumis,
+        value,
+      );
     } catch (e, stackTrace) {
       KazumiLogger().e(
         'GStorage: update timeline only show watching bangumis setting failed. value=$value',

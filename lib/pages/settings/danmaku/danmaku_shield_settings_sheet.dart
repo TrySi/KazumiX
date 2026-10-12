@@ -10,17 +10,17 @@ class DanmakuShieldSettingsSheet extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Scaffold(
-        backgroundColor: Colors.transparent,
-        body: Column(
-          children: [
-            MaterialBottomSheetHeader(
-              title: '屏蔽规则',
-              onClose: () => Navigator.of(context).pop(),
-            ),
-            Expanded(
-              child: DanmakuShieldEditor(controller: inject<MyController>()),
-            ),
-          ],
+    backgroundColor: Colors.transparent,
+    body: Column(
+      children: [
+        MaterialBottomSheetHeader(
+          title: '屏蔽规则',
+          onClose: () => Navigator.of(context).pop(),
         ),
-      );
+        Expanded(
+          child: DanmakuShieldEditor(controller: inject<MyController>()),
+        ),
+      ],
+    ),
+  );
 }

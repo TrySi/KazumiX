@@ -69,8 +69,10 @@ class _VideoDetailsSheet extends StatefulWidget {
 
 class _VideoDetailsSheetState extends State<_VideoDetailsSheet>
     with SingleTickerProviderStateMixin {
-  late final TabController _tabController =
-      TabController(length: 2, vsync: this);
+  late final TabController _tabController = TabController(
+    length: 2,
+    vsync: this,
+  );
   final ScrollController _logScrollController = ScrollController();
   bool _logInitialScrollDone = false;
   int _lastLogCount = 0;
@@ -93,101 +95,147 @@ class _VideoDetailsSheetState extends State<_VideoDetailsSheet>
   Widget build(BuildContext context) {
     return ScaffoldMessenger(
       child: Builder(
-          builder: (context) => Scaffold(
-                backgroundColor: Colors.transparent,
-                body: Column(children: [
-                  MaterialBottomSheetHeader(
-                    title: '播放信息',
-                    onClose: () => Navigator.of(context).pop(),
-                  ),
-                  ConnectedTabs(
-                    padding: materialBottomSheetTabsPadding,
-                    controller: _tabController,
-                    labels: const ['概览', '日志'],
-                  ),
-                  Expanded(
-                      child: TabBarView(
-                    controller: _tabController,
-                    children: [_buildStatusTab(context), _buildLogTab(context)],
-                  )),
-                ]),
-              )),
+        builder: (context) => Scaffold(
+          backgroundColor: Colors.transparent,
+          body: Column(
+            children: [
+              MaterialBottomSheetHeader(
+                title: '播放信息',
+                onClose: () => Navigator.of(context).pop(),
+              ),
+              ConnectedTabs(
+                padding: materialBottomSheetTabsPadding,
+                controller: _tabController,
+                labels: const ['概览', '日志'],
+              ),
+              Expanded(
+                child: TabBarView(
+                  controller: _tabController,
+                  children: [_buildStatusTab(context), _buildLogTab(context)],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 
   Widget _buildStatusTab(BuildContext context) {
-    return Observer(builder: (context) {
-      final debug = playerController.debug;
-      final theme = Theme.of(context);
-      final resolution = debug.playerWidth > 0 && debug.playerHeight > 0
-          ? '${debug.playerWidth} × ${debug.playerHeight}'
-          : '等待画面';
-      return ListView(
-        key: const PageStorageKey('video-details-overview'),
-        padding: materialBottomSheetContentPadding,
-        children: [
-          ContentSection(
-            title: '画面与声音',
-            child:
-                Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              Text(resolution, style: theme.textTheme.headlineSmall),
-              const SizedBox(height: 16),
-              Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                Expanded(
-                    child: _metric(context, '视频码率', debug.playerVideoBitrate)),
-                const SizedBox(width: 16),
-                Expanded(
-                    child: _metric(context, '音频码率', debug.playerAudioBitrate)),
-              ]),
-            ]),
-          ),
-          const SizedBox(height: 24),
-          ContentSection.group(title: '媒体', children: [
-            _statusField(context, '媒体地址', playerController.videoUrl,
-                compact: true),
-            _statusField(context, '播放列表', debug.playerPlaylist, compact: true),
-          ]),
-          const SizedBox(height: 24),
-          ContentSection.group(title: '技术信息', children: [
-            ExpansionTile(
-              key: const PageStorageKey('video-parameters'),
-              title: const Text('视频参数'),
-              shape: const Border(),
-              collapsedShape: const Border(),
+    return Observer(
+      builder: (context) {
+        final debug = playerController.debug;
+        final theme = Theme.of(context);
+        final resolution = debug.playerWidth > 0 && debug.playerHeight > 0
+            ? '${debug.playerWidth} × ${debug.playerHeight}'
+            : '等待画面';
+        return ListView(
+          key: const PageStorageKey('video-details-overview'),
+          padding: materialBottomSheetContentPadding,
+          children: [
+            ContentSection(
+              title: '画面与声音',
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(resolution, style: theme.textTheme.headlineSmall),
+                  const SizedBox(height: 16),
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Expanded(
+                        child: _metric(
+                          context,
+                          '视频码率',
+                          debug.playerVideoBitrate,
+                        ),
+                      ),
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: _metric(
+                          context,
+                          '音频码率',
+                          debug.playerAudioBitrate,
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 24),
+            ContentSection.group(
+              title: '媒体',
               children: [
-                _statusField(context, '编码参数', debug.playerVideoParams),
-                _statusField(context, '轨道', debug.playerVideoTracks),
+                _statusField(
+                  context,
+                  '媒体地址',
+                  playerController.videoUrl,
+                  compact: true,
+                ),
+                _statusField(
+                  context,
+                  '播放列表',
+                  debug.playerPlaylist,
+                  compact: true,
+                ),
               ],
             ),
-            ExpansionTile(
-              key: const PageStorageKey('audio-parameters'),
-              title: const Text('音频参数'),
-              shape: const Border(),
-              collapsedShape: const Border(),
+            const SizedBox(height: 24),
+            ContentSection.group(
+              title: '技术信息',
               children: [
-                _statusField(context, '编码参数', debug.playerAudioParams),
-                _statusField(context, '轨道', debug.playerAudioTracks),
+                ExpansionTile(
+                  key: const PageStorageKey('video-parameters'),
+                  title: const Text('视频参数'),
+                  shape: const Border(),
+                  collapsedShape: const Border(),
+                  children: [
+                    _statusField(context, '编码参数', debug.playerVideoParams),
+                    _statusField(context, '轨道', debug.playerVideoTracks),
+                  ],
+                ),
+                ExpansionTile(
+                  key: const PageStorageKey('audio-parameters'),
+                  title: const Text('音频参数'),
+                  shape: const Border(),
+                  collapsedShape: const Border(),
+                  children: [
+                    _statusField(context, '编码参数', debug.playerAudioParams),
+                    _statusField(context, '轨道', debug.playerAudioTracks),
+                  ],
+                ),
               ],
             ),
-          ]),
-        ],
-      );
-    });
+          ],
+        );
+      },
+    );
   }
 
   Widget _metric(BuildContext context, String label, String value) {
     final theme = Theme.of(context);
-    return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-      Text(label,
-          style: theme.textTheme.labelMedium
-              ?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
-      const SizedBox(height: 4),
-      Text(value.isEmpty ? '—' : value, style: theme.textTheme.titleMedium),
-    ]);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          label,
+          style: theme.textTheme.labelMedium?.copyWith(
+            color: theme.colorScheme.onSurfaceVariant,
+          ),
+        ),
+        const SizedBox(height: 4),
+        Text(value.isEmpty ? '—' : value, style: theme.textTheme.titleMedium),
+      ],
+    );
   }
 
-  Widget _statusField(BuildContext context, String label, String value,
-      {bool compact = false}) {
+  Widget _statusField(
+    BuildContext context,
+    String label,
+    String value, {
+    bool compact = false,
+  }) {
     return ListTile(
       title: Text(label),
       subtitle: Text(
@@ -230,44 +278,56 @@ class _VideoDetailsSheetState extends State<_VideoDetailsSheet>
 
   Widget _buildLogTab(BuildContext context) {
     final theme = Theme.of(context);
-    return Observer(builder: (context) {
-      final logs = playerController.debug.playerLog;
-      _scheduleLogAutoScroll(logs.length);
-      return Padding(
-        padding: materialBottomSheetContentPadding,
-        child: Column(children: [
-          Row(children: [
-            Text('${logs.length} 条记录', style: theme.textTheme.labelMedium),
-            const Spacer(),
-            TextButton.icon(
-              onPressed: logs.isEmpty
-                  ? null
-                  : () => _copyToClipboard(context, logs.join('\n')),
-              icon: const Icon(Icons.content_copy_rounded, size: 18),
-              label: const Text('复制全部'),
-            ),
-          ]),
-          const SizedBox(height: 8),
-          Expanded(
-              child: TonalCard(
-            child: logs.isEmpty
-                ? const GeneralEmptyState(
-                    icon: Icons.receipt_long_rounded,
-                    title: '还没有运行日志',
-                    compact: true,
-                  )
-                : ListView.builder(
-                    key: const PageStorageKey('videoDetailsLogList'),
-                    controller: _logScrollController,
-                    padding: const EdgeInsets.symmetric(vertical: 12),
-                    itemCount: logs.length,
-                    itemBuilder: (context, index) =>
-                        _buildLogRow(context, _LogEntry.parse(logs[index])),
+    return Observer(
+      builder: (context) {
+        final logs = playerController.debug.playerLog;
+        _scheduleLogAutoScroll(logs.length);
+        return Padding(
+          padding: materialBottomSheetContentPadding,
+          child: Column(
+            children: [
+              Row(
+                children: [
+                  Text(
+                    '${logs.length} 条记录',
+                    style: theme.textTheme.labelMedium,
                   ),
-          )),
-        ]),
-      );
-    });
+                  const Spacer(),
+                  TextButton.icon(
+                    onPressed: logs.isEmpty
+                        ? null
+                        : () => _copyToClipboard(context, logs.join('\n')),
+                    icon: const Icon(Icons.content_copy_rounded, size: 18),
+                    label: const Text('复制全部'),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 8),
+              Expanded(
+                child: TonalCard(
+                  child: logs.isEmpty
+                      ? const GeneralEmptyState(
+                          icon: Icons.receipt_long_rounded,
+                          title: '还没有运行日志',
+                          compact: true,
+                        )
+                      : ListView.builder(
+                          key: const PageStorageKey('videoDetailsLogList'),
+                          controller: _logScrollController,
+                          padding: const EdgeInsets.symmetric(vertical: 12),
+                          itemCount: logs.length,
+                          itemBuilder: (context, index) => _buildLogRow(
+                            context,
+                            _LogEntry.parse(logs[index]),
+                          ),
+                        ),
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
   }
 
   Widget _buildLogRow(BuildContext context, _LogEntry entry) {

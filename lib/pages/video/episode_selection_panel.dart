@@ -88,24 +88,20 @@ class EpisodeSelectionPanelState extends State<EpisodeSelectionPanel> {
   String _roadLabel(int index) {
     final line = _roadName(index);
     if (widget.isOffline) return line;
-    return widget.title.trim().isEmpty
-        ? line
-        : '${widget.title} · $line';
+    return widget.title.trim().isEmpty ? line : '${widget.title} · $line';
   }
 
   /// Subtitle matching the source sheet's "source + line + info" style.
   String _roadSubtitle(int index) {
     if (widget.isOffline) {
-      final count =
-          index >= 0 && index < widget.roads.length
-              ? widget.roads[index].data.length
-              : 0;
+      final count = index >= 0 && index < widget.roads.length
+          ? widget.roads[index].data.length
+          : 0;
       return '已缓存 · $count 集';
     }
-    final count =
-        index >= 0 && index < widget.roads.length
-            ? widget.roads[index].data.length
-            : 0;
+    final count = index >= 0 && index < widget.roads.length
+        ? widget.roads[index].data.length
+        : 0;
     final parts = <String>[
       if (widget.pluginName.isNotEmpty) widget.pluginName,
       '$count 集',

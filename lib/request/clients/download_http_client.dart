@@ -68,10 +68,7 @@ class DownloadHttpClient {
       final response = await DioFactory.downloadDio.get<ResponseBody>(
         url,
         options: Options(
-          headers: {
-            ...headers,
-            'Range': 'bytes=$start-$end',
-          },
+          headers: {...headers, 'Range': 'bytes=$start-$end'},
           responseType: ResponseType.stream,
           receiveTimeout: receiveTimeout,
         ),

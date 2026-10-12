@@ -1,10 +1,18 @@
 import 'package:flutter/material.dart';
 
-const EdgeInsets materialBottomSheetContentPadding =
-    EdgeInsets.fromLTRB(24, 0, 24, 24);
+const EdgeInsets materialBottomSheetContentPadding = EdgeInsets.fromLTRB(
+  24,
+  0,
+  24,
+  24,
+);
 
-const EdgeInsets materialBottomSheetTabsPadding =
-    EdgeInsets.fromLTRB(24, 0, 24, 16);
+const EdgeInsets materialBottomSheetTabsPadding = EdgeInsets.fromLTRB(
+  24,
+  0,
+  24,
+  16,
+);
 
 class MaterialBottomSheetHeader extends StatelessWidget {
   const MaterialBottomSheetHeader({
@@ -38,10 +46,7 @@ class MaterialBottomSheetHeader extends StatelessWidget {
           Row(
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              if (leading != null) ...[
-                leading!,
-                const SizedBox(width: 12),
-              ],
+              if (leading != null) ...[leading!, const SizedBox(width: 12)],
               Expanded(
                 child: Semantics(
                   header: true,

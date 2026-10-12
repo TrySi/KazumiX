@@ -21,10 +21,7 @@ class _BangumiRelationTraversalNode {
 }
 
 class BangumiRelation {
-  const BangumiRelation({
-    required this.relation,
-    required this.bangumiItem,
-  });
+  const BangumiRelation({required this.relation, required this.bangumiItem});
 
   final String relation;
   final BangumiItem bangumiItem;
@@ -82,12 +79,14 @@ List<BangumiRelation> selectRelatedAnime(
   required int currentSubjectId,
 }) {
   final seenIds = <int>{};
-  return relations.where((relation) {
-    final item = relation.bangumiItem;
-    return item.type == 2 &&
-        item.id != currentSubjectId &&
-        seenIds.add(item.id);
-  }).toList(growable: false);
+  return relations
+      .where((relation) {
+        final item = relation.bangumiItem;
+        return item.type == 2 &&
+            item.id != currentSubjectId &&
+            seenIds.add(item.id);
+      })
+      .toList(growable: false);
 }
 
 Future<List<BangumiRelation>> resolveRelatedAnimeChain({
@@ -138,10 +137,7 @@ Future<List<BangumiRelation>> resolveRelatedAnimeChain({
     }
     final displayRelation = relationById.putIfAbsent(
       item.id,
-      () => BangumiRelation(
-        relation: direction,
-        bangumiItem: item,
-      ),
+      () => BangumiRelation(relation: direction, bangumiItem: item),
     );
     if (!mainlineDirectionById.containsKey(item.id)) {
       mainlineDirectionById[item.id] = direction;
@@ -149,10 +145,7 @@ Future<List<BangumiRelation>> resolveRelatedAnimeChain({
     }
     if (scheduledIds.add(item.id)) {
       frontier.add(
-        _BangumiRelationTraversalNode(
-          subjectId: item.id,
-          direction: direction,
-        ),
+        _BangumiRelationTraversalNode(subjectId: item.id, direction: direction),
       );
     }
   }
@@ -163,15 +156,17 @@ Future<List<BangumiRelation>> resolveRelatedAnimeChain({
     }
   }
 
-  while (
-      frontier.isNotEmpty && depth < maxDepth && fetchCount < maxFetchCount) {
+  while (frontier.isNotEmpty &&
+      depth < maxDepth &&
+      fetchCount < maxFetchCount) {
     final nextFrontier = <_BangumiRelationTraversalNode>[];
     final nextLayers = <String, List<BangumiRelation>>{
       bangumiPrequelRelation: <BangumiRelation>[],
       bangumiSequelRelation: <BangumiRelation>[],
     };
-    final nodesToFetch =
-        frontier.take(maxFetchCount - fetchCount).toList(growable: false);
+    final nodesToFetch = frontier
+        .take(maxFetchCount - fetchCount)
+        .toList(growable: false);
     final relationLists = await Future.wait([
       for (final node in nodesToFetch)
         Future<List<BangumiRelation>>.sync(
@@ -191,10 +186,7 @@ Future<List<BangumiRelation>> resolveRelatedAnimeChain({
         }
         final displayRelation = relationById.putIfAbsent(
           item.id,
-          () => BangumiRelation(
-            relation: node.direction,
-            bangumiItem: item,
-          ),
+          () => BangumiRelation(relation: node.direction, bangumiItem: item),
         );
         if (!mainlineDirectionById.containsKey(item.id)) {
           mainlineDirectionById[item.id] = node.direction;

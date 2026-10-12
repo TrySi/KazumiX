@@ -149,10 +149,9 @@ class _DownloadPageState extends State<DownloadPage> {
         toolbarHeight: 72,
         title: Text(
           '离线',
-          style: Theme.of(context)
-              .textTheme
-              .headlineSmall
-              ?.copyWith(fontWeight: FontWeight.w700),
+          style: Theme.of(
+            context,
+          ).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w700),
         ),
       ),
       body: Column(

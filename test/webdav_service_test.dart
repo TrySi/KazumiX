@@ -42,10 +42,13 @@ void main() {
     await Hive.close();
     PathProviderPlatform.instance = originalPaths;
     expect(
-        directory.absolute.path.startsWith(Directory.systemTemp.absolute.path),
-        isTrue);
-    expect(directory.uri.pathSegments.where((part) => part.isNotEmpty).last,
-        startsWith('kazumi_webdav_test_'));
+      directory.absolute.path.startsWith(Directory.systemTemp.absolute.path),
+      isTrue,
+    );
+    expect(
+      directory.uri.pathSegments.where((part) => part.isNotEmpty).last,
+      startsWith('kazumi_webdav_test_'),
+    );
     await directory.delete(recursive: true);
   });
 
@@ -61,7 +64,9 @@ void main() {
     expect(GStorage.getSetting(SettingsKeys.webDavEnableHistory), isFalse);
     expect(GStorage.getSetting(SettingsKeys.webDavEnableCollect), isFalse);
     expect(
-        GStorage.getSetting(SettingsKeys.webDavEnableDanmakuShield), isFalse);
+      GStorage.getSetting(SettingsKeys.webDavEnableDanmakuShield),
+      isFalse,
+    );
   });
 
   test('failed WebDAV initialization clears the previous connection', () async {
@@ -98,12 +103,15 @@ void main() {
       client = _MemoryWebDavClient();
       webDav.client = client;
       webDav.initialized = true;
-      webDav.webDavLocalTempDirectory =
-          Directory('${directory.path}/webdavTemp');
+      webDav.webDavLocalTempDirectory = Directory(
+        '${directory.path}/webdavTemp',
+      );
       await GStorage.putSetting(SettingsKeys.webDavEnable, true);
       await GStorage.putSetting(SettingsKeys.webDavEnableDanmakuShield, true);
       await GStorage.putSetting(
-          SettingsKeys.danmakuShieldSyncDeviceId, deviceA);
+        SettingsKeys.danmakuShieldSyncDeviceId,
+        deviceA,
+      );
     });
 
     tearDown(() async {
@@ -112,53 +120,63 @@ void main() {
     });
 
     test(
-        'uploads existing rules on first sync and imports them on a new device',
-        () async {
-      await GStorage.shieldList.putAll({'剧透': '剧透', '/广告+/': '/广告+/'});
+      'uploads existing rules on first sync and imports them on a new device',
+      () async {
+        await GStorage.shieldList.putAll({'剧透': '剧透', '/广告+/': '/广告+/'});
 
-      await service.sync();
+        await service.sync();
 
-      expect(uploaded(deviceA).rules, unorderedEquals(['剧透', '/广告+/']));
-      expect(client.files.keys, ['$root/$deviceA.json']);
-      await switchDevice(deviceB);
-      await repository.setRule('引战', deleted: false);
-      await service.sync();
+        expect(uploaded(deviceA).rules, unorderedEquals(['剧透', '/广告+/']));
+        expect(client.files.keys, ['$root/$deviceA.json']);
+        await switchDevice(deviceB);
+        await repository.setRule('引战', deleted: false);
+        await service.sync();
 
-      expect(
-          GStorage.shieldList.values, unorderedEquals(['剧透', '/广告+/', '引战']));
-      expect(uploaded(deviceB).rules, unorderedEquals(['剧透', '/广告+/', '引战']));
-      expect(client.files.keys,
-          unorderedEquals(['$root/$deviceA.json', '$root/$deviceB.json']));
-      expect(await webDav.webDavLocalTempDirectory.list().toList(), isEmpty);
-    });
+        expect(
+          GStorage.shieldList.values,
+          unorderedEquals(['剧透', '/广告+/', '引战']),
+        );
+        expect(uploaded(deviceB).rules, unorderedEquals(['剧透', '/广告+/', '引战']));
+        expect(
+          client.files.keys,
+          unorderedEquals(['$root/$deviceA.json', '$root/$deviceB.json']),
+        );
+        expect(await webDav.webDavLocalTempDirectory.list().toList(), isEmpty);
+      },
+    );
 
-    test('offline deletions propagate to stale devices and allow re-adding',
-        () async {
-      await repository.setRule('剧透', deleted: false);
-      await service.sync();
-      final stateA = GStorage.getSetting(SettingsKeys.danmakuShieldSyncState);
-      await switchDevice(deviceB);
-      await service.sync();
+    test(
+      'offline deletions propagate to stale devices and allow re-adding',
+      () async {
+        await repository.setRule('剧透', deleted: false);
+        await service.sync();
+        final stateA = GStorage.getSetting(SettingsKeys.danmakuShieldSyncState);
+        await switchDevice(deviceB);
+        await service.sync();
 
-      await GStorage.putSetting(SettingsKeys.webDavEnableDanmakuShield, false);
-      await repository.setRule('剧透', deleted: true);
-      await service.syncIfEnabled();
-      expect(uploaded(deviceB).rules, ['剧透']);
-      await GStorage.putSetting(SettingsKeys.webDavEnableDanmakuShield, true);
-      await service.sync();
-      final stateB = GStorage.getSetting(SettingsKeys.danmakuShieldSyncState);
+        await GStorage.putSetting(
+          SettingsKeys.webDavEnableDanmakuShield,
+          false,
+        );
+        await repository.setRule('剧透', deleted: true);
+        await service.syncIfEnabled();
+        expect(uploaded(deviceB).rules, ['剧透']);
+        await GStorage.putSetting(SettingsKeys.webDavEnableDanmakuShield, true);
+        await service.sync();
+        final stateB = GStorage.getSetting(SettingsKeys.danmakuShieldSyncState);
 
-      await switchDevice(deviceA, state: stateA);
-      await service.sync();
-      expect(GStorage.shieldList.values, isEmpty);
-      expect(uploaded(deviceA).entries['剧透']!.deleted, isTrue);
+        await switchDevice(deviceA, state: stateA);
+        await service.sync();
+        expect(GStorage.shieldList.values, isEmpty);
+        expect(uploaded(deviceA).entries['剧透']!.deleted, isTrue);
 
-      await repository.setRule('剧透', deleted: false);
-      await service.sync();
-      await switchDevice(deviceB, state: stateB);
-      await service.sync();
-      expect(GStorage.shieldList.values, ['剧透']);
-    });
+        await repository.setRule('剧透', deleted: false);
+        await service.sync();
+        await switchDevice(deviceB, state: stateB);
+        await service.sync();
+        expect(GStorage.shieldList.values, ['剧透']);
+      },
+    );
 
     test('failed upload preserves local changes for retry', () async {
       await repository.setRule('广告', deleted: false);
@@ -177,24 +195,33 @@ void main() {
       expect(await webDav.webDavLocalTempDirectory.list().toList(), isEmpty);
     });
 
-    test('invalid remote files never partially apply or overwrite data',
-        () async {
-      await repository.setRule('本地', deleted: false);
-      final before = GStorage.getSetting(SettingsKeys.danmakuShieldSyncState);
-      client.files['$root/$deviceA.json'] = DanmakuShieldSyncState([
-        const DanmakuShieldSyncEntry(
-            rule: '远端', updatedAt: 1, deviceId: deviceA, deleted: false),
-      ]).encode();
-      client.files['$root/$deviceB.json'] = '{invalid';
-      final remoteBefore = Map.of(client.files);
+    test(
+      'invalid remote files never partially apply or overwrite data',
+      () async {
+        await repository.setRule('本地', deleted: false);
+        final before = GStorage.getSetting(SettingsKeys.danmakuShieldSyncState);
+        client.files['$root/$deviceA.json'] = DanmakuShieldSyncState([
+          const DanmakuShieldSyncEntry(
+            rule: '远端',
+            updatedAt: 1,
+            deviceId: deviceA,
+            deleted: false,
+          ),
+        ]).encode();
+        client.files['$root/$deviceB.json'] = '{invalid';
+        final remoteBefore = Map.of(client.files);
 
-      await expectLater(service.sync(), throwsFormatException);
+        await expectLater(service.sync(), throwsFormatException);
 
-      expect(GStorage.shieldList.values, ['本地']);
-      expect(GStorage.getSetting(SettingsKeys.danmakuShieldSyncState), before);
-      expect(client.files, remoteBefore);
-      expect(await webDav.webDavLocalTempDirectory.list().toList(), isEmpty);
-    });
+        expect(GStorage.shieldList.values, ['本地']);
+        expect(
+          GStorage.getSetting(SettingsKeys.danmakuShieldSyncState),
+          before,
+        );
+        expect(client.files, remoteBefore);
+        expect(await webDav.webDavLocalTempDirectory.list().toList(), isEmpty);
+      },
+    );
 
     test('an edit during upload is included in the queued sync', () async {
       await repository.setRule('原有', deleted: false);
@@ -218,27 +245,32 @@ void main() {
       expect(GStorage.shieldList.values, ['新增']);
     });
 
-    test('corrupt sync metadata does not prevent offline edits or restart',
-        () async {
-      const corrupt = '{"version":1,"entries":[';
-      await GStorage.putSetting(SettingsKeys.webDavEnable, false);
-      await GStorage.shieldList.put('旧规则', '旧规则');
-      await GStorage.putSetting(SettingsKeys.danmakuShieldSyncState, corrupt);
+    test(
+      'corrupt sync metadata does not prevent offline edits or restart',
+      () async {
+        const corrupt = '{"version":1,"entries":[';
+        await GStorage.putSetting(SettingsKeys.webDavEnable, false);
+        await GStorage.shieldList.put('旧规则', '旧规则');
+        await GStorage.putSetting(SettingsKeys.danmakuShieldSyncState, corrupt);
 
-      await repository.setRule('/广告+/', deleted: false);
-      await repository.setRule('旧规则', deleted: true);
-      expect(repository.getRules(), ['/广告+/']);
-      expect(GStorage.getSetting(SettingsKeys.danmakuShieldSyncCorruptState),
-          corrupt);
+        await repository.setRule('/广告+/', deleted: false);
+        await repository.setRule('旧规则', deleted: true);
+        expect(repository.getRules(), ['/广告+/']);
+        expect(
+          GStorage.getSetting(SettingsKeys.danmakuShieldSyncCorruptState),
+          corrupt,
+        );
 
-      final restarted = DanmakuShieldRepository();
-      addTearDown(restarted.dispose);
-      await restarted.initialize();
-      expect(restarted.getRules(), ['/广告+/']);
-      final saved = DanmakuShieldSyncState.decode(
-          GStorage.getSetting(SettingsKeys.danmakuShieldSyncState));
-      expect(saved.entries['旧规则']!.deleted, isTrue);
-    });
+        final restarted = DanmakuShieldRepository();
+        addTearDown(restarted.dispose);
+        await restarted.initialize();
+        expect(restarted.getRules(), ['/广告+/']);
+        final saved = DanmakuShieldSyncState.decode(
+          GStorage.getSetting(SettingsKeys.danmakuShieldSyncState),
+        );
+        expect(saved.entries['旧规则']!.deleted, isTrue);
+      },
+    );
   });
 }
 
@@ -251,29 +283,40 @@ class _MemoryWebDavClient implements webdav.Client {
   Future<void> mkdir(String path, [CancelToken? cancelToken]) async {}
 
   @override
-  Future<List<webdav.File>> readDir(String path,
-      [CancelToken? cancelToken]) async {
+  Future<List<webdav.File>> readDir(
+    String path, [
+    CancelToken? cancelToken,
+  ]) async {
     return [
       for (final entry in files.entries)
         if (entry.key.startsWith('$path/'))
           webdav.File(
-              name: entry.key.substring(path.length + 1),
-              isDir: false,
-              size: entry.value.length),
+            name: entry.key.substring(path.length + 1),
+            isDir: false,
+            size: entry.value.length,
+          ),
     ];
   }
 
   @override
-  Future<void> read2File(String path, String savePath,
-      {void Function(int, int)? onProgress, CancelToken? cancelToken}) async {
+  Future<void> read2File(
+    String path,
+    String savePath, {
+    void Function(int, int)? onProgress,
+    CancelToken? cancelToken,
+  }) async {
     final contents = files[path];
     if (contents == null) throw StateError('File missing: $path');
     await File(savePath).writeAsString(contents);
   }
 
   @override
-  Future<void> writeFromFile(String localFilePath, String path,
-      {void Function(int, int)? onProgress, CancelToken? cancelToken}) async {
+  Future<void> writeFromFile(
+    String localFilePath,
+    String path, {
+    void Function(int, int)? onProgress,
+    CancelToken? cancelToken,
+  }) async {
     await beforeUpload?.call();
     if (failUpload) throw StateError('Upload failed');
     files[path] = await File(localFilePath).readAsString();
@@ -285,8 +328,12 @@ class _MemoryWebDavClient implements webdav.Client {
   }
 
   @override
-  Future<void> rename(String oldPath, String newPath, bool overwrite,
-      [CancelToken? cancelToken]) async {
+  Future<void> rename(
+    String oldPath,
+    String newPath,
+    bool overwrite, [
+    CancelToken? cancelToken,
+  ]) async {
     files[newPath] = files.remove(oldPath)!;
   }
 

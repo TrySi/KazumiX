@@ -61,7 +61,8 @@ class _EpisodeCommentsSheetState extends State<EpisodeCommentsSheet>
     final version = ++_requestVersion;
     _selectedEpisode = widget.episode;
     _hasError = false;
-    _isLoading = _controller.commentsEpisode != _selectedEpisode ||
+    _isLoading =
+        _controller.commentsEpisode != _selectedEpisode ||
         _controller.episodeCommentsList.isEmpty;
     if (_isLoading) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -80,7 +81,9 @@ class _EpisodeCommentsSheetState extends State<EpisodeCommentsSheet>
     });
     try {
       final applied = await _controller.queryBangumiEpisodeCommentsByID(
-          _controller.bangumiItem.id, _selectedEpisode);
+        _controller.bangumiItem.id,
+        _selectedEpisode,
+      );
       if (!mounted || version != _requestVersion || !applied) return;
       if (_controller.episodeInfo.id != 0) {
         _rememberEpisodeInfo(_selectedEpisode, _controller.episodeInfo);
@@ -136,22 +139,24 @@ class _EpisodeCommentsSheetState extends State<EpisodeCommentsSheet>
 
   @override
   Widget build(BuildContext context) {
-    return Observer(builder: (context) {
-      final matchesEpisode = _controller.commentsEpisode == _selectedEpisode;
-      final comments = _controller.episodeCommentsList.toList();
-      return EpisodeCommentsView(
-        episode: _selectedEpisode,
-        episodeInfo: matchesEpisode && _controller.episodeInfo.id != 0
-            ? _controller.episodeInfo
-            : _episodeInfoByIndex[_selectedEpisode],
-        comments: matchesEpisode ? comments : [],
-        isLoading: _isLoading,
-        hasError: _hasError,
-        isAscending: _controller.isCommentsAscending,
-        onToggleSort: _controller.toggleSortOrder,
-        onSelectEpisode: _showEpisodeSelection,
-        onRefresh: _loadComments,
-      );
-    });
+    return Observer(
+      builder: (context) {
+        final matchesEpisode = _controller.commentsEpisode == _selectedEpisode;
+        final comments = _controller.episodeCommentsList.toList();
+        return EpisodeCommentsView(
+          episode: _selectedEpisode,
+          episodeInfo: matchesEpisode && _controller.episodeInfo.id != 0
+              ? _controller.episodeInfo
+              : _episodeInfoByIndex[_selectedEpisode],
+          comments: matchesEpisode ? comments : [],
+          isLoading: _isLoading,
+          hasError: _hasError,
+          isAscending: _controller.isCommentsAscending,
+          onToggleSort: _controller.toggleSortOrder,
+          onSelectEpisode: _showEpisodeSelection,
+          onRefresh: _loadComments,
+        );
+      },
+    );
   }
 }

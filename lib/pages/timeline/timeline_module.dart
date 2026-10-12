@@ -8,9 +8,8 @@ final timelineModule = createModule(
     c.route(
       '/',
       transition: TransitionType.none,
-      child: (context, state) => TimelinePage(
-        controller: inject<TimelineController>(),
-      ),
+      child: (context, state) =>
+          TimelinePage(controller: inject<TimelineController>()),
     );
   },
 );

@@ -8,8 +8,9 @@ import 'package:path_provider/path_provider.dart';
 class ImageCacheService {
   Stream<File> _files() async* {
     final temporary = await getTemporaryDirectory();
-    final directory =
-        Directory(p.join(temporary.path, DefaultCacheManager.key));
+    final directory = Directory(
+      p.join(temporary.path, DefaultCacheManager.key),
+    );
     if (!await directory.exists()) return;
     yield* directory
         .list(recursive: true, followLinks: false)

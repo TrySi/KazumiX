@@ -9,16 +9,16 @@ class PluginShopPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => SettingsDetailScaffold(
-        title: const Text('规则仓库'),
-        body: SafeArea(
-          top: false,
-          child: Align(
-            alignment: Alignment.topCenter,
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 1000),
-              child: PluginCatalogView(controller: controller),
-            ),
-          ),
+    title: const Text('规则仓库'),
+    body: SafeArea(
+      top: false,
+      child: Align(
+        alignment: Alignment.topCenter,
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 1000),
+          child: PluginCatalogView(controller: controller),
         ),
-      );
+      ),
+    ),
+  );
 }

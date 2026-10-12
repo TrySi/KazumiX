@@ -44,7 +44,9 @@ class DanmakuShieldRepository implements IDanmakuShieldRepository {
         (_) => random.nextInt(256).toRadixString(16).padLeft(2, '0'),
       ).join();
       await GStorage.putSetting(
-          SettingsKeys.danmakuShieldSyncDeviceId, deviceId);
+        SettingsKeys.danmakuShieldSyncDeviceId,
+        deviceId,
+      );
     }
     return deviceId;
   }
@@ -56,7 +58,9 @@ class DanmakuShieldRepository implements IDanmakuShieldRepository {
         return DanmakuShieldSyncState.decode(saved);
       } on FormatException catch (e) {
         await GStorage.putSetting(
-            SettingsKeys.danmakuShieldSyncCorruptState, saved);
+          SettingsKeys.danmakuShieldSyncCorruptState,
+          saved,
+        );
         KazumiLogger().w(
           'Danmaku: restoring shield sync metadata from local rules',
           error: e,
@@ -93,30 +97,38 @@ class DanmakuShieldRepository implements IDanmakuShieldRepository {
         final change = DanmakuShieldSyncEntry(
           rule: rule,
           updatedAt: max(
-              DateTime.now().millisecondsSinceEpoch, state.latestTimestamp + 1),
+            DateTime.now().millisecondsSinceEpoch,
+            state.latestTimestamp + 1,
+          ),
           deviceId: await _getDeviceId(),
           deleted: deleted,
         );
-        await _save(state.merge(DanmakuShieldSyncState([change])),
-            DanmakuShieldChange.localEdit);
+        await _save(
+          state.merge(DanmakuShieldSyncState([change])),
+          DanmakuShieldChange.localEdit,
+        );
         return true;
       });
 
   @override
   Future<DanmakuShieldSyncState> mergeSyncState(
-          DanmakuShieldSyncState remote) =>
-      _writes.run(() async {
-        final merged = (await _read()).merge(remote);
-        await _save(merged, DanmakuShieldChange.restore);
-        return merged;
-      });
+    DanmakuShieldSyncState remote,
+  ) => _writes.run(() async {
+    final merged = (await _read()).merge(remote);
+    await _save(merged, DanmakuShieldChange.restore);
+    return merged;
+  });
 
   Future<void> _save(
-      DanmakuShieldSyncState state, DanmakuShieldChange source) async {
+    DanmakuShieldSyncState state,
+    DanmakuShieldChange source,
+  ) async {
     final before = getRules().toSet();
     // Commit metadata first so initialize can repair an interrupted projection.
     await GStorage.putSetting(
-        SettingsKeys.danmakuShieldSyncState, state.encode());
+      SettingsKeys.danmakuShieldSyncState,
+      state.encode(),
+    );
     final rules = state.rules.toSet();
     await _rules.deleteAll([
       for (final key in _rules.keys)

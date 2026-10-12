@@ -47,8 +47,7 @@ class PlayerKeyboardShortcuts extends StatefulWidget {
 class _PlayerKeyboardShortcutsState extends State<PlayerKeyboardShortcuts> {
   late Map<String, List<String>> _shortcuts;
   final Map<LogicalKeyboardKey, PlayerLongPressShortcutActions>
-      _activeLongPressKeys =
-      <LogicalKeyboardKey, PlayerLongPressShortcutActions>{};
+  _activeLongPressKeys = <LogicalKeyboardKey, PlayerLongPressShortcutActions>{};
 
   @override
   void initState() {

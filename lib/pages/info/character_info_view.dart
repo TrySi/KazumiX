@@ -27,8 +27,9 @@ class CharacterInfoView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final fields =
-        character.infobox.where((field) => field.key != '引用来源').toList();
+    final fields = character.infobox
+        .where((field) => field.key != '引用来源')
+        .toList();
     final quickFields = fields
         .where((field) => _quickKeys.contains(field.key))
         .take(4)
@@ -37,13 +38,14 @@ class CharacterInfoView extends StatelessWidget {
         .where((field) => field.key != '简体中文名' && !quickFields.contains(field))
         .toList();
     final tappedName = characterName.trim();
-    final originalName =
-        character.name.isNotEmpty ? character.name : tappedName;
+    final originalName = character.name.isNotEmpty
+        ? character.name
+        : tappedName;
     final name = character.nameCn.isNotEmpty
         ? character.nameCn
         : tappedName.isNotEmpty
-            ? tappedName
-            : originalName;
+        ? tappedName
+        : originalName;
     final useCompactColumns = MediaQuery.textScalerOf(context).scale(14) <= 20;
     final relation = characterRelation.trim();
 
@@ -57,16 +59,20 @@ class CharacterInfoView extends StatelessWidget {
             children: [
               if (relation.isNotEmpty && relation != '未知') ...[
                 Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 6,
+                  ),
                   decoration: ShapeDecoration(
                     color: theme.colorScheme.secondaryContainer,
                     shape: const StadiumBorder(),
                   ),
-                  child: Text(relation,
-                      style: theme.textTheme.labelLarge?.copyWith(
-                        color: theme.colorScheme.onSecondaryContainer,
-                      )),
+                  child: Text(
+                    relation,
+                    style: theme.textTheme.labelLarge?.copyWith(
+                      color: theme.colorScheme.onSecondaryContainer,
+                    ),
+                  ),
                 ),
                 const SizedBox(height: 12),
               ],
@@ -79,10 +85,12 @@ class CharacterInfoView extends StatelessWidget {
               ),
               if (originalName.isNotEmpty && originalName != name) ...[
                 const SizedBox(height: 8),
-                SelectableText(originalName,
-                    style: theme.textTheme.bodyMedium?.copyWith(
-                      color: theme.colorScheme.onSurfaceVariant,
-                    )),
+                SelectableText(
+                  originalName,
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    color: theme.colorScheme.onSurfaceVariant,
+                  ),
+                ),
               ],
               if (actorNames.isNotEmpty) ...[
                 const SizedBox(height: 20),
@@ -95,22 +103,26 @@ class CharacterInfoView extends StatelessWidget {
           const SizedBox(height: 16),
           ContentSection(
             title: '基本资料',
-            child: LayoutBuilder(builder: (context, constraints) {
-              final columns =
-                  constraints.maxWidth >= 240 && useCompactColumns ? 2 : 1;
-              return Wrap(
-                spacing: 16,
-                runSpacing: 16,
-                children: [
-                  for (final field in quickFields)
-                    SizedBox(
-                      width:
-                          (constraints.maxWidth - 16 * (columns - 1)) / columns,
-                      child: _buildInfoField(context, field.key, field.value),
-                    ),
-                ],
-              );
-            }),
+            child: LayoutBuilder(
+              builder: (context, constraints) {
+                final columns = constraints.maxWidth >= 240 && useCompactColumns
+                    ? 2
+                    : 1;
+                return Wrap(
+                  spacing: 16,
+                  runSpacing: 16,
+                  children: [
+                    for (final field in quickFields)
+                      SizedBox(
+                        width:
+                            (constraints.maxWidth - 16 * (columns - 1)) /
+                            columns,
+                        child: _buildInfoField(context, field.key, field.value),
+                      ),
+                  ],
+                );
+              },
+            ),
           ),
         ],
       ],
@@ -119,81 +131,88 @@ class CharacterInfoView extends StatelessWidget {
     return SingleChildScrollView(
       key: const PageStorageKey('character-info'),
       padding: materialBottomSheetContentPadding,
-      child: LayoutBuilder(builder: (context, constraints) {
-        final sideBySide = constraints.maxWidth >= 480 && useCompactColumns;
-        final portraitWidth =
-            sideBySide ? constraints.maxWidth * 0.40 : constraints.maxWidth;
-        final screenHeight = MediaQuery.sizeOf(context).height;
-        final portraitHeight = sideBySide
-            ? (screenHeight * 0.42).clamp(240.0, 400.0)
-            : (screenHeight * 0.30).clamp(200.0, 300.0);
-        final portrait = _CharacterPortrait(
-          imageUrl: character.image,
-          width: portraitWidth,
-          height: portraitHeight,
-        );
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final sideBySide = constraints.maxWidth >= 480 && useCompactColumns;
+          final portraitWidth = sideBySide
+              ? constraints.maxWidth * 0.40
+              : constraints.maxWidth;
+          final screenHeight = MediaQuery.sizeOf(context).height;
+          final portraitHeight = sideBySide
+              ? (screenHeight * 0.42).clamp(240.0, 400.0)
+              : (screenHeight * 0.30).clamp(200.0, 300.0);
+          final portrait = _CharacterPortrait(
+            imageUrl: character.image,
+            width: portraitWidth,
+            height: portraitHeight,
+          );
 
-        return Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            if (sideBySide)
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  SizedBox(width: portraitWidth, child: portrait),
-                  const SizedBox(width: 16),
-                  Expanded(child: profile),
-                ],
-              )
-            else ...[
-              portrait,
-              const SizedBox(height: 16),
-              profile,
-            ],
-            if (character.summary.isNotEmpty) ...[
-              const SizedBox(height: 24),
-              ContentSection(
-                title: '人物简介',
-                child: SelectableText(character.summary,
-                    style: theme.textTheme.bodyLarge?.copyWith(height: 1.65)),
-              ),
-            ],
-            if (moreFields.isNotEmpty) ...[
-              const SizedBox(height: 24),
-              ContentSection.group(
-                title: '更多资料',
-                children: [
-                  for (final field in moreFields)
-                    Padding(
-                      padding: const EdgeInsets.all(16),
-                      child: _buildInfoField(context, field.key, field.value),
-                    ),
-                ],
-              ),
-            ],
-            if (character.unstructuredInfo.isNotEmpty) ...[
-              const SizedBox(height: 24),
-              ContentSection(
-                title: '人物资料',
-                child: SelectableText(character.unstructuredInfo,
-                    style: theme.textTheme.bodyMedium?.copyWith(height: 1.6)),
-              ),
-            ],
-            if (fields.isEmpty &&
-                character.unstructuredInfo.isEmpty &&
-                character.summary.isEmpty) ...[
-              const SizedBox(height: 24),
-              const TonalCard(
-                child: GeneralEmptyState(
-                  icon: Icons.person_outline_rounded,
-                  title: '暂无人物资料',
-                  compact: true,
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              if (sideBySide)
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    SizedBox(width: portraitWidth, child: portrait),
+                    const SizedBox(width: 16),
+                    Expanded(child: profile),
+                  ],
+                )
+              else ...[
+                portrait,
+                const SizedBox(height: 16),
+                profile,
+              ],
+              if (character.summary.isNotEmpty) ...[
+                const SizedBox(height: 24),
+                ContentSection(
+                  title: '人物简介',
+                  child: SelectableText(
+                    character.summary,
+                    style: theme.textTheme.bodyLarge?.copyWith(height: 1.65),
+                  ),
                 ),
-              ),
+              ],
+              if (moreFields.isNotEmpty) ...[
+                const SizedBox(height: 24),
+                ContentSection.group(
+                  title: '更多资料',
+                  children: [
+                    for (final field in moreFields)
+                      Padding(
+                        padding: const EdgeInsets.all(16),
+                        child: _buildInfoField(context, field.key, field.value),
+                      ),
+                  ],
+                ),
+              ],
+              if (character.unstructuredInfo.isNotEmpty) ...[
+                const SizedBox(height: 24),
+                ContentSection(
+                  title: '人物资料',
+                  child: SelectableText(
+                    character.unstructuredInfo,
+                    style: theme.textTheme.bodyMedium?.copyWith(height: 1.6),
+                  ),
+                ),
+              ],
+              if (fields.isEmpty &&
+                  character.unstructuredInfo.isEmpty &&
+                  character.summary.isEmpty) ...[
+                const SizedBox(height: 24),
+                const TonalCard(
+                  child: GeneralEmptyState(
+                    icon: Icons.person_outline_rounded,
+                    title: '暂无人物资料',
+                    compact: true,
+                  ),
+                ),
+              ],
             ],
-          ],
-        );
-      }),
+          );
+        },
+      ),
     );
   }
 }
@@ -203,13 +222,17 @@ Widget _buildInfoField(BuildContext context, String label, String value) {
   return Column(
     crossAxisAlignment: CrossAxisAlignment.start,
     children: [
-      Text(label,
-          style: theme.textTheme.labelLarge?.copyWith(
-            color: theme.colorScheme.onSurfaceVariant,
-          )),
+      Text(
+        label,
+        style: theme.textTheme.labelLarge?.copyWith(
+          color: theme.colorScheme.onSurfaceVariant,
+        ),
+      ),
       const SizedBox(height: 4),
-      SelectableText(value,
-          style: theme.textTheme.bodyLarge?.copyWith(height: 1.5)),
+      SelectableText(
+        value,
+        style: theme.textTheme.bodyLarge?.copyWith(height: 1.5),
+      ),
     ],
   );
 }
@@ -275,15 +298,18 @@ class _CharacterPortrait extends StatelessWidget {
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Icon(Icons.zoom_in_rounded,
-                          size: 20, color: colors.primary),
+                      Icon(
+                        Icons.zoom_in_rounded,
+                        size: 20,
+                        color: colors.primary,
+                      ),
                       const SizedBox(width: 8),
                       Flexible(
-                        child: Text('查看原图',
-                            style: Theme.of(context)
-                                .textTheme
-                                .labelLarge
-                                ?.copyWith(color: colors.primary)),
+                        child: Text(
+                          '查看原图',
+                          style: Theme.of(context).textTheme.labelLarge
+                              ?.copyWith(color: colors.primary),
+                        ),
                       ),
                     ],
                   ),

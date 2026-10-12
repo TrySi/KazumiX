@@ -65,9 +65,7 @@ class PluginSearchService {
       infoController.pluginSearchStatus[plugin.name] =
           PluginSearchStatus.pending;
     }
-    await Future.wait(
-      plugins.map((plugin) => _queryPlugin(plugin, keyword)),
-    );
+    await Future.wait(plugins.map((plugin) => _queryPlugin(plugin, keyword)));
   }
 
   Future<void> _queryPlugin(Plugin plugin, String keyword) async {

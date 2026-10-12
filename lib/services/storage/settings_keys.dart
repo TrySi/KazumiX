@@ -666,7 +666,7 @@ class SettingsKeys {
   static List<SettingKey<Object?>> byGroup(SettingGroup group) {
     return [
       for (final key in all)
-        if (key.group == group) key
+        if (key.group == group) key,
     ];
   }
 

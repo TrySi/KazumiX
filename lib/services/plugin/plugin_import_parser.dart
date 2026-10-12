@@ -132,8 +132,7 @@ class PluginImportParser {
         if (decoded is Map) {
           return Map<String, dynamic>.from(decoded);
         }
-        firstError ??=
-            const FormatException('规则链接内容必须是 JSON object');
+        firstError ??= const FormatException('规则链接内容必须是 JSON object');
       } on FormatException catch (error) {
         firstError ??= error;
         // Try a shorter prefix in case prose follows the rule link.

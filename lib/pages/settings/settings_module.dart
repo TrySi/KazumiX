@@ -40,27 +40,36 @@ final settingsModule = createModule(
           ..route('/sync', child: (context, state) => const SyncSettingsPage())
           ..route(
             '/sync/backup',
-            child: (context, state) => CollectBackupPage(
-              controller: inject<CollectController>(),
+            child: (context, state) =>
+                CollectBackupPage(controller: inject<CollectController>()),
+          )
+          ..route(
+            '/bangumi/',
+            child: (context, state) => const BangumiSyncPage(),
+          )
+          ..route(
+            '/webdav/',
+            child: (context, state) => WebDavSyncPage(
+              danmakuShieldSync: inject<DanmakuShieldSyncService>(),
             ),
           )
-          ..route('/bangumi/',
-              child: (context, state) => const BangumiSyncPage())
-          ..route('/webdav/',
-              child: (context, state) => WebDavSyncPage(
-                    danmakuShieldSync: inject<DanmakuShieldSyncService>(),
-                  ))
-          ..route('/webdav/editor',
-              child: (context, state) => const WebDavServerPage())
+          ..route(
+            '/webdav/editor',
+            child: (context, state) => const WebDavServerPage(),
+          )
           ..route(
             '/update',
             child: (context, state) => const UpdateSettingsPage(),
           )
-          ..route('/storage',
-              child: (context, state) => const StorageSettingsPage())
+          ..route(
+            '/storage',
+            child: (context, state) => const StorageSettingsPage(),
+          )
           ..route('/storage/logs', child: (context, state) => const LogsPage())
-          ..route('/theme',
-              child: (context, state) => const ThemeSettingsPage())
+          ..route(
+            '/theme',
+            child: (context, state) => const ThemeSettingsPage(),
+          )
           ..route(
             '/theme/display',
             child: (context, state) => const SetDisplayMode(),
@@ -69,8 +78,10 @@ final settingsModule = createModule(
             '/keyboard',
             child: (context, state) => const KeyboardSettingsPage(),
           )
-          ..route('/player',
-              child: (context, state) => const PlayerSettingsPage())
+          ..route(
+            '/player',
+            child: (context, state) => const PlayerSettingsPage(),
+          )
           ..route(
             '/player/decoder',
             child: (context, state) => const DecoderSettings(),

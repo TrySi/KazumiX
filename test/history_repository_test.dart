@@ -91,64 +91,62 @@ void main() {
       expect(online.key, History.getKey('plugin', item));
       expect(
         offline.key,
-        History.getKey(
+        History.getKey('plugin', item, entryKind: HistoryEntryKind.offline),
+      );
+    });
+
+    test(
+      'does not overwrite existing online source with an empty value',
+      () async {
+        final repository = HistoryRepository(
+          historiesBox: historiesBox,
+          privateModeReader: () => privateMode,
+          progressSyncAppender: _noopHistorySync,
+          deleteSyncAppender: _noopDeleteSync,
+          clearSyncAppender: _noopClearSync,
+        );
+        final item = _item(2);
+
+        await repository.updateHistory(
+          identity: PlaybackHistoryIdentity.online(
+            bangumiItem: item,
+            pluginName: 'plugin',
+            episodeNumber: 1,
+            episodeTitle: 'EP1',
+            road: 0,
+            onlineBangumiSrc: 'https://example.com/source',
+            episodePageUrl: '/online/1',
+          ),
+          progress: const Duration(seconds: 10),
+        );
+
+        await repository.updateHistory(
+          identity: PlaybackHistoryIdentity.online(
+            bangumiItem: item,
+            pluginName: 'plugin',
+            episodeNumber: 2,
+            episodeTitle: 'EP2',
+            road: 1,
+            onlineBangumiSrc: '',
+            episodePageUrl: '/online/2',
+          ),
+          progress: const Duration(seconds: 30),
+        );
+
+        final history = repository.getHistory(
           'plugin',
           item,
-          entryKind: HistoryEntryKind.offline,
-        ),
-      );
-    });
+          entryKind: HistoryEntryKind.online,
+        );
 
-    test('does not overwrite existing online source with an empty value',
-        () async {
-      final repository = HistoryRepository(
-        historiesBox: historiesBox,
-        privateModeReader: () => privateMode,
-        progressSyncAppender: _noopHistorySync,
-        deleteSyncAppender: _noopDeleteSync,
-        clearSyncAppender: _noopClearSync,
-      );
-      final item = _item(2);
-
-      await repository.updateHistory(
-        identity: PlaybackHistoryIdentity.online(
-          bangumiItem: item,
-          pluginName: 'plugin',
-          episodeNumber: 1,
-          episodeTitle: 'EP1',
-          road: 0,
-          onlineBangumiSrc: 'https://example.com/source',
-          episodePageUrl: '/online/1',
-        ),
-        progress: const Duration(seconds: 10),
-      );
-
-      await repository.updateHistory(
-        identity: PlaybackHistoryIdentity.online(
-          bangumiItem: item,
-          pluginName: 'plugin',
-          episodeNumber: 2,
-          episodeTitle: 'EP2',
-          road: 1,
-          onlineBangumiSrc: '',
-          episodePageUrl: '/online/2',
-        ),
-        progress: const Duration(seconds: 30),
-      );
-
-      final history = repository.getHistory(
-        'plugin',
-        item,
-        entryKind: HistoryEntryKind.online,
-      );
-
-      expect(history, isNotNull);
-      expect(history!.lastSrc, 'https://example.com/source');
-      expect(history.lastWatchEpisode, 2);
-      expect(history.lastWatchEpisodeName, 'EP2');
-      expect(history.episodePageUrl, '/online/2');
-      expect(history.progresses[2]!.progress.inSeconds, 30);
-    });
+        expect(history, isNotNull);
+        expect(history!.lastSrc, 'https://example.com/source');
+        expect(history.lastWatchEpisode, 2);
+        expect(history.lastWatchEpisodeName, 'EP2');
+        expect(history.episodePageUrl, '/online/2');
+        expect(history.progresses[2]!.progress.inSeconds, 30);
+      },
+    );
 
     test('does not record history when private mode is enabled', () async {
       privateMode = true;
@@ -178,52 +176,54 @@ void main() {
       expect(repository.getHistory('plugin', item), isNull);
     });
 
-    test('stores zero progress when position is near the end of the video',
-        () async {
-      final repository = HistoryRepository(
-        historiesBox: historiesBox,
-        privateModeReader: () => privateMode,
-        progressSyncAppender: _noopHistorySync,
-        deleteSyncAppender: _noopDeleteSync,
-        clearSyncAppender: _noopClearSync,
-      );
-      final item = _item(5);
-      final identity = PlaybackHistoryIdentity.online(
-        bangumiItem: item,
-        pluginName: 'plugin',
-        episodeNumber: 1,
-        episodeTitle: 'EP1',
-        road: 0,
-        onlineBangumiSrc: 'https://example.com/source',
-        episodePageUrl: '/online/1',
-      );
+    test(
+      'stores zero progress when position is near the end of the video',
+      () async {
+        final repository = HistoryRepository(
+          historiesBox: historiesBox,
+          privateModeReader: () => privateMode,
+          progressSyncAppender: _noopHistorySync,
+          deleteSyncAppender: _noopDeleteSync,
+          clearSyncAppender: _noopClearSync,
+        );
+        final item = _item(5);
+        final identity = PlaybackHistoryIdentity.online(
+          bangumiItem: item,
+          pluginName: 'plugin',
+          episodeNumber: 1,
+          episodeTitle: 'EP1',
+          road: 0,
+          onlineBangumiSrc: 'https://example.com/source',
+          episodePageUrl: '/online/1',
+        );
 
-      await repository.updateHistory(
-        identity: identity,
-        progress: const Duration(minutes: 23, seconds: 57),
-        duration: const Duration(minutes: 24),
-      );
-      var history = repository.getHistory('plugin', item);
-      expect(history!.progresses[1]!.progress, Duration.zero);
+        await repository.updateHistory(
+          identity: identity,
+          progress: const Duration(minutes: 23, seconds: 57),
+          duration: const Duration(minutes: 24),
+        );
+        var history = repository.getHistory('plugin', item);
+        expect(history!.progresses[1]!.progress, Duration.zero);
 
-      await repository.updateHistory(
-        identity: identity,
-        progress: const Duration(minutes: 20),
-        duration: const Duration(minutes: 24),
-      );
-      history = repository.getHistory('plugin', item);
-      expect(history!.progresses[1]!.progress, const Duration(minutes: 20));
+        await repository.updateHistory(
+          identity: identity,
+          progress: const Duration(minutes: 20),
+          duration: const Duration(minutes: 24),
+        );
+        history = repository.getHistory('plugin', item);
+        expect(history!.progresses[1]!.progress, const Duration(minutes: 20));
 
-      await repository.updateHistory(
-        identity: identity,
-        progress: const Duration(minutes: 23, seconds: 57),
-      );
-      history = repository.getHistory('plugin', item);
-      expect(
-        history!.progresses[1]!.progress,
-        const Duration(minutes: 23, seconds: 57),
-      );
-    });
+        await repository.updateHistory(
+          identity: identity,
+          progress: const Duration(minutes: 23, seconds: 57),
+        );
+        history = repository.getHistory('plugin', item);
+        expect(
+          history!.progresses[1]!.progress,
+          const Duration(minutes: 23, seconds: 57),
+        );
+      },
+    );
 
     test('marks completion sticky across rewatches', () async {
       final repository = HistoryRepository(
@@ -364,16 +364,17 @@ void main() {
       final repository = HistoryRepository(
         historiesBox: historiesBox,
         privateModeReader: () => privateMode,
-        progressSyncAppender: ({
-          required history,
-          required episode,
-          required road,
-          required progressMs,
-          required updatedAt,
-        }) async {
-          appendStarted.complete();
-          await allowAppendToFinish.future;
-        },
+        progressSyncAppender:
+            ({
+              required history,
+              required episode,
+              required road,
+              required progressMs,
+              required updatedAt,
+            }) async {
+              appendStarted.complete();
+              await allowAppendToFinish.future;
+            },
         deleteSyncAppender: _noopDeleteSync,
         clearSyncAppender: _noopClearSync,
       );

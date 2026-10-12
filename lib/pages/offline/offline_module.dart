@@ -12,9 +12,8 @@ Module createOfflineModule() => createModule(
     c.route(
       '/',
       transition: TransitionType.none,
-      child: (context, state) => OfflinePage(
-        controller: inject<DownloadController>(),
-      ),
+      child: (context, state) =>
+          OfflinePage(controller: inject<DownloadController>()),
     );
   },
 );

@@ -33,7 +33,12 @@ class CollectedBangumiChange {
   int timestamp;
 
   CollectedBangumiChange(
-      this.id, this.bangumiID, this.action, this.type, this.timestamp);
+    this.id,
+    this.bangumiID,
+    this.action,
+    this.type,
+    this.timestamp,
+  );
 
   @override
   String toString() {

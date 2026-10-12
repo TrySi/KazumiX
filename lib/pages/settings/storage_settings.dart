@@ -67,48 +67,48 @@ class _StorageSettingsPageState extends State<StorageSettingsPage> {
 
   @override
   Widget build(BuildContext context) => SettingsDetailScaffold(
-        title: const Text('存储与日志'),
-        body: FutureBuilder<int>(
-          future: _cacheSize,
-          builder: (context, snapshot) => SettingsList(
-            sections: [
-              SettingsSection(
-                title: const Text('缓存'),
-                tiles: [
-                  SettingsTile(
-                    leading: Icons.image_outlined,
-                    title: const Text('清除图片缓存'),
-                    description: Text(_cacheDescription(snapshot)),
-                    enabled: snapshot.connectionState == ConnectionState.done &&
-                        !_clearing,
-                    onPressed: (_) => _confirmClear(),
-                    trailing:
-                        snapshot.connectionState == ConnectionState.done &&
-                                snapshot.hasError &&
-                                !_clearing
-                            ? IconButton(
-                                tooltip: '重新统计',
-                                onPressed: _refreshSize,
-                                icon: const Icon(Icons.refresh_rounded),
-                              )
-                            : const Icon(Icons.cleaning_services_rounded),
-                  ),
-                ],
-              ),
-              SettingsSection(
-                title: const Text('诊断'),
-                tiles: [
-                  SettingsTile(
-                    leading: Icons.receipt_long_rounded,
-                    title: const Text('错误日志'),
-                    trailing: const Icon(Icons.chevron_right_rounded),
-                    onPressed: (_) =>
-                        context.pushNamed('/settings/storage/logs'),
-                  ),
-                ],
+    title: const Text('存储与日志'),
+    body: FutureBuilder<int>(
+      future: _cacheSize,
+      builder: (context, snapshot) => SettingsList(
+        sections: [
+          SettingsSection(
+            title: const Text('缓存'),
+            tiles: [
+              SettingsTile(
+                leading: Icons.image_outlined,
+                title: const Text('清除图片缓存'),
+                description: Text(_cacheDescription(snapshot)),
+                enabled:
+                    snapshot.connectionState == ConnectionState.done &&
+                    !_clearing,
+                onPressed: (_) => _confirmClear(),
+                trailing:
+                    snapshot.connectionState == ConnectionState.done &&
+                        snapshot.hasError &&
+                        !_clearing
+                    ? IconButton(
+                        tooltip: '重新统计',
+                        onPressed: _refreshSize,
+                        icon: const Icon(Icons.refresh_rounded),
+                      )
+                    : const Icon(Icons.cleaning_services_rounded),
               ),
             ],
           ),
-        ),
-      );
+          SettingsSection(
+            title: const Text('诊断'),
+            tiles: [
+              SettingsTile(
+                leading: Icons.receipt_long_rounded,
+                title: const Text('错误日志'),
+                trailing: const Icon(Icons.chevron_right_rounded),
+                onPressed: (_) => context.pushNamed('/settings/storage/logs'),
+              ),
+            ],
+          ),
+        ],
+      ),
+    ),
+  );
 }

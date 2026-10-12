@@ -3,9 +3,7 @@ import 'package:kazumi/modules/staff/staff_item.dart';
 class StaffResponse {
   final List<StaffFullItem> data;
 
-  StaffResponse({
-    required this.data,
-  });
+  StaffResponse({required this.data});
 
   /// Parses `GET /v0/subjects/{id}/persons`, which returns a flat
   /// (person × relation) list, so entries are merged by person id.
@@ -21,13 +19,16 @@ class StaffResponse {
           .add(json['relation'] as String? ?? '');
     }
 
-    final data = staffById.entries.map((entry) {
-      final relations = relationsById[entry.key]!
-        ..sort((a, b) => _priorityOf(a).compareTo(_priorityOf(b)));
-      return StaffFullItem(staff: entry.value, relations: relations);
-    }).toList()
-      ..sort((a, b) => _priorityOf(a.relations.first)
-          .compareTo(_priorityOf(b.relations.first)));
+    final data =
+        staffById.entries.map((entry) {
+          final relations = relationsById[entry.key]!
+            ..sort((a, b) => _priorityOf(a).compareTo(_priorityOf(b)));
+          return StaffFullItem(staff: entry.value, relations: relations);
+        }).toList()..sort(
+          (a, b) => _priorityOf(
+            a.relations.first,
+          ).compareTo(_priorityOf(b.relations.first)),
+        );
 
     return StaffResponse(data: data);
   }

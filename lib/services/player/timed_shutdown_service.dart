@@ -65,8 +65,10 @@ class TimedShutdownService {
     try {
       _onExpiredCallback?.call();
     } catch (e) {
-      KazumiLogger()
-          .e('TimedShutdownService: onExpired callback failed', error: e);
+      KazumiLogger().e(
+        'TimedShutdownService: onExpired callback failed',
+        error: e,
+      );
     }
 
     _showTimerExpiredDialog();
@@ -129,21 +131,15 @@ class TimedShutdownService {
     }
   }
 
-  static void showCustomTimerDialog({
-    VoidCallback? onExpired,
-  }) {
+  static void showCustomTimerDialog({VoidCallback? onExpired}) {
     KazumiDialog.show(
-      builder: (context) => _CustomTimerDialog(
-        onExpired: onExpired,
-      ),
+      builder: (context) => _CustomTimerDialog(onExpired: onExpired),
     );
   }
 }
 
 class _CustomTimerDialog extends StatefulWidget {
-  const _CustomTimerDialog({
-    required this.onExpired,
-  });
+  const _CustomTimerDialog({required this.onExpired});
 
   final VoidCallback? onExpired;
 
@@ -161,8 +157,9 @@ class _CustomTimerDialogState extends State<_CustomTimerDialog> {
   void initState() {
     super.initState();
     _hoursController = FixedExtentScrollController(initialItem: _selectedHours);
-    _minutesController =
-        FixedExtentScrollController(initialItem: _selectedMinutes);
+    _minutesController = FixedExtentScrollController(
+      initialItem: _selectedMinutes,
+    );
   }
 
   @override
@@ -261,10 +258,7 @@ class _CustomTimerDialogState extends State<_CustomTimerDialog> {
             style: TextStyle(color: Theme.of(context).colorScheme.outline),
           ),
         ),
-        TextButton(
-          onPressed: _confirm,
-          child: const Text('确定'),
-        ),
+        TextButton(onPressed: _confirm, child: const Text('确定')),
       ],
     );
   }

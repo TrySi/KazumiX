@@ -25,11 +25,11 @@ class DanmakuShieldSyncEntry {
   }
 
   Map<String, Object> _toJson() => {
-        'rule': rule,
-        'updatedAt': updatedAt,
-        'deviceId': deviceId,
-        'deleted': deleted,
-      };
+    'rule': rule,
+    'updatedAt': updatedAt,
+    'deviceId': deviceId,
+    'deleted': deleted,
+  };
 
   factory DanmakuShieldSyncEntry._fromJson(Object? value) {
     if (value is! Map<String, dynamic>) {
@@ -59,19 +59,19 @@ class DanmakuShieldSyncEntry {
 
 class DanmakuShieldSyncState {
   DanmakuShieldSyncState([Iterable<DanmakuShieldSyncEntry> entries = const []])
-      : entries = Map.unmodifiable(_mergeEntries(entries));
+    : entries = Map.unmodifiable(_mergeEntries(entries));
 
   final Map<String, DanmakuShieldSyncEntry> entries;
 
   List<String> get rules => [
-        for (final entry in entries.values)
-          if (!entry.deleted) entry.rule,
-      ];
+    for (final entry in entries.values)
+      if (!entry.deleted) entry.rule,
+  ];
 
   int get latestTimestamp => entries.values.fold(
-        0,
-        (latest, entry) => entry.updatedAt > latest ? entry.updatedAt : latest,
-      );
+    0,
+    (latest, entry) => entry.updatedAt > latest ? entry.updatedAt : latest,
+  );
 
   DanmakuShieldSyncState merge(DanmakuShieldSyncState other) =>
       DanmakuShieldSyncState([...entries.values, ...other.entries.values]);

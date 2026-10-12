@@ -12,8 +12,9 @@ class RendererSettings extends StatefulWidget {
 }
 
 class _RendererSettingsState extends State<RendererSettings> {
-  late String _renderer =
-      GStorage.getSetting(SettingsKeys.androidVideoRenderer);
+  late String _renderer = GStorage.getSetting(
+    SettingsKeys.androidVideoRenderer,
+  );
 
   @override
   Widget build(BuildContext context) {
@@ -27,18 +28,22 @@ class _RendererSettingsState extends State<RendererSettings> {
             onChanged: (String? value) {
               if (value != null) {
                 GStorage.putSetting<String>(
-                    SettingsKeys.androidVideoRenderer, value);
+                  SettingsKeys.androidVideoRenderer,
+                  value,
+                );
                 setState(() {
                   _renderer = value;
                 });
               }
             },
             tiles: androidVideoRenderersList.entries
-                .map((e) => SettingsTile<String>.radioTile(
-                      title: Text(e.key),
-                      description: Text(e.value),
-                      radioValue: e.key,
-                    ))
+                .map(
+                  (e) => SettingsTile<String>.radioTile(
+                    title: Text(e.key),
+                    description: Text(e.value),
+                    radioValue: e.key,
+                  ),
+                )
                 .toList(),
           ),
         ],

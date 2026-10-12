@@ -94,7 +94,7 @@ class WebDav {
   Future<void> syncDanmakuShield({
     required String deviceId,
     required Future<DanmakuShieldSyncState> Function(DanmakuShieldSyncState)
-        merge,
+    merge,
   }) {
     // Queue every request: an edit during an upload needs another pass.
     return _runWebDavExclusive(() async {
@@ -102,8 +102,9 @@ class WebDav {
       if (!initialized) await _init();
       await _ensureLocalTempDirectory();
       await _ensureRemoteDirectory(_danmakuShieldPath);
-      final runDirectory =
-          await webDavLocalTempDirectory.createTemp('danmaku-shield-sync-');
+      final runDirectory = await webDavLocalTempDirectory.createTemp(
+        'danmaku-shield-sync-',
+      );
       try {
         var remote = DanmakuShieldSyncState();
         final entries = await client.readDir(_danmakuShieldPath);
@@ -135,8 +136,10 @@ class WebDav {
         try {
           await runDirectory.delete(recursive: true);
         } catch (e) {
-          KazumiLogger()
-              .w('WebDav: failed to clean danmaku shield sync files', error: e);
+          KazumiLogger().w(
+            'WebDav: failed to clean danmaku shield sync files',
+            error: e,
+          );
         }
       }
     });
@@ -201,10 +204,12 @@ class WebDav {
     List<CollectedBangumiChange> remoteChanges = [];
 
     final files = await client.readDir(_syncRootPath);
-    final collectiblesExists =
-        files.any((file) => file.name == 'collectibles.tmp');
-    final changesExists =
-        files.any((file) => file.name == 'collectchanges.tmp');
+    final collectiblesExists = files.any(
+      (file) => file.name == 'collectibles.tmp',
+    );
+    final changesExists = files.any(
+      (file) => file.name == 'collectchanges.tmp',
+    );
     if (!collectiblesExists && !changesExists) {
       await _updateBox('collectibles');
       if (GStorage.collectChanges.isNotEmpty) {
@@ -215,16 +220,20 @@ class WebDav {
 
     List<Future<void>> downloadFutures = [];
     if (collectiblesExists) {
-      downloadFutures.add(_downloadBox('collectibles').catchError((e) {
-        KazumiLogger().e('WebDav: download collectibles failed', error: e);
-        throw Exception('WebDav: download collectibles failed');
-      }));
+      downloadFutures.add(
+        _downloadBox('collectibles').catchError((e) {
+          KazumiLogger().e('WebDav: download collectibles failed', error: e);
+          throw Exception('WebDav: download collectibles failed');
+        }),
+      );
     }
     if (changesExists) {
-      downloadFutures.add(_downloadBox('collectchanges').catchError((e) {
-        KazumiLogger().e('WebDav: download collectchanges failed', error: e);
-        throw Exception('WebDav: download collectchanges failed');
-      }));
+      downloadFutures.add(
+        _downloadBox('collectchanges').catchError((e) {
+          KazumiLogger().e('WebDav: download collectchanges failed', error: e);
+          throw Exception('WebDav: download collectchanges failed');
+        }),
+      );
     }
     if (downloadFutures.isNotEmpty) {
       await Future.wait(downloadFutures);
@@ -232,11 +241,13 @@ class WebDav {
     try {
       if (collectiblesExists) {
         remoteCollectibles = await GStorage.getCollectiblesFromFile(
-            '${webDavLocalTempDirectory.path}/collectibles.tmp');
+          '${webDavLocalTempDirectory.path}/collectibles.tmp',
+        );
       }
       if (changesExists) {
         remoteChanges = await GStorage.getCollectChangesFromFile(
-            '${webDavLocalTempDirectory.path}/collectchanges.tmp');
+          '${webDavLocalTempDirectory.path}/collectchanges.tmp',
+        );
       }
     } catch (e) {
       KazumiLogger().e('WebDav: get collectibles failed', error: e);
@@ -277,11 +288,13 @@ class WebDav {
         }
       }
 
-      final snapshotInitialized =
-          GStorage.getSetting(SettingsKeys.historySyncSnapshotInitialized);
+      final snapshotInitialized = GStorage.getSetting(
+        SettingsKeys.historySyncSnapshotInitialized,
+      );
       final localBatch = await historySync.prepareLocalLogs(
         runDirectory: runDirectory,
-        forceCheckpoint: snapshotInitialized != true ||
+        forceCheckpoint:
+            snapshotInitialized != true ||
             snapshotReadResult.needsRepair ||
             downloads.currentDeviceLogOversized ||
             importedLegacyHistory,
@@ -319,8 +332,9 @@ class WebDav {
           true,
         );
       } else {
-        final uploadFile =
-            await historySync.copyActiveLogForUpload(runDirectory);
+        final uploadFile = await historySync.copyActiveLogForUpload(
+          runDirectory,
+        );
         if (uploadFile != null) {
           await _publishDeviceHistoryChanges(
             sourceFile: uploadFile,
@@ -411,8 +425,9 @@ class WebDav {
   Future<void> _cleanupStaleHistorySyncRunDirectories() async {
     await _ensureLocalTempDirectory();
     final staleBefore = DateTime.now().subtract(_staleRunDirectoryAge);
-    await for (final entity
-        in webDavLocalTempDirectory.list(followLinks: false)) {
+    await for (final entity in webDavLocalTempDirectory.list(
+      followLinks: false,
+    )) {
       if (entity is! Directory) {
         continue;
       }
@@ -465,20 +480,14 @@ class WebDav {
         '${runDirectory.path}${Platform.pathSeparator}'
         'remote-events-${index++}.jsonl',
       );
-      await client.read2File(
-        '$_historyChangesPath/$name',
-        localFile.path,
-      );
+      await client.read2File('$_historyChangesPath/$name', localFile.path);
       if (name == '$deviceId.jsonl' &&
           await localFile.length() >
               HistorySyncService.checkpointLogThresholdBytes) {
         currentDeviceLogOversized = true;
       }
       eventFiles.add(
-        _DownloadedHistoryEventFile(
-          remoteName: name,
-          localFile: localFile,
-        ),
+        _DownloadedHistoryEventFile(remoteName: name, localFile: localFile),
       );
     }
 
@@ -544,7 +553,8 @@ class WebDav {
 
   Future<void> _quarantineRemoteHistoryEventFile(String remoteName) {
     final sourcePath = '$_historyChangesPath/$remoteName';
-    final quarantinePath = '$sourcePath.invalid.'
+    final quarantinePath =
+        '$sourcePath.invalid.'
         '${DateTime.now().millisecondsSinceEpoch}';
     return _quarantineRemoteFile(
       sourcePath: sourcePath,
@@ -628,7 +638,8 @@ class WebDav {
   }
 
   Future<void> _quarantineLegacyHistoryBackup() async {
-    final quarantinePath = '$_syncRootPath/histories.invalid.'
+    final quarantinePath =
+        '$_syncRootPath/histories.invalid.'
         '${DateTime.now().millisecondsSinceEpoch}.tmp';
     await _quarantineRemoteFile(
       sourcePath: '$_syncRootPath/histories.tmp',
@@ -643,14 +654,8 @@ class WebDav {
     required String description,
   }) async {
     try {
-      await client.rename(
-        sourcePath,
-        quarantinePath,
-        false,
-      );
-      KazumiLogger().w(
-        'WebDav: moved invalid $description to $quarantinePath',
-      );
+      await client.rename(sourcePath, quarantinePath, false);
+      KazumiLogger().w('WebDav: moved invalid $description to $quarantinePath');
     } catch (e, stackTrace) {
       KazumiLogger().w(
         'WebDav: failed to quarantine invalid $description',

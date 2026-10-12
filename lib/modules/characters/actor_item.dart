@@ -21,12 +21,7 @@ class ActorAvator {
   }
 
   Map<String, dynamic> toJson() {
-    return {
-      'small': small,
-      'medium': medium,
-      'grid': grid,
-      'large': large,
-    };
+    return {'small': small, 'medium': medium, 'grid': grid, 'large': large};
   }
 }
 
@@ -53,11 +48,6 @@ class ActorItem {
   }
 
   Map<String, dynamic> toJson() {
-    return {
-      'id': id,
-      'type': type,
-      'name': name,
-      'images': avator.toJson(),
-    };
+    return {'id': id, 'type': type, 'name': name, 'images': avator.toJson()};
   }
 }

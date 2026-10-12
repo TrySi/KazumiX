@@ -25,10 +25,14 @@ void main() {
     });
 
     test('http 与 https 同站归一到同一 key（协议以 baseUrl 为准）', () {
-      final viaHttp =
-          normalizeEpisodeUrl(baseUrl, 'http://www.example.com/play/123.html');
-      final viaHttps =
-          normalizeEpisodeUrl(baseUrl, 'https://www.example.com/play/123.html');
+      final viaHttp = normalizeEpisodeUrl(
+        baseUrl,
+        'http://www.example.com/play/123.html',
+      );
+      final viaHttps = normalizeEpisodeUrl(
+        baseUrl,
+        'https://www.example.com/play/123.html',
+      );
       expect(viaHttp, viaHttps);
       expect(viaHttp, 'https://www.example.com/play/123.html');
     });
@@ -43,7 +47,9 @@ void main() {
     test('http baseUrl 下同站绝对 URL 保持 http', () {
       expect(
         normalizeEpisodeUrl(
-            'http://www.example.com', 'http://www.example.com/play/123.html'),
+          'http://www.example.com',
+          'http://www.example.com/play/123.html',
+        ),
         'http://www.example.com/play/123.html',
       );
     });
@@ -51,7 +57,9 @@ void main() {
     test('http baseUrl 下同站 https URL 归一到 http（同一 key）', () {
       expect(
         normalizeEpisodeUrl(
-            'http://www.example.com', 'https://www.example.com/play/123.html'),
+          'http://www.example.com',
+          'https://www.example.com/play/123.html',
+        ),
         'http://www.example.com/play/123.html',
       );
     });
@@ -147,8 +155,11 @@ void main() {
         for (final raw in cases) {
           final once = normalizeEpisodeUrl(base, raw);
           final twice = normalizeEpisodeUrl(base, once);
-          expect(twice, once,
-              reason: 'not idempotent for: "$raw" (base: "$base")');
+          expect(
+            twice,
+            once,
+            reason: 'not idempotent for: "$raw" (base: "$base")',
+          );
         }
       }
     });

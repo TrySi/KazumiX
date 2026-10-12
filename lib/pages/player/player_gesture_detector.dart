@@ -55,8 +55,9 @@ class _PlayerGestureDetectorState extends State<PlayerGestureDetector> {
               final wasCancelPending = _cancelPending;
               if (wasCancelPending == null) return;
               final cancelPending = isAtEdge(details.localPosition);
-              final delta =
-                  cancelPending || wasCancelPending ? 0.0 : details.delta.dx;
+              final delta = cancelPending || wasCancelPending
+                  ? 0.0
+                  : details.delta.dx;
               _cancelPending = cancelPending;
               widget.onSeekUpdate(delta, cancelPending);
             },

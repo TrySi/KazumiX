@@ -29,8 +29,9 @@ class VideoSidePanelState extends State<VideoSidePanel>
     vsync: this,
     duration: SidePanelTransition.duration,
   );
-  late final Animation<double> _opacity =
-      _animation.drive(CurveTween(curve: Curves.easeIn));
+  late final Animation<double> _opacity = _animation.drive(
+    CurveTween(curve: Curves.easeIn),
+  );
 
   bool get _isOpening =>
       _animation.status == AnimationStatus.forward ||
@@ -73,58 +74,60 @@ class VideoSidePanelState extends State<VideoSidePanel>
 
   @override
   Widget build(BuildContext context) => LayoutBuilder(
-        builder: (context, constraints) => AnimatedBuilder(
-          animation: _animation,
-          builder: (context, child) {
-            if (_animation.isDismissed) return const SizedBox.shrink();
-            return Stack(
-              alignment: Alignment.centerRight,
-              children: [
-                FadeTransition(
-                  opacity: _opacity,
-                  child: GestureDetector(
-                    onTap: close,
-                    child: SizedBox.expand(
-                      child: DecoratedBox(
-                        decoration: BoxDecoration(
-                          gradient: LinearGradient(
-                            begin: Alignment.centerLeft,
-                            end: Alignment.centerRight,
-                            colors: [
-                              Colors.black.withValues(alpha: 0.5),
-                              Colors.transparent,
-                            ],
-                          ),
-                        ),
+    builder: (context, constraints) => AnimatedBuilder(
+      animation: _animation,
+      builder: (context, child) {
+        if (_animation.isDismissed) return const SizedBox.shrink();
+        return Stack(
+          alignment: Alignment.centerRight,
+          children: [
+            FadeTransition(
+              opacity: _opacity,
+              child: GestureDetector(
+                onTap: close,
+                child: SizedBox.expand(
+                  child: DecoratedBox(
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        begin: Alignment.centerLeft,
+                        end: Alignment.centerRight,
+                        colors: [
+                          Colors.black.withValues(alpha: 0.5),
+                          Colors.transparent,
+                        ],
                       ),
                     ),
                   ),
                 ),
-                SidePanelTransition(animation: _animation, child: child!),
-              ],
-            );
-          },
-          child: SizedBox(
-            // Keep space outside the panel for dismissal.
-            width: math.min(constraints.maxWidth * 0.9,
-                (constraints.maxWidth / 3).clamp(320.0, 420.0)),
-            height: constraints.maxHeight,
-            child: Material(
-              color: Theme.of(context).colorScheme.surface,
-              borderRadius: const BorderRadiusDirectional.only(
-                topStart: Radius.circular(28),
-                bottomStart: Radius.circular(28),
-              ),
-              clipBehavior: Clip.antiAlias,
-              // Consume the hidden status-bar inset for the entire overlay.
-              child: MediaQuery.removePadding(
-                context: context,
-                removeTop: true,
-                removeLeft: true,
-                child: SafeArea(child: widget.child),
               ),
             ),
+            SidePanelTransition(animation: _animation, child: child!),
+          ],
+        );
+      },
+      child: SizedBox(
+        // Keep space outside the panel for dismissal.
+        width: math.min(
+          constraints.maxWidth * 0.9,
+          (constraints.maxWidth / 3).clamp(320.0, 420.0),
+        ),
+        height: constraints.maxHeight,
+        child: Material(
+          color: Theme.of(context).colorScheme.surface,
+          borderRadius: const BorderRadiusDirectional.only(
+            topStart: Radius.circular(28),
+            bottomStart: Radius.circular(28),
+          ),
+          clipBehavior: Clip.antiAlias,
+          // Consume the hidden status-bar inset for the entire overlay.
+          child: MediaQuery.removePadding(
+            context: context,
+            removeTop: true,
+            removeLeft: true,
+            child: SafeArea(child: widget.child),
           ),
         ),
-      );
+      ),
+    ),
+  );
 }

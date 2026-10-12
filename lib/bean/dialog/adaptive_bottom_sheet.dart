@@ -13,18 +13,17 @@ BoxConstraints _adaptiveBottomSheetConstraints(
   final size = MediaQuery.sizeOf(context);
   final isLandscape = size.width > size.height;
   final useFullWidth = !isLandscape && size.width < 600;
-  final maxWidth =
-      useFullWidth ? size.width : math.min(size.width * 0.72, 640.0);
+  final maxWidth = useFullWidth
+      ? size.width
+      : math.min(size.width * 0.72, 640.0);
   final useExpandedLandscapeHeight = isLandscape && size.height < 600;
-  final maxHeight = size.height *
+  final maxHeight =
+      size.height *
       (useExpandedLandscapeHeight
           ? compactLandscapeMaxHeightFactor
           : maxHeightFactor);
 
-  return BoxConstraints(
-    maxWidth: maxWidth,
-    maxHeight: maxHeight,
-  );
+  return BoxConstraints(maxWidth: maxWidth, maxHeight: maxHeight);
 }
 
 const ShapeBorder _materialSheetShape = RoundedRectangleBorder(
@@ -67,9 +66,8 @@ Future<T?> showAdaptiveBottomSheet<T>({
     sheetAnimationStyle: MediaQuery.disableAnimationsOf(context)
         ? AnimationStyle.noAnimation
         : _materialSheetAnimationStyle,
-    builder: (context) => _MaterialSheetSurface(
-      child: Builder(builder: builder),
-    ),
+    builder: (context) =>
+        _MaterialSheetSurface(child: Builder(builder: builder)),
   );
 }
 
@@ -97,17 +95,19 @@ class _MaterialSheetSurfaceState extends State<_MaterialSheetSurface>
       _started = true;
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (!mounted || MediaQuery.disableAnimationsOf(context)) return;
-        _entrance.animateWith(SpringSimulation(
-          SpringDescription.withDampingRatio(
-            mass: 1,
-            stiffness: 380,
-            ratio: 0.8,
+        _entrance.animateWith(
+          SpringSimulation(
+            SpringDescription.withDampingRatio(
+              mass: 1,
+              stiffness: 380,
+              ratio: 0.8,
+            ),
+            0,
+            1,
+            0,
+            snapToEnd: false,
           ),
-          0,
-          1,
-          0,
-          snapToEnd: false,
-        ));
+        );
       });
     }
   }
@@ -130,9 +130,7 @@ class _MaterialSheetSurfaceState extends State<_MaterialSheetSurface>
       shape: _materialSheetShape,
       clipBehavior: Clip.antiAlias,
       child: Theme(
-        data: theme.copyWith(
-          scaffoldBackgroundColor: Colors.transparent,
-        ),
+        data: theme.copyWith(scaffoldBackgroundColor: Colors.transparent),
         child: SafeArea(
           top: false,
           child: Column(
@@ -140,8 +138,9 @@ class _MaterialSheetSurfaceState extends State<_MaterialSheetSurface>
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               Semantics(
-                label:
-                    MaterialLocalizations.of(context).modalBarrierDismissLabel,
+                label: MaterialLocalizations.of(
+                  context,
+                ).modalBarrierDismissLabel,
                 onDismiss: () => Navigator.of(context).maybePop(),
                 child: Padding(
                   padding: const EdgeInsets.symmetric(vertical: 16),

@@ -6,10 +6,13 @@ enum PlayerTimeLabelPlacement {
   besideProgress,
   afterPlaybackButtons;
 
-  static PlayerTimeLabelPlacement forViewport(Size viewport,
-      {required bool desktop}) {
+  static PlayerTimeLabelPlacement forViewport(
+    Size viewport, {
+    required bool desktop,
+  }) {
     if (desktop) return afterPlaybackButtons;
-    final hasRoomForSideLabels = viewport.shortestSide >= 600 &&
+    final hasRoomForSideLabels =
+        viewport.shortestSide >= 600 &&
         viewport.shortestSide / viewport.longestSide >= 9 / 16;
     return hasRoomForSideLabels ? besideProgress : aboveProgress;
   }
@@ -39,12 +42,14 @@ class PlayerTransportBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => compact
-      ? Row(children: [
-          playPause,
-          Expanded(child: progressBuilder(TimeLabelLocation.none)),
-          timeLabel,
-          fullscreen,
-        ])
+      ? Row(
+          children: [
+            playPause,
+            Expanded(child: progressBuilder(TimeLabelLocation.none)),
+            timeLabel,
+            fullscreen,
+          ],
+        )
       : Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           mainAxisSize: MainAxisSize.min,
@@ -63,18 +68,22 @@ class PlayerTransportBar extends StatelessWidget {
               ),
             ),
             Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 10),
-                child: Row(children: [
+              padding: const EdgeInsets.symmetric(horizontal: 10),
+              child: Row(
+                children: [
                   playPause,
                   nextEpisode,
                   if (timePlacement ==
                       PlayerTimeLabelPlacement.afterPlaybackButtons)
                     Padding(
-                        padding: const EdgeInsets.only(left: 10),
-                        child: timeLabel),
+                      padding: const EdgeInsets.only(left: 10),
+                      child: timeLabel,
+                    ),
                   Expanded(child: controls),
                   fullscreen,
-                ])),
+                ],
+              ),
+            ),
             if (timePlacement != PlayerTimeLabelPlacement.aboveProgress)
               const SizedBox(height: 6),
           ],

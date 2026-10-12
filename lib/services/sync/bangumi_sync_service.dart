@@ -134,10 +134,7 @@ class BangumiSyncService extends ChangeNotifier {
   Future<bool> syncCollectibleWhenIdle(int bangumiId, int localType) {
     return _operations.run(() async {
       if (!initialized) await _connectConfiguredToken();
-      return BangumiApi.updateBangumiByType(
-        bangumiId,
-        localType,
-      );
+      return BangumiApi.updateBangumiByType(bangumiId, localType);
     });
   }
 
@@ -212,7 +209,10 @@ class BangumiSyncService extends ChangeNotifier {
 
         if (mergePlan.conflictUploads.isNotEmpty) {
           onProgress?.call(
-              '${priority.label}：正在上传冲突状态', syncedCount, totalOperations);
+            '${priority.label}：正在上传冲突状态',
+            syncedCount,
+            totalOperations,
+          );
           for (final upload in mergePlan.conflictUploads) {
             final updated = await BangumiApi.updateBangumiByType(
               upload.bangumiId,
@@ -223,17 +223,26 @@ class BangumiSyncService extends ChangeNotifier {
             }
             syncedCount++;
             onProgress?.call(
-                '${priority.label}：正在上传冲突状态', syncedCount, totalOperations);
+              '${priority.label}：正在上传冲突状态',
+              syncedCount,
+              totalOperations,
+            );
           }
         }
         if (mergePlan.conflictLocalUpdates.isNotEmpty) {
           onProgress?.call(
-              '${priority.label}：正在更新本地冲突状态', syncedCount, totalOperations);
+            '${priority.label}：正在更新本地冲突状态',
+            syncedCount,
+            totalOperations,
+          );
           for (final mutation in mergePlan.conflictLocalUpdates) {
             await _applyLocalMutation(mutation);
             syncedCount++;
             onProgress?.call(
-                '${priority.label}：正在更新本地冲突状态', syncedCount, totalOperations);
+              '${priority.label}：正在更新本地冲突状态',
+              syncedCount,
+              totalOperations,
+            );
           }
         }
         onProgress?.call('Bangumi 状态同步完成', 1, 1);

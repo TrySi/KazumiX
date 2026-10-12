@@ -64,10 +64,7 @@ class OfflineEpisodeTitles {
   final Map<int, String> _byNumber;
   final Map<String, String> _byName;
 
-  static const OfflineEpisodeTitles empty = OfflineEpisodeTitles._(
-    {},
-    {},
-  );
+  static const OfflineEpisodeTitles empty = OfflineEpisodeTitles._({}, {});
 
   factory OfflineEpisodeTitles.fromCache(Iterable<EpisodeInfo>? cached) {
     final byNumber = <int, String>{};

@@ -44,43 +44,47 @@ class VideoWebviewWindowsImpl
   }
 
   @override
-  Future<void> loadUrl(String url, bool useLegacyParser,
-      {int offset = 0}) async {
+  Future<void> loadUrl(
+    String url,
+    bool useLegacyParser, {
+    int offset = 0,
+  }) async {
     await unloadPage();
     count = 0;
     this.offset = offset;
     isIframeLoaded = false;
     isVideoSourceLoaded = false;
     videoLoadingEventController.add(true);
-    subscriptions.add(headlessWebview!.onM3USourceLoaded.listen((data) {
-      if (headlessWebview == null) return;
-      String url = data['url'] ?? '';
-      if (url.isEmpty) {
-        return;
-      }
-      unloadPage();
-      isIframeLoaded = true;
-      isVideoSourceLoaded = true;
-      videoLoadingEventController.add(false);
-      logEventController.add('Loading m3u8 source: $url');
-      notifyVideoSourceResolved(
-        url,
-        format: VideoSourceFormat.hls,
-      );
-    }));
-    subscriptions.add(headlessWebview!.onVideoSourceLoaded.listen((data) {
-      if (headlessWebview == null) return;
-      String url = data['url'] ?? '';
-      if (url.isEmpty) {
-        return;
-      }
-      unloadPage();
-      isIframeLoaded = true;
-      isVideoSourceLoaded = true;
-      videoLoadingEventController.add(false);
-      logEventController.add('Loading video source: $url');
-      notifyVideoSourceResolved(url);
-    }));
+    subscriptions.add(
+      headlessWebview!.onM3USourceLoaded.listen((data) {
+        if (headlessWebview == null) return;
+        String url = data['url'] ?? '';
+        if (url.isEmpty) {
+          return;
+        }
+        unloadPage();
+        isIframeLoaded = true;
+        isVideoSourceLoaded = true;
+        videoLoadingEventController.add(false);
+        logEventController.add('Loading m3u8 source: $url');
+        notifyVideoSourceResolved(url, format: VideoSourceFormat.hls);
+      }),
+    );
+    subscriptions.add(
+      headlessWebview!.onVideoSourceLoaded.listen((data) {
+        if (headlessWebview == null) return;
+        String url = data['url'] ?? '';
+        if (url.isEmpty) {
+          return;
+        }
+        unloadPage();
+        isIframeLoaded = true;
+        isVideoSourceLoaded = true;
+        videoLoadingEventController.add(false);
+        logEventController.add('Loading video source: $url');
+        notifyVideoSourceResolved(url);
+      }),
+    );
     await headlessWebview!.loadUrl(url);
   }
 

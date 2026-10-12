@@ -1,9 +1,5 @@
 enum SuperResolutionMode {
-  off(
-    storageValue: 1,
-    label: '关闭',
-    description: '默认禁用超分辨率',
-  ),
+  off(storageValue: 1, label: '关闭', description: '默认禁用超分辨率'),
   efficiency(
     storageValue: 2,
     label: '效率档',

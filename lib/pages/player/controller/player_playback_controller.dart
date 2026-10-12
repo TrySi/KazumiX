@@ -171,8 +171,10 @@ abstract class _PlayerPlaybackController with Store {
       await player.play();
       startOffset = 0;
     } catch (e) {
-      KazumiLogger()
-          .w('PlayerController: failed to restart from beginning', error: e);
+      KazumiLogger().w(
+        'PlayerController: failed to restart from beginning',
+        error: e,
+      );
     }
   }
 
@@ -278,8 +280,9 @@ abstract class _PlayerPlaybackController with Store {
       GStorage.getSetting(SettingsKeys.defaultSuperResolutionMode),
     );
     hAenable = GStorage.getSetting(SettingsKeys.hAenable);
-    androidEnableOpenSLES =
-        GStorage.getSetting(SettingsKeys.androidEnableOpenSLES);
+    androidEnableOpenSLES = GStorage.getSetting(
+      SettingsKeys.androidEnableOpenSLES,
+    );
     hardwareDecoder = GStorage.getSetting(SettingsKeys.hardwareDecoder);
     autoPlay = GStorage.getSetting(SettingsKeys.autoPlay);
     playerDebugMode = GStorage.getSetting(SettingsKeys.playerDebugMode);
@@ -369,17 +372,16 @@ abstract class _PlayerPlaybackController with Store {
         }
       }
 
-      await player.setAudioTrack(
-        AudioTrack.auto(),
-      );
+      await player.setAudioTrack(AudioTrack.auto());
       if (!isCurrentPlayer(player)) {
         return await _discardIfNotCurrent(candidate);
       }
 
       String? videoRenderer;
       if (Platform.isAndroid) {
-        final String androidVideoRenderer =
-            GStorage.getSetting(SettingsKeys.androidVideoRenderer);
+        final String androidVideoRenderer = GStorage.getSetting(
+          SettingsKeys.androidVideoRenderer,
+        );
 
         if (androidVideoRenderer == 'auto') {
           // Android 14 及以上使用基于 Vulkan 的 MPV GPU-NEXT 视频输出，着色器性能更好
@@ -430,16 +432,21 @@ abstract class _PlayerPlaybackController with Store {
           );
           if (actionableMessage != null) {
             KazumiDialog.showToast(
-                message: actionableMessage, showActionButton: true);
+              message: actionableMessage,
+              showActionButton: true,
+            );
           } else if (showPlayerError) {
             KazumiDialog.showToast(
-                message: '播放器内部错误 ${event.toString()} ${videoUrl()}',
-                duration: const Duration(seconds: 5),
-                showActionButton: true);
+              message: '播放器内部错误 ${event.toString()} ${videoUrl()}',
+              duration: const Duration(seconds: 5),
+              showActionButton: true,
+            );
           }
         }
-        KazumiLogger().e('PlayerController: Player intent error ${videoUrl()}',
-            error: event);
+        KazumiLogger().e(
+          'PlayerController: Player intent error ${videoUrl()}',
+          error: event,
+        );
       });
 
       if (superResolutionMode != SuperResolutionMode.off) {
@@ -457,8 +464,11 @@ abstract class _PlayerPlaybackController with Store {
       }
 
       await player.open(
-        Media(videoUrl(),
-            start: Duration(seconds: offset), httpHeaders: httpHeaders),
+        Media(
+          videoUrl(),
+          start: Duration(seconds: offset),
+          httpHeaders: httpHeaders,
+        ),
         play: autoPlay,
       );
       if (!isCurrentPlayer(player)) {
@@ -529,8 +539,10 @@ abstract class _PlayerPlaybackController with Store {
     try {
       mediaPlayer!.setRate(playerSpeed);
     } catch (e) {
-      KazumiLogger()
-          .e('PlayerController: failed to set playback speed', error: e);
+      KazumiLogger().e(
+        'PlayerController: failed to set playback speed',
+        error: e,
+      );
     }
   }
 

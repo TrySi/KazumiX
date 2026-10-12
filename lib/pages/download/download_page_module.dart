@@ -10,9 +10,8 @@ Module createDownloadModule() => createModule(
   register: (c) {
     c.route(
       '/',
-      child: (context, state) => DownloadPage(
-        controller: inject<DownloadController>(),
-      ),
+      child: (context, state) =>
+          DownloadPage(controller: inject<DownloadController>()),
     );
   },
 );

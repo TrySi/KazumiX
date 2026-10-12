@@ -8,9 +8,7 @@ final myModule = createModule(
     c.route(
       '/',
       transition: TransitionType.none,
-      child: (context, state) => MyPage(
-        controller: inject<MyController>(),
-      ),
+      child: (context, state) => MyPage(controller: inject<MyController>()),
     );
   },
 );

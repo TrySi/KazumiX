@@ -26,20 +26,20 @@ class AboutContent extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => SafeArea(
-        top: false,
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.fromLTRB(16, 12, 16, 32),
-          child: Center(
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 880),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: children,
-              ),
-            ),
+    top: false,
+    child: SingleChildScrollView(
+      padding: const EdgeInsets.fromLTRB(16, 12, 16, 32),
+      child: Center(
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 880),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: children,
           ),
         ),
-      );
+      ),
+    ),
+  );
 }
 
 class AboutLinkTile extends StatelessWidget {
@@ -49,8 +49,8 @@ class AboutLinkTile extends StatelessWidget {
     required this.title,
     required String url,
     this.subtitle,
-  })  : _url = url,
-        _route = null;
+  }) : _url = url,
+       _route = null;
 
   const AboutLinkTile.route({
     super.key,
@@ -58,8 +58,8 @@ class AboutLinkTile extends StatelessWidget {
     required this.title,
     required String route,
     this.subtitle,
-  })  : _route = route,
-        _url = null;
+  }) : _route = route,
+       _url = null;
 
   final IconData icon;
   final String title;
@@ -149,9 +149,9 @@ class _CheckUpdateButtonState extends State<CheckUpdateButton> {
 
   @override
   Widget build(BuildContext context) => StateActionButton(
-        onPressed: _checking ? null : _check,
-        text: _checking ? '正在检查…' : '检查更新',
-        reserveText: '正在检查…',
-        icon: Icons.update_rounded,
-      );
+    onPressed: _checking ? null : _check,
+    text: _checking ? '正在检查…' : '检查更新',
+    reserveText: '正在检查…',
+    icon: Icons.update_rounded,
+  );
 }

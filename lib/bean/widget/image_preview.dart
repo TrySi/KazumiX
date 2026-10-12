@@ -46,7 +46,8 @@ class ImageViewer extends StatefulWidget {
     if (imageUrls.isEmpty) return;
 
     final index = initialIndex.clamp(0, imageUrls.length - 1);
-    final effectiveHeroTag = heroTag ??
+    final effectiveHeroTag =
+        heroTag ??
         (imageUrls.length > 1
             ? ImageViewer.heroTagFor(imageUrls[index], index)
             : imageUrls[index]);
@@ -133,8 +134,9 @@ class _ImageViewerState extends State<ImageViewer> {
         photoViewController.scale ?? _initialScales[scaleKey] ?? 1.0;
     _initialScales[scaleKey] ??= currentScale;
 
-    final factor =
-        event.scrollDelta.dy < 0 ? _wheelScaleStep : 1 / _wheelScaleStep;
+    final factor = event.scrollDelta.dy < 0
+        ? _wheelScaleStep
+        : 1 / _wheelScaleStep;
     final minScale = _initialScales[scaleKey]! * _minScaleFactor;
     final maxScale = _initialScales[scaleKey]! * _maxScaleFactor;
     final newScale = (currentScale * factor).clamp(minScale, maxScale);
@@ -220,8 +222,10 @@ class _ImageViewerState extends State<ImageViewer> {
               right: 0,
               child: Center(
                 child: Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 6,
+                  ),
                   decoration: BoxDecoration(
                     color: Colors.black.withValues(alpha: 0.5),
                     borderRadius: BorderRadius.circular(16),
@@ -265,10 +269,10 @@ class _ImageViewerState extends State<ImageViewer> {
   }
 
   Widget _buildErrorWidget() => const MediaErrorWidget(
-        title: '图片加载失败',
-        errMsg: '请检查网络连接，返回后重新打开图片。',
-        icon: Icons.broken_image_outlined,
-      );
+    title: '图片加载失败',
+    errMsg: '请检查网络连接，返回后重新打开图片。',
+    icon: Icons.broken_image_outlined,
+  );
 
   Widget _buildSingleImage() {
     return Listener(
@@ -285,9 +289,8 @@ class _ImageViewerState extends State<ImageViewer> {
           heroAttributes: widget.heroTag != null
               ? PhotoViewHeroAttributes(tag: widget.heroTag!)
               : null,
-          loadingBuilder: (context, event) => const Center(
-            child: LoadingIndicator(),
-          ),
+          loadingBuilder: (context, event) =>
+              const Center(child: LoadingIndicator()),
           errorBuilder: (context, error, stackTrace) => _buildErrorWidget(),
         ),
       ),
@@ -304,20 +307,16 @@ class _ImageViewerState extends State<ImageViewer> {
           itemCount: widget.imageUrls.length,
           onPageChanged: (index) => setState(() => _currentIndex = index),
           backgroundDecoration: const BoxDecoration(color: Colors.black),
-          loadingBuilder: (context, event) => const Center(
-            child: LoadingIndicator(),
-          ),
+          loadingBuilder: (context, event) =>
+              const Center(child: LoadingIndicator()),
           builder: (context, index) {
             final imageUrl = widget.imageUrls[index];
             final controller = _galleryControllers.putIfAbsent(
               index,
               PhotoViewController.new,
             );
-            final scaleStateController =
-                _galleryScaleStateControllers.putIfAbsent(
-              index,
-              PhotoViewScaleStateController.new,
-            );
+            final scaleStateController = _galleryScaleStateControllers
+                .putIfAbsent(index, PhotoViewScaleStateController.new);
             return PhotoViewGalleryPageOptions(
               imageProvider: CachedNetworkImageProvider(imageUrl),
               controller: controller,

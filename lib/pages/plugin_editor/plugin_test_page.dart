@@ -17,10 +17,7 @@ const _h8 = SizedBox(height: 8.0);
 const _h12 = SizedBox(height: 12.0);
 
 class PluginTestPage extends StatefulWidget {
-  const PluginTestPage({
-    super.key,
-    required this.plugin,
-  });
+  const PluginTestPage({super.key, required this.plugin});
 
   final Plugin plugin;
 
@@ -64,7 +61,8 @@ class _PluginTestPageState extends State<PluginTestPage> {
     super.initState();
     plugin = widget.plugin;
     testKeywordController.addListener(
-        () => errorMsg.isNotEmpty ? setState(() => errorMsg = "") : null);
+      () => errorMsg.isNotEmpty ? setState(() => errorMsg = "") : null,
+    );
   }
 
   @override
@@ -78,24 +76,25 @@ class _PluginTestPageState extends State<PluginTestPage> {
   }
 
   void _resetState() => setState(() {
-        _runId++;
-        isTesting = false;
-        _hasRun = false;
-        _testCancelToken?.cancel();
-        _testCancelToken = null;
-        searchRaw = "";
-        chapterRaw = "";
-        searchRes = null;
-        chapters = null;
-        errorMsg = "";
-        searchDiagnostics = [];
-        chapterDiagnostics = [];
-        _itemFragmentMap.clear();
-        _shownFragmentIndex = null;
-      });
+    _runId++;
+    isTesting = false;
+    _hasRun = false;
+    _testCancelToken?.cancel();
+    _testCancelToken = null;
+    searchRaw = "";
+    chapterRaw = "";
+    searchRes = null;
+    chapters = null;
+    errorMsg = "";
+    searchDiagnostics = [];
+    chapterDiagnostics = [];
+    _itemFragmentMap.clear();
+    _shownFragmentIndex = null;
+  });
 
   void _toggleFragment(int index) => setState(
-      () => _shownFragmentIndex = _shownFragmentIndex == index ? null : index);
+    () => _shownFragmentIndex = _shownFragmentIndex == index ? null : index,
+  );
 
   Future<void> _startTest() async {
     if (isTesting) return;
@@ -113,8 +112,10 @@ class _PluginTestPageState extends State<PluginTestPage> {
       _hasRun = true;
     });
     try {
-      final searchTrace =
-          await plugin.traceSearch(keyword, cancelToken: cancelToken);
+      final searchTrace = await plugin.traceSearch(
+        keyword,
+        cancelToken: cancelToken,
+      );
       if (!mounted || runId != _runId) return;
       setState(() {
         searchRaw = searchTrace.rawResponse;
@@ -125,8 +126,10 @@ class _PluginTestPageState extends State<PluginTestPage> {
       if (_hasSearchData && _needChapterParse) {
         final firstItem = searchRes!.data.first;
         if (firstItem.src.isNotEmpty) {
-          final chapterTrace = await plugin.traceChapters(firstItem.src,
-              cancelToken: cancelToken);
+          final chapterTrace = await plugin.traceChapters(
+            firstItem.src,
+            cancelToken: cancelToken,
+          );
           if (!mounted || runId != _runId) return;
           setState(() {
             chapterRaw = chapterTrace.rawResponse;
@@ -137,8 +140,11 @@ class _PluginTestPageState extends State<PluginTestPage> {
       }
     } catch (error, stack) {
       if (!mounted || runId != _runId) return;
-      KazumiLogger()
-          .e('PluginTest: test failed', error: error, stackTrace: stack);
+      KazumiLogger().e(
+        'PluginTest: test failed',
+        error: error,
+        stackTrace: stack,
+      );
       setState(() => errorMsg = error.toString());
     } finally {
       if (mounted && runId == _runId) setState(() => isTesting = false);
@@ -186,11 +192,14 @@ class _PluginTestPageState extends State<PluginTestPage> {
                           alignment: AlignmentDirectional.centerEnd,
                           child: FilledButton.icon(
                             style: FilledButton.styleFrom(
-                                minimumSize: const Size(132, 48)),
+                              minimumSize: const Size(132, 48),
+                            ),
                             onPressed: isTesting ? _resetState : _startTest,
-                            icon: Icon(isTesting
-                                ? Icons.stop_rounded
-                                : Icons.play_arrow_rounded),
+                            icon: Icon(
+                              isTesting
+                                  ? Icons.stop_rounded
+                                  : Icons.play_arrow_rounded,
+                            ),
                             label: Text(isTesting ? '停止测试' : '开始测试'),
                           ),
                         ),
@@ -207,31 +216,34 @@ class _PluginTestPageState extends State<PluginTestPage> {
                   ],
                   const SizedBox(height: 20),
                   _buildExpansionTile(
-                      theme: theme,
-                      number: 1,
-                      title: '搜索请求',
-                      subtitle: _getSearchSubtitle(),
-                      completed: _hasSearchRaw,
-                      expanded: false,
-                      child: _buildSearchContent(theme)),
+                    theme: theme,
+                    number: 1,
+                    title: '搜索请求',
+                    subtitle: _getSearchSubtitle(),
+                    completed: _hasSearchRaw,
+                    expanded: false,
+                    child: _buildSearchContent(theme),
+                  ),
                   _h12,
                   _buildExpansionTile(
-                      theme: theme,
-                      number: 2,
-                      title: '结果解析',
-                      subtitle: _getParseSubtitle(),
-                      completed: _hasSearchData,
-                      expanded: _hasSearchData,
-                      child: _buildParseContent(theme)),
+                    theme: theme,
+                    number: 2,
+                    title: '结果解析',
+                    subtitle: _getParseSubtitle(),
+                    completed: _hasSearchData,
+                    expanded: _hasSearchData,
+                    child: _buildParseContent(theme),
+                  ),
                   _h12,
                   _buildExpansionTile(
-                      theme: theme,
-                      number: 3,
-                      title: '播放线路',
-                      subtitle: _getChapterSubtitle(),
-                      completed: _hasChapters,
-                      expanded: _hasChapters,
-                      child: _buildChapterContent(theme)),
+                    theme: theme,
+                    number: 3,
+                    title: '播放线路',
+                    subtitle: _getChapterSubtitle(),
+                    completed: _hasChapters,
+                    expanded: _hasChapters,
+                    child: _buildChapterContent(theme),
+                  ),
                 ],
               ),
             ),
@@ -251,7 +263,8 @@ class _PluginTestPageState extends State<PluginTestPage> {
     required Widget child,
   }) {
     final colors = theme.colorScheme;
-    final failed = _hasRun &&
+    final failed =
+        _hasRun &&
         !isTesting &&
         !completed &&
         switch (number) {
@@ -262,8 +275,8 @@ class _PluginTestPageState extends State<PluginTestPage> {
     final foreground = completed
         ? colors.onTertiaryContainer
         : failed
-            ? colors.onErrorContainer
-            : colors.onSurfaceVariant;
+        ? colors.onErrorContainer
+        : colors.onSurfaceVariant;
     return Material(
       color: colors.surfaceContainerLow,
       borderRadius: BorderRadius.circular(28),
@@ -276,27 +289,38 @@ class _PluginTestPageState extends State<PluginTestPage> {
           width: 40,
           height: 40,
           decoration: BoxDecoration(
-              color: completed
-                  ? colors.tertiaryContainer
-                  : failed
-                      ? colors.errorContainer
-                      : colors.surfaceContainerHighest,
-              borderRadius: BorderRadius.circular(completed ? 20 : 12)),
+            color: completed
+                ? colors.tertiaryContainer
+                : failed
+                ? colors.errorContainer
+                : colors.surfaceContainerHighest,
+            borderRadius: BorderRadius.circular(completed ? 20 : 12),
+          ),
           child: Center(
-              child: completed
-                  ? Icon(Icons.check_rounded, color: foreground)
-                  : failed
-                      ? Icon(Icons.error_outline_rounded, color: foreground)
-                      : Text('$number',
-                          style: theme.textTheme.titleMedium
-                              ?.copyWith(color: foreground))),
+            child: completed
+                ? Icon(Icons.check_rounded, color: foreground)
+                : failed
+                ? Icon(Icons.error_outline_rounded, color: foreground)
+                : Text(
+                    '$number',
+                    style: theme.textTheme.titleMedium?.copyWith(
+                      color: foreground,
+                    ),
+                  ),
+          ),
         ),
-        title: Text(title,
-            style: theme.textTheme.titleMedium
-                ?.copyWith(fontWeight: FontWeight.w600)),
-        subtitle: Text(subtitle,
-            style: theme.textTheme.bodySmall
-                ?.copyWith(color: colors.onSurfaceVariant)),
+        title: Text(
+          title,
+          style: theme.textTheme.titleMedium?.copyWith(
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+        subtitle: Text(
+          subtitle,
+          style: theme.textTheme.bodySmall?.copyWith(
+            color: colors.onSurfaceVariant,
+          ),
+        ),
         initiallyExpanded: expanded,
         shape: const Border(),
         collapsedShape: const Border(),
@@ -306,51 +330,61 @@ class _PluginTestPageState extends State<PluginTestPage> {
   }
 
   Widget _buildKeywordInput() => TextField(
-        controller: testKeywordController,
-        decoration: ruleInputDecoration(context,
-            label: '测试关键词',
-            hint: '输入番剧名称',
-            prefix: const Icon(Icons.search_rounded)),
-        enabled: !isTesting,
-        textInputAction: TextInputAction.search,
-        onSubmitted: (_) => _startTest(),
-      );
+    controller: testKeywordController,
+    decoration: ruleInputDecoration(
+      context,
+      label: '测试关键词',
+      hint: '输入番剧名称',
+      prefix: const Icon(Icons.search_rounded),
+    ),
+    enabled: !isTesting,
+    textInputAction: TextInputAction.search,
+    onSubmitted: (_) => _startTest(),
+  );
 
   Widget _buildErrorWidget(ThemeData theme) => Container(
-        padding: const EdgeInsets.all(12.0),
-        decoration: BoxDecoration(
-          color: theme.colorScheme.errorContainer,
-          borderRadius: BorderRadius.circular(20),
-        ),
-        child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Icon(Icons.error_outline, color: theme.colorScheme.error, size: 20),
-          const SizedBox(width: 12),
-          Expanded(
-            child:
-                Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              Text(errorMsg,
-                  style: theme.textTheme.bodyMedium
-                      ?.copyWith(color: theme.colorScheme.onErrorContainer)),
+    padding: const EdgeInsets.all(12.0),
+    decoration: BoxDecoration(
+      color: theme.colorScheme.errorContainer,
+      borderRadius: BorderRadius.circular(20),
+    ),
+    child: Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Icon(Icons.error_outline, color: theme.colorScheme.error, size: 20),
+        const SizedBox(width: 12),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                errorMsg,
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  color: theme.colorScheme.onErrorContainer,
+                ),
+              ),
               _h8,
               TextButton(
                 onPressed: _startTest,
                 style: TextButton.styleFrom(
-                    backgroundColor:
-                        theme.colorScheme.error.withValues(alpha: 0.1)),
-                child: Text('重试测试',
-                    style:
-                        TextStyle(color: theme.colorScheme.onErrorContainer)),
+                  backgroundColor: theme.colorScheme.error.withValues(
+                    alpha: 0.1,
+                  ),
+                ),
+                child: Text(
+                  '重试测试',
+                  style: TextStyle(color: theme.colorScheme.onErrorContainer),
+                ),
               ),
-            ]),
+            ],
           ),
-        ]),
-      );
-
-  Widget _buildLoading(ThemeData theme) => Center(
-        child: LoadingIndicator(
-          color: theme.colorScheme.primary,
         ),
-      );
+      ],
+    ),
+  );
+
+  Widget _buildLoading(ThemeData theme) =>
+      Center(child: LoadingIndicator(color: theme.colorScheme.primary));
 
   Widget _buildEmpty(String text, ThemeData theme, {bool isError = false}) =>
       Center(
@@ -373,37 +407,50 @@ class _PluginTestPageState extends State<PluginTestPage> {
     return '${plugin.searchMode == RuleMode.api ? 'JSON' : 'HTML'}长度：${searchRaw.length} 字符';
   }
 
-  Widget _codePanel(String raw, ThemeData theme,
-      {ScrollController? controller}) {
+  Widget _codePanel(
+    String raw,
+    ThemeData theme, {
+    ScrollController? controller,
+  }) {
     return Container(
       decoration: BoxDecoration(
-          color: theme.colorScheme.surfaceContainerHighest,
-          borderRadius: BorderRadius.circular(16)),
+        color: theme.colorScheme.surfaceContainerHighest,
+        borderRadius: BorderRadius.circular(16),
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Padding(
             padding: const EdgeInsets.only(left: 16, right: 4, top: 4),
-            child: Row(children: [
-              Expanded(child: Text('响应内容', style: theme.textTheme.labelLarge)),
-              IconButton(
+            child: Row(
+              children: [
+                Expanded(
+                  child: Text('响应内容', style: theme.textTheme.labelLarge),
+                ),
+                IconButton(
                   tooltip: '复制响应内容',
                   onPressed: () async {
                     try {
                       await Clipboard.setData(ClipboardData(text: raw));
                       if (mounted) {
                         KazumiDialog.showToast(
-                            context: context, message: '已复制响应内容');
+                          context: context,
+                          message: '已复制响应内容',
+                        );
                       }
                     } catch (_) {
                       if (mounted) {
                         KazumiDialog.showToast(
-                            context: context, message: '复制失败，请重试');
+                          context: context,
+                          message: '复制失败，请重试',
+                        );
                       }
                     }
                   },
-                  icon: const Icon(Icons.copy_rounded, size: 18)),
-            ]),
+                  icon: const Icon(Icons.copy_rounded, size: 18),
+                ),
+              ],
+            ),
           ),
           SizedBox(
             height: 220,
@@ -412,9 +459,12 @@ class _PluginTestPageState extends State<PluginTestPage> {
               child: SingleChildScrollView(
                 controller: controller,
                 padding: const EdgeInsets.fromLTRB(16, 4, 16, 16),
-                child: SelectableText(raw,
-                    style: theme.textTheme.bodySmall
-                        ?.copyWith(fontFamily: 'monospace')),
+                child: SelectableText(
+                  raw,
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    fontFamily: 'monospace',
+                  ),
+                ),
               ),
             ),
           ),
@@ -427,17 +477,19 @@ class _PluginTestPageState extends State<PluginTestPage> {
     if (isTesting && !_hasSearchRaw) return _buildLoading(theme);
     if (!_hasSearchRaw) return _buildEmpty('输入关键词后，点击「开始测试」。', theme);
     return _codePanel(
-        _formattedRaw(searchRaw, isJson: plugin.searchMode == RuleMode.api),
-        theme,
-        controller: searchRawScrollController);
+      _formattedRaw(searchRaw, isJson: plugin.searchMode == RuleMode.api),
+      theme,
+      controller: searchRawScrollController,
+    );
   }
 
   String _getParseSubtitle() {
     if (isTesting && !_hasSearchRaw) return '等待搜索响应';
     if (!_hasSearchRaw) return _hasRun ? '等待有效响应' : '等待开始';
     if (!_hasSearchData) return '未解析到结果';
-    final skipped =
-        searchDiagnostics.isEmpty ? '' : '，跳过 ${searchDiagnostics.length} 条';
+    final skipped = searchDiagnostics.isEmpty
+        ? ''
+        : '，跳过 ${searchDiagnostics.length} 条';
     return '解析到 ${searchRes?.data.length ?? 0} 条结果$skipped';
   }
 
@@ -446,17 +498,19 @@ class _PluginTestPageState extends State<PluginTestPage> {
     if (!_hasSearchRaw) return _buildEmpty('请先完成搜索请求测试', theme);
     if (!_hasSearchData) return _buildEmpty('未解析到搜索结果', theme, isError: true);
 
-    return Column(children: [
-      _buildDiagnosticsWidget(searchDiagnostics, theme),
-      ListView.builder(
-        shrinkWrap: true,
-        physics: const NeverScrollableScrollPhysics(),
-        itemCount: searchRes!.data.length,
-        itemBuilder: (_, i) =>
-            _buildSearchItemCard(searchRes!.data[i], i, theme),
-      ),
-      _h8,
-    ]);
+    return Column(
+      children: [
+        _buildDiagnosticsWidget(searchDiagnostics, theme),
+        ListView.builder(
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          itemCount: searchRes!.data.length,
+          itemBuilder: (_, i) =>
+              _buildSearchItemCard(searchRes!.data[i], i, theme),
+        ),
+        _h8,
+      ],
+    );
   }
 
   Widget _buildDiagnosticsWidget(List<String> diagnostics, ThemeData theme) {
@@ -472,23 +526,35 @@ class _PluginTestPageState extends State<PluginTestPage> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(children: [
-            Icon(Icons.warning_amber_outlined,
-                color: theme.colorScheme.error, size: 20),
-            const SizedBox(width: 8.0),
-            Expanded(
-                child: Text('部分节点被跳过（${diagnostics.length}）',
-                    style: theme.textTheme.bodyMedium?.copyWith(
-                        color: theme.colorScheme.onErrorContainer,
-                        fontWeight: FontWeight.w500))),
-          ]),
+          Row(
+            children: [
+              Icon(
+                Icons.warning_amber_outlined,
+                color: theme.colorScheme.error,
+                size: 20,
+              ),
+              const SizedBox(width: 8.0),
+              Expanded(
+                child: Text(
+                  '部分节点被跳过（${diagnostics.length}）',
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    color: theme.colorScheme.onErrorContainer,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ),
+            ],
+          ),
           _h8,
           ...diagnostics.map(
             (message) => Padding(
               padding: const EdgeInsets.only(bottom: 4.0),
-              child: SelectableText(message,
-                  style: theme.textTheme.bodySmall
-                      ?.copyWith(color: theme.colorScheme.onErrorContainer)),
+              child: SelectableText(
+                message,
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: theme.colorScheme.onErrorContainer,
+                ),
+              ),
             ),
           ),
         ],
@@ -500,50 +566,68 @@ class _PluginTestPageState extends State<PluginTestPage> {
     final isShowingFragment = _shownFragmentIndex == i;
     final fragment = _itemFragmentMap[i] ?? '无匹配片段';
 
-    return Column(children: [
-      Card(
-        margin: const EdgeInsets.only(bottom: 8.0),
-        elevation: 0,
-        color: theme.colorScheme.surfaceContainerHighest,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        child: Padding(
-          padding: const EdgeInsets.all(12.0),
-          child:
-              Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-              Expanded(
-                child: Text(
-                  '${i + 1}：${item.name}',
-                  style: theme.textTheme.titleMedium
-                      ?.copyWith(fontWeight: FontWeight.w500),
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
+    return Column(
+      children: [
+        Card(
+          margin: const EdgeInsets.only(bottom: 8.0),
+          elevation: 0,
+          color: theme.colorScheme.surfaceContainerHighest,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+          ),
+          child: Padding(
+            padding: const EdgeInsets.all(12.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Expanded(
+                      child: Text(
+                        '${i + 1}：${item.name}',
+                        style: theme.textTheme.titleMedium?.copyWith(
+                          fontWeight: FontWeight.w500,
+                        ),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                    IconButton(
+                      onPressed: isTesting ? null : () => _toggleFragment(i),
+                      icon: Icon(
+                        isShowingFragment
+                            ? Icons.keyboard_arrow_up
+                            : Icons.code,
+                        size: 18,
+                        color: theme.colorScheme.primary,
+                      ),
+                      tooltip: isShowingFragment ? '隐藏匹配片段' : '查看匹配片段',
+                    ),
+                  ],
                 ),
-              ),
-              IconButton(
-                onPressed: isTesting ? null : () => _toggleFragment(i),
-                icon: Icon(
-                  isShowingFragment ? Icons.keyboard_arrow_up : Icons.code,
-                  size: 18,
-                  color: theme.colorScheme.primary,
+                _h8,
+                Text(
+                  '链接：${item.src}',
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: theme.colorScheme.onSurfaceVariant,
+                  ),
                 ),
-                tooltip: isShowingFragment ? '隐藏匹配片段' : '查看匹配片段',
-              ),
-            ]),
-            _h8,
-            Text('链接：${item.src}',
-                style: theme.textTheme.bodySmall
-                    ?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
-          ]),
+              ],
+            ),
+          ),
         ),
-      ),
-      if (isShowingFragment)
-        Padding(
-          padding: const EdgeInsets.only(bottom: 8),
-          child:
-              _codePanel(fragment, theme, controller: fragmentScrollController),
-        ),
-    ]);
+        if (isShowingFragment)
+          Padding(
+            padding: const EdgeInsets.only(bottom: 8),
+            child: _codePanel(
+              fragment,
+              theme,
+              controller: fragmentScrollController,
+            ),
+          ),
+      ],
+    );
   }
 
   String _getChapterSubtitle() {
@@ -552,8 +636,9 @@ class _PluginTestPageState extends State<PluginTestPage> {
     if (!_hasSearchData) return '等待有效搜索结果';
     if (!_needChapterParse) return '无需解析章节';
     if (chapters == null) return '未获取章节数据';
-    final skipped =
-        chapterDiagnostics.isEmpty ? '' : '，跳过 ${chapterDiagnostics.length} 条';
+    final skipped = chapterDiagnostics.isEmpty
+        ? ''
+        : '，跳过 ${chapterDiagnostics.length} 条';
     return '获取到 ${chapters?.length ?? 0} 个播放线路$skipped';
   }
 
@@ -571,9 +656,12 @@ class _PluginTestPageState extends State<PluginTestPage> {
           Padding(
             padding: const EdgeInsets.only(bottom: 12),
             child: _codePanel(
-                _formattedRaw(chapterRaw,
-                    isJson: plugin.chapterMode == RuleMode.api),
-                theme),
+              _formattedRaw(
+                chapterRaw,
+                isJson: plugin.chapterMode == RuleMode.api,
+              ),
+              theme,
+            ),
           ),
         Container(
           padding: const EdgeInsets.all(8.0),
@@ -598,47 +686,53 @@ class _PluginTestPageState extends State<PluginTestPage> {
   }
 
   Widget _buildChapterCard(Road road, int i, ThemeData theme) => Card(
-        margin: const EdgeInsets.only(bottom: 8.0),
-        elevation: 0,
-        color: theme.colorScheme.surfaceContainerHighest,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        child: Padding(
-          padding: const EdgeInsets.all(12.0),
-          child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(
-                  '播放线路 ${i + 1}：${road.name}',
-                  style: theme.textTheme.titleMedium
-                      ?.copyWith(fontWeight: FontWeight.w500),
-                ),
-                _h8,
-                Text('章节数量：${road.data.length}',
-                    style: theme.textTheme.bodySmall
-                        ?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
-                _h8,
-                SizedBox(
-                  width: double.infinity,
-                  height: 120,
-                  child: SingleChildScrollView(
-                    child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          ...road.identifier.asMap().entries.map(
-                                (e) => Padding(
-                                  padding: const EdgeInsets.only(bottom: 6),
-                                  child: SelectableText(
-                                    '${e.key + 1}. ${e.value}\n'
-                                    '${e.key < road.data.length ? road.data[e.key] : ''}',
-                                    style: theme.textTheme.bodySmall,
-                                  ),
-                                ),
-                              ),
-                        ]),
+    margin: const EdgeInsets.only(bottom: 8.0),
+    elevation: 0,
+    color: theme.colorScheme.surfaceContainerHighest,
+    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+    child: Padding(
+      padding: const EdgeInsets.all(12.0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(
+            '播放线路 ${i + 1}：${road.name}',
+            style: theme.textTheme.titleMedium?.copyWith(
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+          _h8,
+          Text(
+            '章节数量：${road.data.length}',
+            style: theme.textTheme.bodySmall?.copyWith(
+              color: theme.colorScheme.onSurfaceVariant,
+            ),
+          ),
+          _h8,
+          SizedBox(
+            width: double.infinity,
+            height: 120,
+            child: SingleChildScrollView(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  ...road.identifier.asMap().entries.map(
+                    (e) => Padding(
+                      padding: const EdgeInsets.only(bottom: 6),
+                      child: SelectableText(
+                        '${e.key + 1}. ${e.value}\n'
+                        '${e.key < road.data.length ? road.data[e.key] : ''}',
+                        style: theme.textTheme.bodySmall,
+                      ),
+                    ),
                   ),
-                ),
-              ]),
-        ),
-      );
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    ),
+  );
 }

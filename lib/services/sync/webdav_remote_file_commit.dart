@@ -1,12 +1,8 @@
 typedef WebDavRemoveRemoteFile = Future<void> Function(String path);
-typedef WebDavUploadRemoteFile = Future<void> Function(
-  String sourceFilePath,
-  String remotePath,
-);
-typedef WebDavRenameRemoteFile = Future<void> Function(
-  String sourcePath,
-  String destinationPath,
-);
+typedef WebDavUploadRemoteFile =
+    Future<void> Function(String sourceFilePath, String remotePath);
+typedef WebDavRenameRemoteFile =
+    Future<void> Function(String sourcePath, String destinationPath);
 typedef WebDavRemoteEntryExists = Future<bool> Function(String path);
 
 class WebDavRemoteFileCommitter {
@@ -21,25 +17,13 @@ class WebDavRemoteFileCommitter {
     required WebDavRenameRemoteFile rename,
     required WebDavRemoteEntryExists exists,
   }) async {
-    await _removeIfExists(
-      temporaryPath,
-      remove: remove,
-      exists: exists,
-    );
+    await _removeIfExists(temporaryPath, remove: remove, exists: exists);
     try {
       await uploadFromFile(sourceFilePath, temporaryPath);
-      await _removeIfExists(
-        destinationPath,
-        remove: remove,
-        exists: exists,
-      );
+      await _removeIfExists(destinationPath, remove: remove, exists: exists);
       await rename(temporaryPath, destinationPath);
     } catch (_) {
-      await _removeIfExists(
-        temporaryPath,
-        remove: remove,
-        exists: exists,
-      );
+      await _removeIfExists(temporaryPath, remove: remove, exists: exists);
       rethrow;
     }
   }

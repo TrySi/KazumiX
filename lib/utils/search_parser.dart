@@ -6,10 +6,7 @@ class SearchDateRange {
   final String start;
   final String end;
 
-  const SearchDateRange({
-    required this.start,
-    required this.end,
-  });
+  const SearchDateRange({required this.start, required this.end});
 
   bool get isValid => start.isNotEmpty && end.isNotEmpty;
 
@@ -26,10 +23,7 @@ class SearchIntRange {
   final int? min;
   final int? max;
 
-  const SearchIntRange({
-    this.min,
-    this.max,
-  });
+  const SearchIntRange({this.min, this.max});
 
   bool get isValid => min != null || max != null;
 
@@ -48,10 +42,7 @@ class SearchDoubleRange {
   final double? min;
   final double? max;
 
-  const SearchDoubleRange({
-    this.min,
-    this.max,
-  });
+  const SearchDoubleRange({this.min, this.max});
 
   bool get isValid => min != null || max != null;
 
@@ -295,8 +286,10 @@ class SearchParser {
   }
 
   static SearchDateRange? seasonToDateRange(String season) {
-    final match =
-        RegExp(r'^(\d{4})Q([1-4])$', caseSensitive: false).firstMatch(season);
+    final match = RegExp(
+      r'^(\d{4})Q([1-4])$',
+      caseSensitive: false,
+    ).firstMatch(season);
     if (match == null) return null;
     final year = int.parse(match.group(1)!);
     final quarter = int.parse(match.group(2)!);

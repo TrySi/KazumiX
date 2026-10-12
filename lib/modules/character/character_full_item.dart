@@ -2,10 +2,7 @@ class CharacterInfoField {
   final String key;
   final String value;
 
-  const CharacterInfoField({
-    required this.key,
-    required this.value,
-  });
+  const CharacterInfoField({required this.key, required this.value});
 }
 
 class CharacterFullItem {
@@ -35,7 +32,8 @@ class CharacterFullItem {
     }
     var nameCn = _text(json['nameCN'] ?? json['name_cn']);
     if (nameCn.isEmpty) {
-      nameCn = fields
+      nameCn =
+          fields
               .where((field) => field.key == '简体中文名')
               .map((field) => field.value)
               .firstOrNull ??
@@ -48,8 +46,8 @@ class CharacterFullItem {
       summary: _text(json['summary']),
       image: images is Map
           ? ['large', 'medium', 'small']
-              .map((size) => _text(images[size]))
-              .firstWhere((url) => url.isNotEmpty, orElse: () => '')
+                .map((size) => _text(images[size]))
+                .firstWhere((url) => url.isNotEmpty, orElse: () => '')
           : '',
       name: _text(json['name']),
       nameCn: nameCn,

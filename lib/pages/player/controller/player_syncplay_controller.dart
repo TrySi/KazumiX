@@ -67,18 +67,21 @@ abstract class _PlayerSyncPlayController with Store {
     if (_chatStreamController.isClosed) {
       return;
     }
-    _chatStreamController.add(SyncPlayChatMessage(
-      username: username,
-      message: message,
-      fromRemote: fromRemote,
-    ));
+    _chatStreamController.add(
+      SyncPlayChatMessage(
+        username: username,
+        message: message,
+        fromRemote: fromRemote,
+      ),
+    );
   }
 
   Future<void> createRoom(
-      String room,
-      String username,
-      Future<void> Function(int episode, {int currentRoad, int offset})
-          changeEpisode) async {
+    String room,
+    String username,
+    Future<void> Function(int episode, {int currentRoad, int offset})
+    changeEpisode,
+  ) async {
     if (_connectionSessions.isClosed) {
       return;
     }
@@ -91,14 +94,13 @@ abstract class _PlayerSyncPlayController with Store {
     if (session.isStale) {
       return;
     }
-    final String syncPlayEndPoint =
-        GStorage.getSetting(SettingsKeys.syncPlayEndPoint);
+    final String syncPlayEndPoint = GStorage.getSetting(
+      SettingsKeys.syncPlayEndPoint,
+    );
     KazumiLogger().i('SyncPlay: connecting to $syncPlayEndPoint');
     final parsed = parseSyncPlayEndPoint(syncPlayEndPoint);
     if (parsed == null) {
-      KazumiDialog.showToast(
-        message: 'SyncPlay: 服务器地址不合法 $syncPlayEndPoint',
-      );
+      KazumiDialog.showToast(message: 'SyncPlay: 服务器地址不合法 $syncPlayEndPoint');
       KazumiLogger().e('SyncPlay: invalid server address $syncPlayEndPoint');
       return;
     }
@@ -118,8 +120,9 @@ abstract class _PlayerSyncPlayController with Store {
           if (!_isCurrentConnection(session, client)) {
             return;
           }
-          final message =
-              error is SyncplayException ? error.message : error.toString();
+          final message = error is SyncplayException
+              ? error.message
+              : error.toString();
           KazumiLogger().e('SyncPlay: error $message', error: error);
           if (error is SyncplayConnectionException) {
             exitRoom();
@@ -133,57 +136,59 @@ abstract class _PlayerSyncPlayController with Store {
           }
         },
       );
-      client.onRoomMessage.listen(
-        (message) {
-          if (!_isCurrentConnection(session, client)) {
-            return;
-          }
-          if (message['type'] == 'init') {
-            if (message['username'] == '') {
-              KazumiDialog.showToast(
-                  message: 'SyncPlay: 您是当前房间中的唯一用户',
-                  duration: const Duration(seconds: 5));
-              setPlayingBangumi();
-            } else {
-              KazumiDialog.showToast(
-                  message:
-                      'SyncPlay: 您不是当前房间中的唯一用户, 当前以用户 ${message['username']} 进度为准');
-            }
-          }
-          if (message['type'] == 'left') {
+      client.onRoomMessage.listen((message) {
+        if (!_isCurrentConnection(session, client)) {
+          return;
+        }
+        if (message['type'] == 'init') {
+          if (message['username'] == '') {
             KazumiDialog.showToast(
-                message: 'SyncPlay: ${message['username']} 离开了房间',
-                duration: const Duration(seconds: 5));
-          }
-          if (message['type'] == 'joined') {
+              message: 'SyncPlay: 您是当前房间中的唯一用户',
+              duration: const Duration(seconds: 5),
+            );
+            setPlayingBangumi();
+          } else {
             KazumiDialog.showToast(
-                message: 'SyncPlay: ${message['username']} 加入了房间',
-                duration: const Duration(seconds: 5));
+              message:
+                  'SyncPlay: 您不是当前房间中的唯一用户, 当前以用户 ${message['username']} 进度为准',
+            );
           }
-        },
-      );
-      client.onFileChangedMessage.listen(
-        (message) {
-          if (!_isCurrentConnection(session, client)) {
-            return;
+        }
+        if (message['type'] == 'left') {
+          KazumiDialog.showToast(
+            message: 'SyncPlay: ${message['username']} 离开了房间',
+            duration: const Duration(seconds: 5),
+          );
+        }
+        if (message['type'] == 'joined') {
+          KazumiDialog.showToast(
+            message: 'SyncPlay: ${message['username']} 加入了房间',
+            duration: const Duration(seconds: 5),
+          );
+        }
+      });
+      client.onFileChangedMessage.listen((message) {
+        if (!_isCurrentConnection(session, client)) {
+          return;
+        }
+        KazumiLogger().i(
+          'SyncPlay: file changed by ${message['setBy']}: ${message['name']}',
+        );
+        RegExp regExp = RegExp(r'(\d+)\[(\d+)\]');
+        Match? match = regExp.firstMatch(message['name']);
+        if (match != null) {
+          int bangumiID = int.tryParse(match.group(1) ?? '0') ?? 0;
+          int episode = int.tryParse(match.group(2) ?? '0') ?? 0;
+          if (bangumiID != 0 && episode != 0 && episode != currentEpisode()) {
+            KazumiDialog.showToast(
+              message:
+                  'SyncPlay: ${message['setBy'] ?? 'unknown'} 切换到第 $episode 话',
+              duration: const Duration(seconds: 3),
+            );
+            changeEpisode(episode, currentRoad: currentRoad());
           }
-          KazumiLogger().i(
-              'SyncPlay: file changed by ${message['setBy']}: ${message['name']}');
-          RegExp regExp = RegExp(r'(\d+)\[(\d+)\]');
-          Match? match = regExp.firstMatch(message['name']);
-          if (match != null) {
-            int bangumiID = int.tryParse(match.group(1) ?? '0') ?? 0;
-            int episode = int.tryParse(match.group(2) ?? '0') ?? 0;
-            if (bangumiID != 0 && episode != 0 && episode != currentEpisode()) {
-              KazumiDialog.showToast(
-                  message:
-                      'SyncPlay: ${message['setBy'] ?? 'unknown'} 切换到第 $episode 话',
-                  duration: const Duration(seconds: 3));
-              changeEpisode(episode, currentRoad: currentRoad());
-            }
-          }
-        },
-      );
+        }
+      });
       client.onChatMessage.listen(
         (message) {
           if (!_isCurrentConnection(session, client)) {
@@ -203,52 +208,55 @@ abstract class _PlayerSyncPlayController with Store {
           if (!_isCurrentConnection(session, client)) {
             return;
           }
-          final message =
-              error is SyncplayException ? error.message : error.toString();
+          final message = error is SyncplayException
+              ? error.message
+              : error.toString();
           KazumiLogger().e('SyncPlay: error $message', error: error);
         },
       );
-      client.onPositionChangedMessage.listen(
-        (message) {
-          if (!_isCurrentConnection(session, client)) {
-            return;
-          }
-          syncplayClientRtt = (message['clientRtt'].toDouble() * 1000).toInt();
-          KazumiLogger().i(
-              'SyncPlay: position changed by ${message['setBy']}: [${DateTime.now().millisecondsSinceEpoch / 1000.0}] calculatedPosition ${message['calculatedPositon']} position: ${message['position']} doSeek: ${message['doSeek']} paused: ${message['paused']} clientRtt: ${message['clientRtt']} serverRtt: ${message['serverRtt']} fd: ${message['fd']}');
-          if (message['paused'] != !playing()) {
-            if (message['paused']) {
-              if (message['position'] != 0) {
-                KazumiDialog.showToast(
-                    message: 'SyncPlay: ${message['setBy'] ?? 'unknown'} 暂停了播放',
-                    duration: const Duration(seconds: 3));
-                pause(enableSync: false);
-              }
-            } else {
-              if (message['position'] != 0) {
-                KazumiDialog.showToast(
-                    message: 'SyncPlay: ${message['setBy'] ?? 'unknown'} 开始了播放',
-                    duration: const Duration(seconds: 3));
-                play(enableSync: false);
-              }
+      client.onPositionChangedMessage.listen((message) {
+        if (!_isCurrentConnection(session, client)) {
+          return;
+        }
+        syncplayClientRtt = (message['clientRtt'].toDouble() * 1000).toInt();
+        KazumiLogger().i(
+          'SyncPlay: position changed by ${message['setBy']}: [${DateTime.now().millisecondsSinceEpoch / 1000.0}] calculatedPosition ${message['calculatedPositon']} position: ${message['position']} doSeek: ${message['doSeek']} paused: ${message['paused']} clientRtt: ${message['clientRtt']} serverRtt: ${message['serverRtt']} fd: ${message['fd']}',
+        );
+        if (message['paused'] != !playing()) {
+          if (message['paused']) {
+            if (message['position'] != 0) {
+              KazumiDialog.showToast(
+                message: 'SyncPlay: ${message['setBy'] ?? 'unknown'} 暂停了播放',
+                duration: const Duration(seconds: 3),
+              );
+              pause(enableSync: false);
+            }
+          } else {
+            if (message['position'] != 0) {
+              KazumiDialog.showToast(
+                message: 'SyncPlay: ${message['setBy'] ?? 'unknown'} 开始了播放',
+                duration: const Duration(seconds: 3),
+              );
+              play(enableSync: false);
             }
           }
-          if ((((playerPosition().inMilliseconds -
-                              (message['calculatedPositon'].toDouble() * 1000)
-                                  .toInt())
-                          .abs() >
-                      1000) ||
-                  message['doSeek']) &&
-              duration().inMilliseconds > 0) {
-            seek(
-                Duration(
-                    milliseconds:
-                        (message['calculatedPositon'].toDouble() * 1000)
-                            .toInt()),
-                enableSync: false);
-          }
-        },
-      );
+        }
+        if ((((playerPosition().inMilliseconds -
+                            (message['calculatedPositon'].toDouble() * 1000)
+                                .toInt())
+                        .abs() >
+                    1000) ||
+                message['doSeek']) &&
+            duration().inMilliseconds > 0) {
+          seek(
+            Duration(
+              milliseconds: (message['calculatedPositon'].toDouble() * 1000)
+                  .toInt(),
+            ),
+            enableSync: false,
+          );
+        }
+      });
       await client.joinRoom(room, username);
       if (!_isCurrentConnection(session, client)) {
         await client.disconnect();
@@ -283,29 +291,37 @@ abstract class _PlayerSyncPlayController with Store {
     }
     forceSyncPlaying ??= playing();
     syncplayController!.setPaused(!forceSyncPlaying);
-    syncplayController!.setPosition((forceSyncPosition ??
-        (((currentPosition().inMilliseconds - playerPosition().inMilliseconds)
-                    .abs() >
-                2000)
-            ? currentPosition().inMilliseconds.toDouble() / 1000
-            : playerPosition().inMilliseconds.toDouble() / 1000)));
+    syncplayController!.setPosition(
+      (forceSyncPosition ??
+          (((currentPosition().inMilliseconds - playerPosition().inMilliseconds)
+                      .abs() >
+                  2000)
+              ? currentPosition().inMilliseconds.toDouble() / 1000
+              : playerPosition().inMilliseconds.toDouble() / 1000)),
+    );
   }
 
-  Future<void> setPlayingBangumi(
-      {bool? forceSyncPlaying, double? forceSyncPosition}) async {
+  Future<void> setPlayingBangumi({
+    bool? forceSyncPlaying,
+    double? forceSyncPosition,
+  }) async {
     final client = syncplayController;
     if (client == null) {
       return;
     }
     await _runBestEffortSync(() async {
       await client.setSyncPlayPlaying(
-          "${bangumiId()}[${currentEpisode()}]", 10800, 220514438);
+        "${bangumiId()}[${currentEpisode()}]",
+        10800,
+        220514438,
+      );
       if (!identical(syncplayController, client)) {
         return;
       }
       setCurrentPosition(
-          forceSyncPlaying: forceSyncPlaying,
-          forceSyncPosition: forceSyncPosition);
+        forceSyncPlaying: forceSyncPlaying,
+        forceSyncPosition: forceSyncPosition,
+      );
       await client.sendSyncPlaySyncRequest(doSeek: null);
     });
   }
@@ -316,7 +332,8 @@ abstract class _PlayerSyncPlayController with Store {
       return;
     }
     await _runBestEffortSync(
-        () => client.sendSyncPlaySyncRequest(doSeek: doSeek));
+      () => client.sendSyncPlaySyncRequest(doSeek: doSeek),
+    );
   }
 
   Future<void> sendChatMessage(String message) async {

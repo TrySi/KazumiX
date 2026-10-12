@@ -13,18 +13,23 @@ enum CollectSort {
 
 class CollectLibraryQuery {
   CollectLibraryQuery(Iterable<CollectedBangumi> items, String query)
-      : _matches = _match(items, query);
+    : _matches = _match(items, query);
 
   final List<CollectedBangumi> _matches;
 
   static List<CollectedBangumi> _match(
-      Iterable<CollectedBangumi> items, String query) {
+    Iterable<CollectedBangumi> items,
+    String query,
+  ) {
     final terms = query.trim().toLowerCase().split(RegExp(r'\s+'));
     return items.where((entry) {
       if (!CollectType.fromValue(entry.type).isCollected) return false;
       final item = entry.bangumiItem;
-      final names =
-          [item.nameCn, item.name, ...item.alias].join('\n').toLowerCase();
+      final names = [
+        item.nameCn,
+        item.name,
+        ...item.alias,
+      ].join('\n').toLowerCase();
       return terms.every(names.contains);
     }).toList();
   }
@@ -40,11 +45,12 @@ class CollectLibraryQuery {
     result.sort((a, b) {
       final comparison = switch (sort) {
         CollectSort.recentlyChanged => b.time.compareTo(a.time),
-        CollectSort.title => titleOf(a).toLowerCase().compareTo(
-              titleOf(b).toLowerCase(),
-            ),
-        CollectSort.rating =>
-          b.bangumiItem.ratingScore.compareTo(a.bangumiItem.ratingScore),
+        CollectSort.title => titleOf(
+          a,
+        ).toLowerCase().compareTo(titleOf(b).toLowerCase()),
+        CollectSort.rating => b.bangumiItem.ratingScore.compareTo(
+          a.bangumiItem.ratingScore,
+        ),
         CollectSort.airDate => _airDate(b).compareTo(_airDate(a)),
       };
       if (comparison != 0) return comparison;

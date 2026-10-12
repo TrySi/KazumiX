@@ -75,11 +75,7 @@ class WebViewVideoSourceService implements IVideoSourceService {
     try {
       request.throwIfNotCurrent(_activeRequest);
       didStartLoad = true;
-      await _webview!.loadUrl(
-        episodeUrl,
-        useLegacyParser,
-        offset: offset,
-      );
+      await _webview!.loadUrl(episodeUrl, useLegacyParser, offset: offset);
 
       request.throwIfNotCurrent(_activeRequest);
 

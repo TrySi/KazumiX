@@ -19,29 +19,31 @@ void main() {
       expect(owner.begin().isActive, isTrue);
     });
 
-    test('close invalidates pending work and permanently rejects new work',
-        () async {
-      final owner = AsyncSessionOwner();
-      final cleanup = Completer<void>();
-      final session = owner.begin();
-      var installedAfterCleanup = false;
+    test(
+      'close invalidates pending work and permanently rejects new work',
+      () async {
+        final owner = AsyncSessionOwner();
+        final cleanup = Completer<void>();
+        final session = owner.begin();
+        var installedAfterCleanup = false;
 
-      final initialization = () async {
-        await cleanup.future;
-        if (session.isStale) {
-          return;
-        }
-        installedAfterCleanup = true;
-      }();
+        final initialization = () async {
+          await cleanup.future;
+          if (session.isStale) {
+            return;
+          }
+          installedAfterCleanup = true;
+        }();
 
-      owner.close();
-      cleanup.complete();
-      await initialization;
+        owner.close();
+        cleanup.complete();
+        await initialization;
 
-      expect(session.isStale, isTrue);
-      expect(installedAfterCleanup, isFalse);
-      expect(owner.isClosed, isTrue);
-      expect(owner.begin, throwsStateError);
-    });
+        expect(session.isStale, isTrue);
+        expect(installedAfterCleanup, isFalse);
+        expect(owner.isClosed, isTrue);
+        expect(owner.begin, throwsStateError);
+      },
+    );
   });
 }

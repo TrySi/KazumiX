@@ -44,7 +44,8 @@ class ChapterErrorException implements Exception {
   final Object? cause;
 
   @override
-  String toString() => 'ChapterErrorException: $pluginName chapter query failed'
+  String toString() =>
+      'ChapterErrorException: $pluginName chapter query failed'
       '${cause != null ? ' ($cause)' : ''}';
 }
 

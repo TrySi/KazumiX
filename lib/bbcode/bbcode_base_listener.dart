@@ -62,7 +62,8 @@ class BBCodeBaseListener implements BBCodeListener {
         break;
       default:
         KazumiLogger().e(
-            'BBCode: unrecognized Tag: ${ctx.text}, please submit an issue with logs, bangumi, and episode information');
+          'BBCode: unrecognized Tag: ${ctx.text}, please submit an issue with logs, bangumi, and episode information',
+        );
         break;
     }
   }
@@ -141,8 +142,9 @@ class BBCodeBaseListener implements BBCodeListener {
         if (bbCodeTag.img! < bbcode.length &&
             bbcode.isNotEmpty &&
             bbcode[bbCodeTag.img!] is BBCodeText) {
-          bbcode[bbCodeTag.img!] =
-              BBCodeImg(imageUrl: bbcode[bbCodeTag.img!].text);
+          bbcode[bbCodeTag.img!] = BBCodeImg(
+            imageUrl: bbcode[bbCodeTag.img!].text,
+          );
         }
         break;
       case 'MASK':
@@ -171,7 +173,8 @@ class BBCodeBaseListener implements BBCodeListener {
         break;
       default:
         KazumiLogger().e(
-            'BBCode: unrecognized Tag: ${ctx.text}, please submit an issue with logs, bangumi, and episode information');
+          'BBCode: unrecognized Tag: ${ctx.text}, please submit an issue with logs, bangumi, and episode information',
+        );
         break;
     }
   }

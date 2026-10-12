@@ -26,18 +26,22 @@ class _DecoderSettingsState extends State<DecoderSettings> {
             onChanged: (String? value) {
               if (value != null) {
                 GStorage.putSetting<String>(
-                    SettingsKeys.hardwareDecoder, value);
+                  SettingsKeys.hardwareDecoder,
+                  value,
+                );
                 setState(() {
                   _decoder = value;
                 });
               }
             },
             tiles: hardwareDecodersList.entries
-                .map((e) => SettingsTile<String>.radioTile(
-                      title: Text(e.key),
-                      description: Text(e.value),
-                      radioValue: e.key,
-                    ))
+                .map(
+                  (e) => SettingsTile<String>.radioTile(
+                    title: Text(e.key),
+                    description: Text(e.value),
+                    radioValue: e.key,
+                  ),
+                )
                 .toList(),
           ),
         ],

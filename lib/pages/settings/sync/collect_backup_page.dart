@@ -99,10 +99,9 @@ class _CollectBackupPageState extends State<CollectBackupPage> {
       );
       if (result == null) return; // Cancelled.
       final picked = result.files.single;
-      final bytes = picked.bytes ??
-          (picked.path == null
-              ? null
-              : await File(picked.path!).readAsBytes());
+      final bytes =
+          picked.bytes ??
+          (picked.path == null ? null : await File(picked.path!).readAsBytes());
       if (bytes == null) throw const FileSystemException('无法读取所选文件');
 
       final parsed = CollectBackupService.instance.decode(utf8.decode(bytes));
@@ -165,8 +164,7 @@ class _CollectBackupPageState extends State<CollectBackupPage> {
                   SettingsTile(
                     leading: Icons.bookmarks_rounded,
                     title: const Text('当前追番'),
-                    description:
-                        Text(count == 0 ? '还没有可导出的追番' : '共 $count 部'),
+                    description: Text(count == 0 ? '还没有可导出的追番' : '共 $count 部'),
                   ),
                 ],
               ),

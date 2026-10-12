@@ -57,10 +57,7 @@ void _showCustomKeywordDialog({
             style: TextStyle(color: Theme.of(context).colorScheme.outline),
           ),
         ),
-        TextButton(
-          onPressed: () => submit(keyword),
-          child: const Text('检索'),
-        ),
+        TextButton(onPressed: () => submit(keyword), child: const Text('检索')),
       ],
     ),
   );
@@ -133,8 +130,8 @@ class _AliasPickerDialogState extends State<_AliasPickerDialog> {
                   Text(
                     '仅检索来源：${widget.sourceName}',
                     style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                          color: Theme.of(context).colorScheme.onSurfaceVariant,
-                        ),
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                    ),
                   ),
                 ],
               ),

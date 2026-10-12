@@ -25,11 +25,11 @@ class PlayerSeekController {
     required Future<void> Function({bool enableSync}) pause,
     required Future<void> Function({bool enableSync}) play,
     required Future<void> Function(bool enableSync) onSeekCompleted,
-  })  : _playback = playback,
-        _danmaku = danmaku,
-        _pause = pause,
-        _play = play,
-        _onSeekCompleted = onSeekCompleted;
+  }) : _playback = playback,
+       _danmaku = danmaku,
+       _pause = pause,
+       _play = play,
+       _onSeekCompleted = onSeekCompleted;
 
   final PlayerPlaybackController _playback;
   final PlayerDanmakuController _danmaku;
@@ -42,10 +42,7 @@ class PlayerSeekController {
 
   bool get hasActiveInteractiveSeek => _interactiveSession != null;
 
-  Future<void> seekTo(
-    Duration target, {
-    bool enableSync = true,
-  }) {
+  Future<void> seekTo(Duration target, {bool enableSync = true}) {
     final player = _playback.mediaPlayer;
     if (player == null) {
       return Future<void>.value();
@@ -72,14 +69,8 @@ class PlayerSeekController {
     return operation;
   }
 
-  Future<void> seekBy(
-    Duration offset, {
-    bool enableSync = true,
-  }) =>
-      seekTo(
-        _playback.currentPosition + offset,
-        enableSync: enableSync,
-      );
+  Future<void> seekBy(Duration offset, {bool enableSync = true}) =>
+      seekTo(_playback.currentPosition + offset, enableSync: enableSync);
 
   void beginInteractiveSeek() {
     final initialPosition = _playback.currentPosition;
@@ -112,8 +103,10 @@ class PlayerSeekController {
     if (session == null) {
       return Future<bool>.value(false);
     }
-    return session.completion ??=
-        _finishInteractiveSeek(session, cancelled: cancelled);
+    return session.completion ??= _finishInteractiveSeek(
+      session,
+      cancelled: cancelled,
+    );
   }
 
   void invalidateInteractiveSeek() {

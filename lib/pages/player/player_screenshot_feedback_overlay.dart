@@ -1,10 +1,7 @@
 import 'package:flutter/material.dart';
 
 class PlayerScreenshotFeedbackOverlay extends StatelessWidget {
-  const PlayerScreenshotFeedbackOverlay({
-    super.key,
-    required this.animation,
-  });
+  const PlayerScreenshotFeedbackOverlay({super.key, required this.animation});
 
   final Animation<double> animation;
 
@@ -21,7 +18,8 @@ class PlayerScreenshotFeedbackOverlay extends StatelessWidget {
 
           final dimOpacity =
               0.12 * _pulse(value, begin: 0.0, peak: 0.18, end: 0.62);
-          final frameOpacity = 0.90 *
+          final frameOpacity =
+              0.90 *
               _interval(value, begin: 0.0, end: 0.14, curve: Curves.easeOut) *
               (1 -
                   _interval(
@@ -40,9 +38,7 @@ class PlayerScreenshotFeedbackOverlay extends StatelessWidget {
           return Stack(
             fit: StackFit.expand,
             children: [
-              ColoredBox(
-                color: Colors.black.withValues(alpha: dimOpacity),
-              ),
+              ColoredBox(color: Colors.black.withValues(alpha: dimOpacity)),
               CustomPaint(
                 painter: _ScreenshotFramePainter(
                   opacity: frameOpacity,
@@ -89,12 +85,7 @@ class PlayerScreenshotFeedbackOverlay extends StatelessWidget {
       );
     }
     return 1 -
-        _interval(
-          value,
-          begin: peak,
-          end: end,
-          curve: Curves.easeOutCubic,
-        );
+        _interval(value, begin: peak, end: end, curve: Curves.easeOutCubic);
   }
 }
 
@@ -122,8 +113,9 @@ class _ScreenshotFramePainter extends CustomPainter {
       size.height - verticalInset,
     );
 
-    final cornerLength =
-        (rect.shortestSide * 0.12).clamp(22.0, 54.0).toDouble();
+    final cornerLength = (rect.shortestSide * 0.12)
+        .clamp(22.0, 54.0)
+        .toDouble();
     final strokeWidth = (1.4 + 0.8 * (1 - progress)).clamp(1.4, 2.2);
     final paint = Paint()
       ..color = Colors.white.withValues(alpha: opacity)

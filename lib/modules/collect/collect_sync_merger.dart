@@ -15,10 +15,7 @@ class CollectiblesMergeResult {
 }
 
 class BangumiUploadMutation {
-  const BangumiUploadMutation({
-    required this.bangumiId,
-    required this.type,
-  });
+  const BangumiUploadMutation({required this.bangumiId, required this.type});
 
   final int bangumiId;
   final int type;
@@ -61,18 +58,20 @@ class CollectSyncMerger {
     required List<CollectedBangumi> remoteCollectibles,
     required List<CollectedBangumiChange> remoteChanges,
   }) {
-    final mergedCollectibles =
-        remoteCollectibles.map(_copyCollectible).toList();
+    final mergedCollectibles = remoteCollectibles
+        .map(_copyCollectible)
+        .toList();
     final newLocalChanges = localChanges.where((localChange) {
-      return !remoteChanges
-          .any((remoteChange) => remoteChange.id == localChange.id);
-    }).toList()
-      ..sort((a, b) => a.timestamp.compareTo(b.timestamp));
+      return !remoteChanges.any(
+        (remoteChange) => remoteChange.id == localChange.id,
+      );
+    }).toList()..sort((a, b) => a.timestamp.compareTo(b.timestamp));
 
     for (final change in newLocalChanges) {
       if (change.action == 3) {
-        mergedCollectibles
-            .removeWhere((item) => item.bangumiItem.id == change.bangumiID);
+        mergedCollectibles.removeWhere(
+          (item) => item.bangumiItem.id == change.bangumiID,
+        );
         continue;
       }
 
@@ -132,21 +131,15 @@ class CollectSyncMerger {
       remoteMap[item.bangumiId] = item;
     }
 
-    final localOnlyIds = localMap.keys
-        .toSet()
-        .difference(remoteMap.keys.toSet())
-        .toList()
-      ..sort();
-    final remoteOnlyIds = remoteMap.keys
-        .toSet()
-        .difference(localMap.keys.toSet())
-        .toList()
-      ..sort();
-    final sharedIds = localMap.keys
-        .toSet()
-        .intersection(remoteMap.keys.toSet())
-        .toList()
-      ..sort();
+    final localOnlyIds =
+        localMap.keys.toSet().difference(remoteMap.keys.toSet()).toList()
+          ..sort();
+    final remoteOnlyIds =
+        remoteMap.keys.toSet().difference(localMap.keys.toSet()).toList()
+          ..sort();
+    final sharedIds =
+        localMap.keys.toSet().intersection(remoteMap.keys.toSet()).toList()
+          ..sort();
     final mismatchIds = <int>[];
     for (final id in sharedIds) {
       if (localMap[id]!.type != remoteMap[id]!.type.toCollectType().value) {
