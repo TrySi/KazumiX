@@ -1529,9 +1529,9 @@ class _OfflineEpisodeSheet extends StatelessWidget {
       watchStates[number] ?? _EpisodeWatchState.unwatched;
 
   List<_OfflineEpisodeChoice> _buildChoices(List<EpisodeInfo>? cached) {
-    // Reuse the show's deduplicated map so an episode plays from the same
-    // source here as it does from the card and the player.
-    final downloadedByNumber = show.completedByNumber;
+    // Extras have no number, so they are matched by name instead. The main
+    // episodes read the show's deduplicated map, so an episode plays from the
+    // same source here as it does from the card and the player.
     final downloadedByName = <String, DownloadEntry>{};
     for (final e in show.episodes) {
       if (e.episode.status != DownloadStatus.completed) continue;
@@ -1554,7 +1554,7 @@ class _OfflineEpisodeSheet extends StatelessWidget {
             number: slot.episodeNumber,
             title: slot.title,
             entry: slot.episodeNumber > 0
-                ? downloadedByNumber[slot.episodeNumber]
+                ? show.completedByNumber[slot.episodeNumber]
                 : downloadedByName[slot.nameCn] ?? downloadedByName[slot.name],
             state: _stateFor(slot.episodeNumber),
           ),
@@ -1562,15 +1562,11 @@ class _OfflineEpisodeSheet extends StatelessWidget {
       if (choices.isNotEmpty) return choices;
     }
 
-    // 无缓存时，退回只显示已下载完成的集。
-    final completed =
-        show.episodes
-            .where((e) => e.episode.status == DownloadStatus.completed)
-            .toList()
-          ..sort(
-            (a, b) =>
-                a.episode.episodeNumber.compareTo(b.episode.episodeNumber),
-          );
+    // 无缓存时，退回只显示已下载完成的集。show.episodes 已按集号和来源排好，
+    // 再按集号排一次会丢掉来源的先后，同一集的两个来源顺序变得不确定。
+    final completed = show.episodes
+        .where((e) => e.episode.status == DownloadStatus.completed)
+        .toList();
     return [
       for (final e in completed)
         _OfflineEpisodeChoice(

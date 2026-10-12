@@ -14,9 +14,10 @@ class DownloadEntry {
 
 /// A bangumi's downloads aggregated across every source that has any.
 ///
-/// Both lists are ordered by [DownloadRecord.compareBySource], so the show's
-/// name and cover and the source that wins a duplicated episode stay stable
-/// across rebuilds instead of following container iteration order.
+/// [records] is ordered by [DownloadRecord.compareBySource], so the show's name
+/// and cover and the source that wins a duplicated episode stay stable across
+/// rebuilds instead of following container iteration order. [entries] orders by
+/// episode number first and keeps that same source order between ties.
 class ShowDownloads {
   const ShowDownloads({
     required this.primaryRecord,
@@ -32,7 +33,8 @@ class ShowDownloads {
   /// Every record contributing to this show, ordered by source.
   final List<DownloadRecord> records;
 
-  /// Every downloaded episode of every source, ordered by episode number.
+  /// Every downloaded episode of every source, ordered by episode number and
+  /// then by [DownloadRecord.compareBySource] for a duplicated episode.
   final List<DownloadEntry> entries;
 
   /// Newest [DownloadRecord.createdAt] across [records].
