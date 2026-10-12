@@ -37,8 +37,8 @@ class AudioController {
     late _KazumiAudioHandler rawHandler;
     if (Platform.isLinux) {
       AudioServiceMpris.init(
-        dBusName: 'io.github.Predidit.Kazumi.channel.audio',
-        identity: 'Kazumi Playback',
+        dBusName: 'com.trysi.kazumix.channel.audio',
+        identity: 'KazumiX Playback',
         canControl: true,
         canPlay: true,
         canPause: true,
@@ -52,8 +52,8 @@ class AudioController {
         return rawHandler;
       },
       config: const AudioServiceConfig(
-        androidNotificationChannelId: 'io.github.Predidit.Kazumi.channel.audio',
-        androidNotificationChannelName: 'Kazumi Playback',
+        androidNotificationChannelId: 'com.trysi.kazumix.channel.audio',
+        androidNotificationChannelName: 'KazumiX Playback',
         androidNotificationOngoing: true,
       ),
     );

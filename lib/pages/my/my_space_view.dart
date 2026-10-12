@@ -134,7 +134,7 @@ class _WideSpaceLayout extends StatelessWidget {
                 children: [
                   Icon(Icons.info_outline_rounded, size: 20),
                   SizedBox(width: 8),
-                  Flexible(child: Text('关于 Kazumi')),
+                  Flexible(child: Text('关于 KazumiX')),
                 ],
               ),
             ),
@@ -212,7 +212,7 @@ class _CompactSpaceLayout extends StatelessWidget {
               MyDestination.storage,
             ),
             _entry(
-              '关于 Kazumi',
+              '关于 KazumiX',
               Icons.info_outline_rounded,
               MyDestination.about,
             ),

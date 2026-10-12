@@ -110,7 +110,7 @@ class _ProjectHeader extends StatelessWidget {
           Semantics(
             header: true,
             child: Text(
-              'Kazumi',
+              'KazumiX',
               style: theme.textTheme.displayMedium?.copyWith(
                 color: colors.primary,
                 fontWeight: FontWeight.w600,

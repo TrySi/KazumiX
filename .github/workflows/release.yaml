@@ -303,8 +303,8 @@
                        libwebkit2gtk-4.1-0
               EOF
 
-              cp ../assets/linux/io.github.Predidit.Kazumi.desktop usr/share/applications
-              cp ../assets/images/logo/logo_linux.png usr/share/icons/hicolor/512x512/apps/io.github.Predidit.Kazumi.png
+              cp ../assets/linux/com.trysi.kazumix.desktop usr/share/applications
+              cp ../assets/images/logo/logo_linux.png usr/share/icons/hicolor/512x512/apps/com.trysi.kazumix.png
 
               cd ..
               dpkg-deb --build --root-owner-group Kazumi_linux_${{ env.tag }}_amd64
@@ -386,8 +386,8 @@
                        libwebkit2gtk-4.1-0
               EOF
 
-              cp ../assets/linux/io.github.Predidit.Kazumi.desktop usr/share/applications
-              cp ../assets/images/logo/logo_linux.png usr/share/icons/hicolor/512x512/apps/io.github.Predidit.Kazumi.png
+              cp ../assets/linux/com.trysi.kazumix.desktop usr/share/applications
+              cp ../assets/images/logo/logo_linux.png usr/share/icons/hicolor/512x512/apps/com.trysi.kazumix.png
 
               cd ..
               dpkg-deb --build --root-owner-group Kazumi_linux_${{ env.tag }}_arm64
