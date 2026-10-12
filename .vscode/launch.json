@@ -2,7 +2,7 @@
   "version": "0.2.0",
   "configurations": [
     {
-      "name": "Kazumi (debug, Skia)",
+      "name": "KazumiX (debug, Skia)",
       "request": "launch",
       "type": "dart",
       "program": "lib/main.dart",
@@ -12,7 +12,7 @@
       ]
     },
     {
-      "name": "Kazumi (debug, Skia, local defines)",
+      "name": "KazumiX (debug, Skia, local defines)",
       "request": "launch",
       "type": "dart",
       "program": "lib/main.dart",
@@ -23,7 +23,7 @@
       ]
     },
     {
-      "name": "Kazumi (debug, Impeller)",
+      "name": "KazumiX (debug, Impeller)",
       "request": "launch",
       "type": "dart",
       "program": "lib/main.dart",
@@ -33,7 +33,7 @@
       ]
     },
     {
-      "name": "Kazumi (debug, Impeller, local defines)",
+      "name": "KazumiX (debug, Impeller, local defines)",
       "request": "launch",
       "type": "dart",
       "program": "lib/main.dart",
