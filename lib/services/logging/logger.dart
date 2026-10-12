@@ -113,7 +113,9 @@ class KazumiLogOutput extends LogOutput {
   @override
   void output(OutputEvent event) {
     for (var line in event.lines) {
-      print(line);
+      // stdout is where print writes anyway, but naming it explicitly marks
+      // this as the logging framework's own sink instead of app debug output.
+      stdout.writeln(line);
     }
 
     // Write to file if: warning/error/fatal OR forceLog is enabled
@@ -140,7 +142,7 @@ class KazumiLogOutput extends LogOutput {
           mode: FileMode.writeOnlyAppend,
         );
       } catch (e) {
-        print('Failed to write log to file: ${_singleLineLogText(e)}');
+        stdout.writeln('Failed to write log to file: ${_singleLineLogText(e)}');
       }
     });
   }
@@ -271,7 +273,7 @@ Future<bool> clearLogs() async {
     });
     return true;
   } catch (e) {
-    print('Error clearing file: ${_singleLineLogText(e)}');
+    stdout.writeln('Error clearing file: ${_singleLineLogText(e)}');
     return false;
   }
 }

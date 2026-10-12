@@ -403,7 +403,7 @@ class _ImageSearchPageState extends State<ImageSearchPage> {
           fit: action == null ? FlexFit.loose : FlexFit.tight,
           child: scrollable,
         ),
-        if (action != null) action,
+        ?action,
       ],
     );
   }
