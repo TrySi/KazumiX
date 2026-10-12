@@ -34,6 +34,27 @@ abstract class _HistoryController with Store {
     init();
   }
 
+  /// Marks or unmarks a single offline episode as watched, then refreshes the
+  /// in-memory list so derived watch states update immediately.
+  Future<void> setEpisodeWatched({
+    required BangumiItem bangumiItem,
+    required String adapterName,
+    required int episode,
+    required String episodeTitle,
+    required int road,
+    required bool watched,
+  }) async {
+    await _historyRepository.setEpisodeWatched(
+      bangumiItem: bangumiItem,
+      adapterName: adapterName,
+      episode: episode,
+      episodeTitle: episodeTitle,
+      road: road,
+      watched: watched,
+    );
+    init();
+  }
+
   Progress? lastWatching(
     BangumiItem bangumiItem,
     String adapterName, {

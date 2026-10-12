@@ -54,6 +54,20 @@ abstract class IHistoryRepository {
     Duration duration = Duration.zero,
   });
 
+  /// Marks or unmarks a single episode as watched for a given entry kind.
+  ///
+  /// [watched] true stores `completed` with zero progress; false stores a zero
+  /// progress without the completion flag (which reads back as "未看过").
+  Future<void> setEpisodeWatched({
+    required BangumiItem bangumiItem,
+    required String adapterName,
+    required int episode,
+    required String episodeTitle,
+    required int road,
+    required bool watched,
+    String entryKind = HistoryEntryKind.offline,
+  });
+
   /// 获取上次观看的进度
   ///
   /// [bangumiItem] 番剧信息
@@ -204,9 +218,10 @@ class HistoryRepository implements IHistoryRepository {
     required Duration progress,
     Duration duration = Duration.zero,
   }) async {
-    // 距结尾过近视为已看完，归零保存
-    if (duration > Duration.zero &&
-        progress >= duration - nearEndWatchedThreshold) {
+    // 距结尾过近视为已看完，归零保存，并标记完成
+    final reachedEnd = duration > Duration.zero &&
+        progress >= duration - nearEndWatchedThreshold;
+    if (reachedEnd) {
       progress = Duration.zero;
     }
     await _storageCoordinator.run(() async {
@@ -269,11 +284,14 @@ class HistoryRepository implements IHistoryRepository {
             identity.road,
             progress.inMilliseconds,
             updatedAtMs: nowMs,
+            completed: reachedEnd,
           );
         } else {
           prog.road = identity.road;
           prog.progress = progress;
           prog.updatedAtMs = nowMs;
+          // Completion is sticky so a rewatch never downgrades the state.
+          if (reachedEnd) prog.completed = true;
         }
 
         // 保存到存储
@@ -291,6 +309,69 @@ class HistoryRepository implements IHistoryRepository {
       } catch (e, stackTrace) {
         KazumiLogger().e(
           'GStorage: update history failed. bangumi=${identity.bangumiItem.name}, episode=${identity.episodeNumber}',
+          error: e,
+          stackTrace: stackTrace,
+        );
+      }
+    });
+  }
+
+  @override
+  Future<void> setEpisodeWatched({
+    required BangumiItem bangumiItem,
+    required String adapterName,
+    required int episode,
+    required String episodeTitle,
+    required int road,
+    required bool watched,
+    String entryKind = HistoryEntryKind.offline,
+  }) async {
+    await _storageCoordinator.run(() async {
+      try {
+        if (getPrivateMode()) return;
+        final normalizedKind = HistoryEntryKind.normalize(entryKind);
+        var history = _findHistory(adapterName, bangumiItem, normalizedKind);
+        if (watched && history == null) {
+          history = History(
+            bangumiItem,
+            episode,
+            adapterName,
+            DateTime.now(),
+            '',
+            episodeTitle,
+            entryKind: normalizedKind,
+          );
+        }
+        // Nothing to unmark when the record (or progress) does not exist.
+        if (history == null) return;
+        if (!watched && !history.progresses.containsKey(episode)) return;
+
+        final nowMs = DateTime.now().millisecondsSinceEpoch;
+        final prog = history.progresses[episode];
+        if (prog == null) {
+          history.progresses[episode] = Progress(
+            episode,
+            road,
+            0,
+            updatedAtMs: nowMs,
+            completed: watched,
+          );
+        } else {
+          prog.completed = watched;
+          prog.progress = Duration.zero;
+          prog.updatedAtMs = nowMs;
+        }
+        await _historiesBox.put(history.key, history);
+        await _progressSyncAppender(
+          history: history,
+          episode: episode,
+          road: road,
+          progressMs: 0,
+          updatedAt: nowMs,
+        );
+      } catch (e, stackTrace) {
+        KazumiLogger().e(
+          'GStorage: set episode watched failed. bangumi=${bangumiItem.name}, episode=$episode',
           error: e,
           stackTrace: stackTrace,
         );

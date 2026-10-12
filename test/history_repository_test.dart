@@ -225,6 +225,133 @@ void main() {
       );
     });
 
+    test('marks completion sticky across rewatches', () async {
+      final repository = HistoryRepository(
+        historiesBox: historiesBox,
+        privateModeReader: () => privateMode,
+        progressSyncAppender: _noopHistorySync,
+        deleteSyncAppender: _noopDeleteSync,
+        clearSyncAppender: _noopClearSync,
+      );
+      final item = _item(6);
+      final identity = PlaybackHistoryIdentity.offline(
+        bangumiItem: item,
+        pluginName: 'plugin',
+        episodeNumber: 1,
+        episodeTitle: 'EP1',
+        road: 0,
+        episodePageUrl: '/offline/1',
+      );
+
+      // Partway: not completed.
+      await repository.updateHistory(
+        identity: identity,
+        progress: const Duration(minutes: 10),
+        duration: const Duration(minutes: 24),
+      );
+      var progress = repository
+          .getHistory('plugin', item, entryKind: HistoryEntryKind.offline)!
+          .progresses[1]!;
+      expect(progress.completed, isFalse);
+      expect(progress.progress, const Duration(minutes: 10));
+
+      // Reaching the end marks completion and resets the position.
+      await repository.updateHistory(
+        identity: identity,
+        progress: const Duration(minutes: 23, seconds: 58),
+        duration: const Duration(minutes: 24),
+      );
+      progress = repository
+          .getHistory('plugin', item, entryKind: HistoryEntryKind.offline)!
+          .progresses[1]!;
+      expect(progress.completed, isTrue);
+      expect(progress.progress, Duration.zero);
+
+      // Rewatching partway keeps the completion flag.
+      await repository.updateHistory(
+        identity: identity,
+        progress: const Duration(minutes: 3),
+        duration: const Duration(minutes: 24),
+      );
+      progress = repository
+          .getHistory('plugin', item, entryKind: HistoryEntryKind.offline)!
+          .progresses[1]!;
+      expect(progress.completed, isTrue);
+      expect(progress.progress, const Duration(minutes: 3));
+    });
+
+    test('setEpisodeWatched marks and unmarks offline episodes', () async {
+      final repository = HistoryRepository(
+        historiesBox: historiesBox,
+        privateModeReader: () => privateMode,
+        progressSyncAppender: _noopHistorySync,
+        deleteSyncAppender: _noopDeleteSync,
+        clearSyncAppender: _noopClearSync,
+      );
+      final item = _item(8);
+
+      // Mark two episodes watched; the record is created on demand.
+      await repository.setEpisodeWatched(
+        bangumiItem: item,
+        adapterName: 'plugin',
+        episode: 1,
+        episodeTitle: '第1话',
+        road: 0,
+        watched: true,
+      );
+      await repository.setEpisodeWatched(
+        bangumiItem: item,
+        adapterName: 'plugin',
+        episode: 2,
+        episodeTitle: '第2话',
+        road: 0,
+        watched: true,
+      );
+      var history = repository.getHistory(
+        'plugin',
+        item,
+        entryKind: HistoryEntryKind.offline,
+      )!;
+      expect(history.progresses[1]!.completed, isTrue);
+      expect(history.progresses[2]!.completed, isTrue);
+
+      // Unmark one; it reads back as unwatched (zero progress, not completed).
+      await repository.setEpisodeWatched(
+        bangumiItem: item,
+        adapterName: 'plugin',
+        episode: 1,
+        episodeTitle: '第1话',
+        road: 0,
+        watched: false,
+      );
+      history = repository.getHistory(
+        'plugin',
+        item,
+        entryKind: HistoryEntryKind.offline,
+      )!;
+      expect(history.progresses[1]!.completed, isFalse);
+      expect(history.progresses[1]!.progress, Duration.zero);
+      expect(history.progresses[2]!.completed, isTrue);
+
+      // Unmarking a nonexistent record is a no-op.
+      await repository.setEpisodeWatched(
+        bangumiItem: _item(9),
+        adapterName: 'plugin',
+        episode: 5,
+        episodeTitle: '第5话',
+        road: 0,
+        watched: false,
+      );
+      expect(
+        repository.getHistory(
+          'plugin',
+          _item(9),
+          entryKind: HistoryEntryKind.offline,
+        ),
+        isNull,
+      );
+    });
+
     test('serializes repository writes with snapshot reconciliation', () async {
       final appendStarted = Completer<void>();
       final allowAppendToFinish = Completer<void>();

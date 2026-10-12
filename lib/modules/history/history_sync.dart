@@ -460,11 +460,14 @@ class HistorySyncState {
     final progressVersion = episodeVersions[episode];
     if (progressVersion == null ||
         HistorySyncVersion.compare(event.version, progressVersion) >= 0) {
+      // Remote events never carry the local-only completion flag; keep it.
+      final existing = current.progresses[episode];
       current.progresses[episode] = Progress(
         episode,
         road,
         progressMs,
         updatedAtMs: event.updatedAt,
+        completed: existing?.completed ?? false,
       );
       episodeVersions[episode] = event.version;
     }

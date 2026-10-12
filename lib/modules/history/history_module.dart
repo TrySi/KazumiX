@@ -154,6 +154,12 @@ class Progress {
   @HiveField(3, defaultValue: 0)
   int updatedAtMs;
 
+  /// Set once the episode was played through to the end. Sticky: rewatching
+  /// from the start does not clear it, and it survives the near-end progress
+  /// reset, so "已看完" stays distinguishable from "看了一部分".
+  @HiveField(4, defaultValue: false)
+  bool completed;
+
   Duration get progress => Duration(milliseconds: _progressInMilli);
 
   set progress(Duration d) => _progressInMilli = d.inMilliseconds;
@@ -163,6 +169,7 @@ class Progress {
     this.road,
     this._progressInMilli, {
     this.updatedAtMs = 0,
+    this.completed = false,
   });
 
   int effectiveUpdatedAtMs(DateTime fallback) {
