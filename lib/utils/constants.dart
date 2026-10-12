@@ -85,10 +85,11 @@ const List<String> acceptLanguageList = [
   'zh-CN,zh-TW;q=0.9,zh;q=0.8,en-US;q=0.7,en;q=0.6',
 ];
 
-/// Bangumi API 文档要求的UA格式
+/// Bangumi API 文档要求的UA格式：<用户>/<项目>/<版本> (<联系方式>)
+/// 上游写的是 Predidit/Kazumi；本分支改用自身的仓库标识。
 Map<String, String> bangumiHTTPHeader = {
   'user-agent':
-      'Predidit/Kazumi/${ApiEndpoints.version} (Android) (https://github.com/Predidit/Kazumi)',
+      'TrySi/KazumiX/${ApiEndpoints.version} (Android) (${ApiEndpoints.sourceUrl})',
   'referer': '',
   'content-type': 'application/json',
 };
