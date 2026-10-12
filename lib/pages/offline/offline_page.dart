@@ -49,13 +49,35 @@ enum _EpisodeWatchState {
 /// A show aggregated across download records (sources): one entry per bangumi,
 /// with its cover and every downloaded episode keeping its owning record.
 class _OfflineShow {
-  _OfflineShow({
+  factory _OfflineShow({
+    required DownloadRecord primaryRecord,
+    required DateTime latestTime,
+    required List<_OfflineEpisode> episodes,
+    DateTime? lastWatchTime,
+  }) {
+    final derived = _deriveDownloads(episodes);
+    final downloaded = derived.completed.values.map((e) => e.episode).toList()
+      ..sort((a, b) => a.episodeNumber.compareTo(b.episodeNumber));
+    return _OfflineShow._(
+      primaryRecord: primaryRecord,
+      latestTime: latestTime,
+      episodes: episodes,
+      lastWatchTime: lastWatchTime,
+      completedByNumber: derived.completed,
+      downloadedEpisodes: downloaded,
+      activeCount: derived.active.length,
+    );
+  }
+
+  _OfflineShow._({
     required this.primaryRecord,
     required this.latestTime,
     required this.episodes,
+    required this.completedByNumber,
+    required this.downloadedEpisodes,
+    required this.activeCount,
     this.lastWatchTime,
-  }) : downloadedNumbers = _downloadedNumbers(episodes),
-       activeCount = _activeCount(episodes);
+  });
 
   /// The record supplying the show's identity (name and cover) when several
   /// sources downloaded the same bangumi.
@@ -71,31 +93,46 @@ class _OfflineShow {
   /// Most recent watch time of this show across all history entries.
   final DateTime? lastWatchTime;
 
-  /// Distinct episode numbers that finished downloading. Derived once so
-  /// sorting and filtering never re-scan [episodes].
-  final Set<int> downloadedNumbers;
+  /// Downloaded episodes by episode number, earliest source winning. Every
+  /// derived count below comes from here, so a show is scanned exactly once.
+  final Map<int, _OfflineEpisode> completedByNumber;
 
-  /// Episodes still downloading or queued. Derived once for the same reason.
+  /// [completedByNumber] sorted by episode number, for playback.
+  final List<DownloadEpisode> downloadedEpisodes;
+
+  /// Distinct episode numbers still downloading or queued. Counted per episode
+  /// so it reads the same way as [completedCount], even when the same episode
+  /// is queued from several sources.
   final int activeCount;
 
-  int get completedCount => downloadedNumbers.length;
+  /// Distinct downloaded episode numbers.
+  int get completedCount => completedByNumber.length;
 
-  static Set<int> _downloadedNumbers(List<_OfflineEpisode> episodes) => {
-    for (final e in episodes)
-      if (e.episode.status == DownloadStatus.completed) e.episode.episodeNumber,
-  };
+  /// Card subtitle. Both counts are distinct episode numbers, so a show that
+  /// is downloaded from several sources is not counted twice.
+  String get downloadStatusLabel => activeCount > 0
+      ? '已下载 $completedCount 集 · 下载中 $activeCount 集'
+      : '已下载 $completedCount 集';
 
-  static int _activeCount(List<_OfflineEpisode> episodes) {
-    var count = 0;
-    for (final e in episodes) {
-      final status = e.episode.status;
-      if (status == DownloadStatus.downloading ||
-          status == DownloadStatus.resolving ||
-          status == DownloadStatus.pending) {
-        count++;
+  /// Splits [episodes] into the two states the cards report, in one pass.
+  static ({
+    Map<int, _OfflineEpisode> completed,
+    Set<int> active,
+  }) _deriveDownloads(List<_OfflineEpisode> episodes) {
+    final completed = <int, _OfflineEpisode>{};
+    final active = <int>{};
+    for (final entry in episodes) {
+      final number = entry.episode.episodeNumber;
+      switch (entry.episode.status) {
+        case DownloadStatus.completed:
+          completed.putIfAbsent(number, () => entry);
+        case DownloadStatus.downloading:
+        case DownloadStatus.resolving:
+        case DownloadStatus.pending:
+          active.add(number);
       }
     }
-    return count;
+    return (completed: completed, active: active);
   }
 }
 
@@ -238,6 +275,9 @@ class _OfflinePageState extends State<OfflinePage>
 
     final shows = <_OfflineShow>[];
     byBangumi.forEach((bangumiId, records) {
+      // Sorted so the show's name/cover and the winner of a duplicated episode
+      // do not depend on how the records happened to be collected.
+      records.sort(DownloadRecord.compareBySource);
       final episodes = <_OfflineEpisode>[];
       var latestTime = DateTime(0);
       for (final record in records) {
@@ -249,10 +289,9 @@ class _OfflinePageState extends State<OfflinePage>
       episodes.sort(
         (a, b) => a.episode.episodeNumber.compareTo(b.episode.episodeNumber),
       );
-      final first = records.first;
       shows.add(
         _OfflineShow(
-          primaryRecord: first,
+          primaryRecord: records.first,
           latestTime: latestTime,
           lastWatchTime: watchTimes[bangumiId],
           episodes: episodes,
@@ -317,9 +356,9 @@ class _OfflinePageState extends State<OfflinePage>
     return result;
   }
 
-  /// Groups the offline history entries by bangumi once, so deriving watch
-  /// states for every show costs O(histories) instead of
-  /// O(shows x histories).
+  /// Groups the offline history entries by bangumi in a single pass, so
+  /// deriving the watch states of every show costs O(histories) in total
+  /// instead of re-scanning the list once per show.
   Map<int, List<History>> _offlineHistoriesByBangumi() {
     final grouped = <int, List<History>>{};
     for (final history in historyController.histories) {
@@ -359,11 +398,7 @@ class _OfflinePageState extends State<OfflinePage>
   /// Opens a bottom sheet (matching the download picker) so the user can
   /// choose which downloaded episodes are watched; writes back to history.
   Future<void> _editWatchStates(_OfflineShow show) async {
-    final episodes = <int, _OfflineEpisode>{};
-    for (final e in show.episodes) {
-      if (e.episode.status != DownloadStatus.completed) continue;
-      episodes.putIfAbsent(e.episode.episodeNumber, () => e);
-    }
+    final episodes = show.completedByNumber;
     final numbers = episodes.keys.toList()..sort();
     if (numbers.isEmpty) return;
     final states = _watchStatesFrom(
@@ -501,26 +536,13 @@ class _OfflinePageState extends State<OfflinePage>
         road: episode.road,
         // Include every downloaded episode of the show, across all sources,
         // so the player's episode list is not limited to one source.
-        downloadedEpisodes: _allCompletedEpisodes(show),
+        downloadedEpisodes: show.downloadedEpisodes,
         episodePlugins: {
-          for (final e in show.episodes)
-            if (e.episode.status == DownloadStatus.completed)
-              e.episode.episodeNumber: e.record.pluginName,
+          for (final entry in show.completedByNumber.entries)
+            entry.key: entry.value.record.pluginName,
         },
       ),
     );
-  }
-
-  /// Completed episodes of a show merged across every download source,
-  /// deduplicated by episode number (first source wins).
-  List<DownloadEpisode> _allCompletedEpisodes(_OfflineShow show) {
-    final byNumber = <int, DownloadEpisode>{};
-    for (final e in show.episodes) {
-      if (e.episode.status != DownloadStatus.completed) continue;
-      byNumber.putIfAbsent(e.episode.episodeNumber, () => e.episode);
-    }
-    return byNumber.values.toList()
-      ..sort((a, b) => a.episodeNumber.compareTo(b.episodeNumber));
   }
 
   @override
@@ -533,8 +555,9 @@ class _OfflinePageState extends State<OfflinePage>
           for (final entry in collectibles)
             entry.bangumiItem.id: CollectType.fromValue(entry.type),
         };
-        // Compute watch states for every show before filtering. Histories are
-        // grouped once so this stays linear in the number of history entries.
+        // Derive watch states for every show before filtering, grouping the
+        // offline histories in a single pass so the cost stays linear in the
+        // number of history entries rather than per show.
         final allShows = _buildShows();
         final offlineHistories = _offlineHistoriesByBangumi();
         final watchStatesByShow = <int, Map<int, _EpisodeWatchState>>{
@@ -1051,22 +1074,18 @@ class _OfflinePosterCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final colors = theme.colorScheme;
-    final completed = show.completedCount;
-    final active = show.activeCount;
-    final status = active > 0
-        ? '已下载 $completed 集 · 下载中 $active 集'
-        : '已下载 $completed 集';
+    final status = show.downloadStatusLabel;
 
     return Material(
       color: colors.surfaceContainerLow,
       borderRadius: BorderRadius.circular(20),
       clipBehavior: Clip.antiAlias,
       child: Semantics(
-        button: selecting || completed > 0,
+        button: selecting || show.completedCount > 0,
         selected: selecting ? selected : null,
         label: '${show.bangumiName}，$status',
         child: InkWell(
-          onTap: (selecting || completed > 0) ? onTap : null,
+          onTap: (selecting || show.completedCount > 0) ? onTap : null,
           child: Stack(
             children: [
               Column(
@@ -1149,11 +1168,7 @@ class _OfflineListTile extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final colors = theme.colorScheme;
-    final completed = show.completedCount;
-    final active = show.activeCount;
-    final status = active > 0
-        ? '已下载 $completed 集 · 下载中 $active 集'
-        : '已下载 $completed 集';
+    final status = show.downloadStatusLabel;
 
     return Material(
       color: colors.surfaceContainerLow,
@@ -1164,13 +1179,13 @@ class _OfflineListTile extends StatelessWidget {
           // Isolate taps from the card's own affordance.
           Positioned.fill(
             child: Semantics(
-              button: selecting || completed > 0,
+              button: selecting || show.completedCount > 0,
               selected: selecting ? selected : null,
               label: '${show.bangumiName}，$status',
               child: InkWell(
                 onTap: selecting
                     ? onToggleSelect
-                    : (completed > 0 ? onOpen : null),
+                    : (show.completedCount > 0 ? onOpen : null),
               ),
             ),
           ),
@@ -1225,7 +1240,7 @@ class _OfflineListTile extends StatelessWidget {
                         children: [
                           Expanded(
                             child: Text(
-                              '已下载 $completed 集'
+                              '已下载 ${show.completedCount} 集'
                               ' · ${collectType == CollectType.none ? '未收藏' : collectType.label}',
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
@@ -1239,7 +1254,7 @@ class _OfflineListTile extends StatelessWidget {
                             _OfflineWatchProgressButton(
                               label:
                                   _overallWatchState(show, watchStates).label,
-                              enabled: completed > 0,
+                              enabled: show.completedCount > 0,
                               onPressed: onEditProgress,
                             ),
                           ],
@@ -1294,7 +1309,7 @@ _EpisodeWatchState _overallWatchState(
   _OfflineShow show,
   Map<int, _EpisodeWatchState> watchStates,
 ) {
-  final numbers = show.downloadedNumbers;
+  final numbers = show.completedByNumber.keys;
   if (numbers.isEmpty) return _EpisodeWatchState.unwatched;
 
   var completed = 0;
