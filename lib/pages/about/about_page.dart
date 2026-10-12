@@ -33,10 +33,11 @@ class AboutPage extends StatelessWidget {
                     title: '问题反馈',
                     url: '${ApiEndpoints.sourceUrl}/issues',
                   ),
+                  // Kept to one line so both columns hold three rows of equal
+                  // height; a subtitle here left the left column taller.
                   AboutLinkTile(
                     icon: Icons.call_split_rounded,
-                    title: 'Kazumi',
-                    subtitle: '本分支的上游项目',
+                    title: 'Kazumi（上游）',
                     url: ApiEndpoints.upstreamUrl,
                   ),
                 ],
