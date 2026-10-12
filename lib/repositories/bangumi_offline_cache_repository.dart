@@ -69,8 +69,9 @@ class BangumiOfflineCacheRepository {
 
   Future<void> writeCalendar(
     String key,
-    Iterable<Iterable<BangumiItem>> calendar,
-  ) async {
+    Iterable<Iterable<BangumiItem>> calendar, {
+    bool preserveFreshness = false,
+  }) async {
     final previous = readCalendar(key);
     final covers = _offlineCovers([
       for (final day in previous ?? const <List<BangumiItem>>[]) ...day,
@@ -80,7 +81,7 @@ class BangumiOfflineCacheRepository {
         [for (final item in day) _keepOfflineCover(item, covers).toCacheJson()],
     ];
     if (snapshot.every((day) => day.isEmpty)) return;
-    await _write(key, snapshot);
+    await _write(key, snapshot, keepSavedAt: preserveFreshness);
   }
 
   List<EpisodeInfo>? readEpisodes(int bangumiId) {
@@ -241,12 +242,19 @@ class BangumiOfflineCacheRepository {
     }
   }
 
-  Future<void> _write(String key, Object value) async {
+  Future<void> _write(
+    String key,
+    Object value, {
+    bool keepSavedAt = false,
+  }) async {
     try {
+      // Reusing the existing timestamp keeps a cover-only rewrite from looking
+      // like a fresh fetch to [isFresh].
+      final previous = keepSavedAt ? _savedAtOf(key) : null;
       await _box.put(
         key,
         jsonEncode({
-          'savedAt': DateTime.now().millisecondsSinceEpoch,
+          'savedAt': previous ?? DateTime.now().millisecondsSinceEpoch,
           'data': value,
         }),
       );
@@ -257,5 +265,19 @@ class BangumiOfflineCacheRepository {
         stackTrace: stackTrace,
       );
     }
+  }
+
+  int? _savedAtOf(String key) {
+    final encoded = _box.get(key);
+    if (encoded == null) return null;
+    try {
+      final value = jsonDecode(encoded);
+      if (value is Map && value['savedAt'] is int) {
+        return value['savedAt'] as int;
+      }
+    } catch (_) {
+      // Fall through to a fresh timestamp.
+    }
+    return null;
   }
 }

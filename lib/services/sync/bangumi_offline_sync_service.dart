@@ -118,41 +118,61 @@ class BangumiOfflineSyncService {
         }
       }
 
-      final currentWeek = await _syncCurrentWeek(now);
-      _addSubjects(subjects, currentWeek);
-
-      final currentQuarter = _quarterStart(now);
+      // The network refresh is isolated so a failure cannot skip the cleanup
+      // below. It used to share the outer try, so an unreachable endpoint left
+      // the subject and cover caches growing without bound.
       final currentSeasonIds = <int>{};
-      for (var offset = 0; offset < 4; offset++) {
-        final season = DateTime(
-          currentQuarter.year,
-          currentQuarter.month - offset * 3,
-        );
-        final dateRange = AnimeSeason(season).toSeasonStartAndEnd();
-        final key = 'calendar:season:${dateRange[0]}:${dateRange[1]}';
-        retainedCalendarKeys.add(key);
-        final isCurrent = offset == 0;
-        final items = await _syncSeason(
-          key: key,
-          dateRange: dateRange,
-          isCurrent: isCurrent,
-          now: now,
-        );
-        _addSubjects(subjects, items);
-        if (isCurrent) {
-          for (final day in items) {
-            currentSeasonIds.addAll(day.map((item) => item.id));
+      try {
+        final currentWeek = await _syncCurrentWeek(now);
+        _addSubjects(subjects, currentWeek);
+
+        final currentQuarter = _quarterStart(now);
+        for (var offset = 0; offset < 4; offset++) {
+          final season = DateTime(
+            currentQuarter.year,
+            currentQuarter.month - offset * 3,
+          );
+          final dateRange = AnimeSeason(season).toSeasonStartAndEnd();
+          final key = 'calendar:season:${dateRange[0]}:${dateRange[1]}';
+          retainedCalendarKeys.add(key);
+          final isCurrent = offset == 0;
+          final items = await _syncSeason(
+            key: key,
+            dateRange: dateRange,
+            isCurrent: isCurrent,
+            now: now,
+          );
+          _addSubjects(subjects, items);
+          if (isCurrent) {
+            for (final day in items) {
+              currentSeasonIds.addAll(day.map((item) => item.id));
+            }
           }
         }
+
+        final ordered = _orderSubjects(
+          subjects.values.toList(),
+          downloadedIds: downloadedIds,
+          collectedIds: collectedIds,
+          currentSeasonIds: currentSeasonIds,
+        );
+        await _syncSubjects(ordered, currentSeasonIds);
+      } catch (error, stackTrace) {
+        KazumiLogger().w(
+          'BangumiOfflineSync: metadata refresh failed, keeping the cache',
+          error: error,
+          stackTrace: stackTrace,
+        );
       }
 
-      final ordered = _orderSubjects(
-        subjects.values.toList(),
-        downloadedIds: downloadedIds,
-        collectedIds: collectedIds,
-        currentSeasonIds: currentSeasonIds,
-      );
-      await _syncSubjects(ordered, currentSeasonIds);
+      // Keep every subject referenced by a calendar we are about to retain.
+      // Reading it locally keeps the cleanup correct (and stops it deleting
+      // data still on screen) even when the refresh above failed.
+      for (final key in retainedCalendarKeys) {
+        final calendar = _cache.readCalendar(key);
+        if (calendar != null) _addSubjects(subjects, calendar);
+      }
+
       await _cache.retainOfflineScope(
         subjectIds: subjects.keys.toSet(),
         calendarKeys: retainedCalendarKeys,
@@ -304,7 +324,9 @@ class BangumiOfflineSyncService {
     const key = 'calendar:current-week';
     final cached = _cache.readCalendar(key);
     if (_cache.isFresh(key, _currentWeekTtl, now: now)) {
-      return _cacheCovers(key, cached ?? []);
+      // Refreshing only the covers must not extend the entry's freshness, or a
+      // season that always gains a cover would never be re-fetched.
+      return _cacheCovers(key, cached ?? [], preserveFreshness: true);
     }
 
     final fresh = await BangumiApi.getCalendar();
@@ -324,7 +346,8 @@ class BangumiOfflineSyncService {
     final cached = _cache.readCalendar(key);
     final ttl = isCurrent ? _currentSeasonTtl : _previousSeasonTtl;
     if (_cache.isFresh(key, ttl, now: now)) {
-      return _cacheCovers(key, cached ?? []);
+      // See _syncCurrentWeek: a cover-only rewrite keeps the original age.
+      return _cacheCovers(key, cached ?? [], preserveFreshness: true);
     }
 
     final fresh = BangumiAcceleration.current == BangumiAcceleration.mirror
@@ -415,10 +438,14 @@ class BangumiOfflineSyncService {
   /// Stores the covers of [calendar] and rewrites the snapshot when at least
   /// one cover was added, so the offline data itself is never delayed by a slow
   /// download. Subjects whose cover is already on disk are left untouched.
+  ///
+  /// [preserveFreshness] keeps the snapshot's original `savedAt` when only the
+  /// covers changed, so a cover refresh cannot indefinitely postpone the TTL.
   Future<List<List<BangumiItem>>> _cacheCovers(
     String key,
-    List<List<BangumiItem>> calendar,
-  ) async {
+    List<List<BangumiItem>> calendar, {
+    bool preserveFreshness = false,
+  }) async {
     final subjects = [for (final day in calendar) ...day];
     final covered = List<BangumiItem?>.filled(subjects.length, null);
     var nextIndex = 0;
@@ -449,7 +476,11 @@ class BangumiOfflineSyncService {
       }
       localized.add(items);
     }
-    await _cache.writeCalendar(key, localized);
+    await _cache.writeCalendar(
+      key,
+      localized,
+      preserveFreshness: preserveFreshness,
+    );
     return localized;
   }
 
@@ -464,16 +495,16 @@ class BangumiOfflineSyncService {
 
   /// Returns [subject] with the cover stored locally, or the same instance when
   /// it already is.
+  ///
+  /// [store] is always consulted rather than short-circuiting on an existing
+  /// local file: it is what notices the upstream cover changed and refreshes
+  /// the cached image.
   Future<BangumiItem> _withOfflineCover(BangumiItem subject) async {
-    final existing = subject.offlineCover;
-    if (existing != null &&
-        BangumiOfflineCoverCache.localCoverExists(existing)) {
-      return subject;
-    }
     final cover = await _coverCache.store(
       subject.id,
       subject.images['large'] ?? '',
     );
-    return cover == null ? subject : subject.withOfflineCover(cover);
+    if (cover == null || cover == subject.offlineCover) return subject;
+    return subject.withOfflineCover(cover);
   }
 }

@@ -30,6 +30,10 @@ class BangumiOfflineCoverCache {
 
   static const String directoryName = 'bangumi_covers';
 
+  /// Sidecar recording the remote URL a cover file came from, so a changed
+  /// cover is detected instead of reusing a stale image forever.
+  static const String _urlSuffix = '.url';
+
   /// Covers are small, but the scope can span four seasons; keep the on-disk
   /// footprint bounded so a large collection cannot grow without limit.
   static const int _maxTotalBytes = 256 * 1024 * 1024;
@@ -87,11 +91,17 @@ class BangumiOfflineCoverCache {
       final keptFiles = <File>[];
       await for (final entity in directory.list()) {
         if (entity is! File) continue;
-        if (!keep.contains(path.basename(entity.path))) {
+        final name = path.basename(entity.path);
+        // A cover's URL sidecar belongs to the subject it documents.
+        final isSidecar = name.endsWith(_urlSuffix);
+        final owner = isSidecar
+            ? name.substring(0, name.length - _urlSuffix.length)
+            : name;
+        if (!keep.contains(owner)) {
           await _safeDelete(entity);
           continue;
         }
-        keptFiles.add(entity);
+        if (!isSidecar) keptFiles.add(entity);
       }
 
       final sorted = [...keptFiles]
@@ -143,7 +153,20 @@ class BangumiOfflineCoverCache {
     try {
       final directory = await _coverDirectory();
       final cover = File(path.join(directory.path, '$subjectId'));
-      if (await cover.exists()) return cover.uri.toString();
+      final urlFile = File('${cover.path}$_urlSuffix');
+      if (await cover.exists()) {
+        final recorded = await _readRecordedUrl(urlFile);
+        // No sidecar means the file predates URL tracking; adopt it rather
+        // than re-downloading the same cover on every sync.
+        if (recorded == null || recorded == remoteUrl) {
+          if (recorded == null) await _writeRecordedUrl(urlFile, remoteUrl);
+          await _touch(cover);
+          return cover.uri.toString();
+        }
+        // The cover changed upstream; drop the stale file and fetch again.
+        await _safeDelete(cover);
+        await _safeDelete(urlFile);
+      }
       final downloaded = await _fetchImage(remoteUrl);
       if (!await downloaded.exists()) return null;
       // Copy next to the target first so an interrupted write cannot leave a
@@ -151,6 +174,7 @@ class BangumiOfflineCoverCache {
       final temporary = File('${cover.path}.tmp');
       await downloaded.copy(temporary.path);
       await _replace(temporary, cover);
+      await _writeRecordedUrl(urlFile, remoteUrl);
       return cover.uri.toString();
     } catch (error, stackTrace) {
       KazumiLogger().w(
@@ -159,6 +183,33 @@ class BangumiOfflineCoverCache {
         stackTrace: stackTrace,
       );
       return null;
+    }
+  }
+
+  /// Marks the cover as recently used so the size trim evicts it last.
+  Future<void> _touch(File file) async {
+    try {
+      await file.setLastModified(DateTime.now());
+    } on FileSystemException {
+      // Touch is best effort; a failure only affects eviction order.
+    }
+  }
+
+  Future<String?> _readRecordedUrl(File urlFile) async {
+    try {
+      if (!await urlFile.exists()) return null;
+      final value = (await urlFile.readAsString()).trim();
+      return value.isEmpty ? null : value;
+    } on FileSystemException {
+      return null;
+    }
+  }
+
+  Future<void> _writeRecordedUrl(File urlFile, String remoteUrl) async {
+    try {
+      await urlFile.writeAsString(remoteUrl);
+    } on FileSystemException {
+      // Without the sidecar the next sync re-downloads once, then retries.
     }
   }
 

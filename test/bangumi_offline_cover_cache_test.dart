@@ -64,6 +64,27 @@ void main() {
     expect(downloadCount, 1);
   });
 
+  test('replaces the cover when the remote url changes', () async {
+    final cache = buildCache();
+
+    final first = await cache.store(42, coverUrl);
+    final second = await cache.store(42, 'https://example.test/cover-v2.jpg');
+
+    expect(second, first, reason: 'the file path stays keyed by subject id');
+    expect(downloadCount, 2, reason: 'the stale cover is re-fetched');
+  });
+
+  test('keeps a cover that predates url tracking', () async {
+    final cache = buildCache();
+    final cover = await cache.store(42, coverUrl);
+    // Simulate an install that cached the file before sidecars existed.
+    final sidecar = File('${File.fromUri(Uri.parse(cover!)).path}.url');
+    if (await sidecar.exists()) await sidecar.delete();
+
+    expect(await cache.store(42, coverUrl), cover);
+    expect(downloadCount, 1, reason: 'no sidecar means adopt, not re-download');
+  });
+
   test('shares one download between concurrent callers', () async {
     var started = 0;
     final cache = BangumiOfflineCoverCache.forTesting(
