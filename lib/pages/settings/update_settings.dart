@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:kazumi/bean/settings/settings_detail_scaffold.dart';
 import 'package:kazumi/bean/settings/settings_list.dart';
 import 'package:kazumi/services/storage/storage.dart';
+import 'package:kazumi/services/update/auto_updater.dart';
 
 class UpdateSettingsPage extends StatefulWidget {
   const UpdateSettingsPage({super.key});
@@ -28,6 +29,12 @@ class _UpdateSettingsPageState extends State<UpdateSettingsPage> {
             SettingsTile.switchTile(
               leading: Icons.update_rounded,
               title: const Text('应用更新'),
+              // Only the app feed is unavailable; rule updates come from the
+              // rule repository and keep working.
+              description: AutoUpdater.enabled
+                  ? null
+                  : const Text('本分支不提供应用更新，请自行获取新版本'),
+              enabled: AutoUpdater.enabled,
               initialValue: _autoUpdate,
               onToggle: (value) {
                 setState(() => _autoUpdate = value ?? !_autoUpdate);

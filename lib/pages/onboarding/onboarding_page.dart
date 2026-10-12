@@ -16,6 +16,7 @@ import 'package:kazumi/plugins/plugins.dart' show pluginNameKey;
 import 'package:kazumi/plugins/plugins_controller.dart';
 import 'package:kazumi/services/logging/logger.dart';
 import 'package:kazumi/services/storage/storage.dart';
+import 'package:kazumi/services/update/auto_updater.dart';
 import 'package:kazumi/services/update/startup_update_check.dart';
 
 class OnboardingPage extends StatefulWidget {
@@ -47,7 +48,8 @@ class _OnboardingPageState extends State<OnboardingPage> {
   final _pageController = PageController();
   final _steps = [
     _OnboardingStep.welcome,
-    if (Platform.isAndroid) _OnboardingStep.updates,
+    // The update-source choice only applies when the build can actually update.
+    if (Platform.isAndroid && AutoUpdater.enabled) _OnboardingStep.updates,
     _OnboardingStep.mirrors,
     _OnboardingStep.rules,
   ];

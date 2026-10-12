@@ -5,6 +5,7 @@ import 'package:url_launcher/url_launcher.dart';
 import 'package:kazumi/bean/dialog/dialog_helper.dart';
 import 'package:kazumi/bean/widget/split_list_row.dart';
 import 'package:kazumi/bean/widget/state_presentation.dart';
+import 'package:kazumi/services/update/auto_updater.dart';
 
 void _showMessage(BuildContext context, String message) {
   KazumiDialog.showToast(context: context, message: message);
@@ -148,10 +149,16 @@ class _CheckUpdateButtonState extends State<CheckUpdateButton> {
   }
 
   @override
-  Widget build(BuildContext context) => StateActionButton(
-    onPressed: _checking ? null : _check,
-    text: _checking ? '正在检查…' : '检查更新',
-    reserveText: '正在检查…',
-    icon: Icons.update_rounded,
-  );
+  Widget build(BuildContext context) {
+    // A build that cannot install upstream's packages must not offer to fetch
+    // them, so the control is disabled and the reason stays on hover.
+    final button = StateActionButton(
+      onPressed: (!AutoUpdater.enabled || _checking) ? null : _check,
+      text: _checking ? '正在检查…' : '检查更新',
+      reserveText: '正在检查…',
+      icon: Icons.update_rounded,
+    );
+    if (AutoUpdater.enabled) return button;
+    return Tooltip(message: '本分支不提供应用更新', child: button);
+  }
 }

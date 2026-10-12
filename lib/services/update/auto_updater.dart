@@ -115,6 +115,16 @@ class AutoUpdater {
 
   AutoUpdater._internal();
 
+  /// Whether this build can check for and install updates.
+  ///
+  /// It cannot. The feed is upstream's own release list, and the packages it
+  /// offers are named and signed for `com.predidit.kazumi`; installing one
+  /// over this fork (`com.trysi.kazumix`) would fail or replace the wrong app.
+  /// The check is short-circuited instead of being left to fail later, so no
+  /// "new version" prompt is ever shown for a package that cannot be
+  /// installed.
+  static const bool enabled = false;
+
   final DownloadHttpClient _downloadClient = DownloadHttpClient.instance;
 
   List<InstallationType> _detectAvailableInstallationTypes() {
@@ -131,6 +141,8 @@ class AutoUpdater {
   }
 
   Future<UpdateInfo?> checkForUpdates() async {
+    if (!enabled) return null;
+
     try {
       final data = await _latestRelease();
 
@@ -173,6 +185,8 @@ class AutoUpdater {
   }
 
   Future<void> autoCheckForUpdates() async {
+    if (!enabled) return;
+
     final autoUpdate = GStorage.getSetting(SettingsKeys.autoUpdate);
     if (!autoUpdate) return;
 
@@ -187,6 +201,11 @@ class AutoUpdater {
   }
 
   Future<void> manualCheckForUpdates() async {
+    if (!enabled) {
+      KazumiDialog.showToast(message: '本分支不提供应用更新，请自行获取新版本');
+      return;
+    }
+
     try {
       final updateInfo = await checkForUpdates();
       if (updateInfo != null) {
