@@ -115,7 +115,6 @@ dev_dependencies:
   mobx_codegen: ^2.7.5
   hive_ce_generator: ^1.10.0
   flutter_launcher_icons: ^0.14.3
-  flutter_native_splash: ^2.4.3
   msix: ^3.16.12
 
 flutter_launcher_icons:
@@ -130,13 +129,6 @@ flutter_launcher_icons:
     generate: true
     image_path: assets/images/logo/logo_rounded.png
     icon_size: 256
-
-# 本分支不再生成启动图：Android 的启动页由 android/app/src/main/res/values/styles.xml
-# 的 LaunchTheme 提供，Windows 本来也不由这个工具生成。
-flutter_native_splash:
-  android: false
-  ios: false
-  web: false
 
 msix_config:
   display_name: KazumiX

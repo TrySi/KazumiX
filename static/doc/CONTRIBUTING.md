@@ -18,8 +18,8 @@
 
 ```bash
 # 克隆仓库
-git clone https://github.com/Predidit/Kazumi.git
-cd Kazumi
+git clone https://github.com/TrySi/KazumiX.git
+cd KazumiX
 
 # 检查 Flutter SDK 状态并下载相关包
 flutter doctor -v
@@ -37,7 +37,6 @@ flutter run
 # 为生产环境编译
 flutter build apk --release
 # flutter build windows --release
-# flutter build macos --release
 # ...
 ```
 

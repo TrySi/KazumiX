@@ -144,11 +144,10 @@ A: 本项目编译需要良好的网络环境, 除了由 Google 托管的 Flutte
 
 原作者拥有该图标的版权，并且明确声明该图标不是自由使用的、不随本项目的 GPL 授权，
 因此本仓库不再包含这一图标：`assets/images/logo/` 下是一张写着 `KazumiX PLACEHOLDER`
-的白底占位图。换入自有图标后重新运行下面两条命令即可重新生成各平台图标：
+的白底占位图。换入自有图标后重新运行下面这条命令即可重新生成 Android 与 Windows 的图标：
 
 ```bash
 dart run flutter_launcher_icons
-dart run flutter_native_splash:create
 ```
 
 本项目内嵌字体为 [Mi Sans](https://hyperos.mi.com/font/zh/details/sc/) 字体, 由 [Xiaomi](https://www.mi.com/index.html) 开发和拥有版权。
