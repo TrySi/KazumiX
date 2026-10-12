@@ -55,8 +55,9 @@ android/build/reports/problems/
 **/macos/Pods/
 **/ios/Podfile.lock
 **/macos/Podfile.lock
-# Widget Preview related
+
+# Widget Preview
 .widget_preview/
 
-# reference
-Anich
+# Local build defines holding API credentials, referenced by .vscode/launch.json
+.kazumi_build_defines.env
