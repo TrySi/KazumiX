@@ -52,8 +52,12 @@ enum _EpisodeWatchState {
 class _OfflineShow {
   factory _OfflineShow(ShowDownloads downloads, {DateTime? lastWatchTime}) {
     final derived = _deriveDownloads(downloads.entries);
-    final downloaded = derived.completed.values.map((e) => e.episode).toList()
-      ..sort((a, b) => a.episodeNumber.compareTo(b.episodeNumber));
+    // [downloads.entries] is ordered by episode number and the map keeps the
+    // first entry of each number, so its values already come out in that order.
+    // Re-sorting would only be a place for an unstable sort to creep back in.
+    final downloaded = derived.completed.values
+        .map((entry) => entry.episode)
+        .toList();
     return _OfflineShow._(
       downloads: downloads,
       lastWatchTime: lastWatchTime,
