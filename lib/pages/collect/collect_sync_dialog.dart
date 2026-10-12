@@ -5,7 +5,7 @@ import 'package:kazumi/bean/widget/state_presentation.dart';
 import 'package:kazumi/modules/bangumi/sync_priority.dart';
 import 'package:kazumi/modules/collect/collect_sync_plan.dart';
 
-enum CollectSyncDestination { webDavSettings, bangumiSettings }
+enum CollectSyncDestination { webDavSettings, bangumiSettings, localBackup }
 
 enum CollectSyncStep {
   webDav('WebDAV 收藏', '合并本地与云端收藏', Icons.cloud_sync_rounded),
@@ -231,9 +231,11 @@ class _CollectSyncDialogState extends State<CollectSyncDialog> {
                 const SizedBox(height: 24),
               ],
               if (!widget.plan.canSync) ...[
-                _setupRow(CollectSyncDestination.webDavSettings),
+                _setupRow(CollectSyncDestination.webDavSettings,
+                    index: 0, length: 2),
                 const SizedBox(height: 4),
-                _setupRow(CollectSyncDestination.bangumiSettings),
+                _setupRow(CollectSyncDestination.bangumiSettings,
+                    index: 1, length: 2),
               ] else ...[
                 for (var i = 0; i < _steps.length; i++) ...[
                   if (i > 0) const SizedBox(height: 4),
@@ -248,6 +250,11 @@ class _CollectSyncDialogState extends State<CollectSyncDialog> {
                         ?.copyWith(color: colors.onSurfaceVariant),
                   ),
                 ],
+              ],
+              if (!_running) ...[
+                const SizedBox(height: 16),
+                _setupRow(CollectSyncDestination.localBackup,
+                    index: 0, length: 1),
               ],
             ],
           ),
@@ -286,7 +293,11 @@ class _CollectSyncDialogState extends State<CollectSyncDialog> {
         bottom: Radius.circular(index == length - 1 ? 20 : 4),
       );
 
-  Widget _setupRow(CollectSyncDestination destination) {
+  Widget _setupRow(
+    CollectSyncDestination destination, {
+    required int index,
+    required int length,
+  }) {
     final theme = Theme.of(context);
     final colors = theme.colorScheme;
     final (title, description, icon) = switch (destination) {
@@ -300,11 +311,15 @@ class _CollectSyncDialogState extends State<CollectSyncDialog> {
           '连接账号，开启状态同步',
           Icons.bookmarks_rounded
         ),
+      CollectSyncDestination.localBackup => (
+          '本地备份',
+          '导出追番到文件，或从文件恢复',
+          Icons.save_alt_rounded
+        ),
     };
     return Material(
       color: colors.surfaceContainerLow,
-      borderRadius:
-          _rowRadius(destination.index, CollectSyncDestination.values.length),
+      borderRadius: _rowRadius(index, length),
       clipBehavior: Clip.antiAlias,
       child: ListTile(
         contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),

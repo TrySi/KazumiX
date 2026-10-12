@@ -3,6 +3,7 @@ import 'package:flutter_modular/flutter_modular.dart';
 
 import 'package:kazumi/bean/settings/settings_detail_scaffold.dart';
 import 'package:kazumi/bean/widget/state_presentation.dart';
+import 'package:kazumi/bean/widget/tonal_card.dart';
 import 'package:kazumi/pages/settings/sync/sync_settings_widgets.dart';
 import 'package:kazumi/services/storage/storage.dart';
 import 'package:kazumi/services/sync/bangumi_sync_service.dart';
@@ -120,6 +121,19 @@ class _SyncSettingsPageState extends State<SyncSettingsPage> {
                     }
                     return Column(spacing: 16, children: cards);
                   },
+                ),
+                TonalCard(
+                  child: ListTile(
+                    contentPadding: const EdgeInsets.symmetric(
+                      horizontal: 20,
+                      vertical: 4,
+                    ),
+                    leading: const Icon(Icons.save_alt_rounded),
+                    title: const Text('追番本地备份'),
+                    subtitle: const Text('导出追番到文件，或从文件恢复'),
+                    trailing: const Icon(Icons.chevron_right_rounded),
+                    onTap: () => _open('/settings/sync/backup'),
+                  ),
                 ),
               ],
             );

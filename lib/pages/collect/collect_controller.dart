@@ -205,6 +205,35 @@ abstract class _CollectController with Store {
     loadCollectibles();
   }
 
+  /// Merges [items] from a local backup into the library, keeping the newer
+  /// entry per bangumi. Returns the number of entries added or updated.
+  Future<int> importCollectibles(Iterable<CollectedBangumi> items) async {
+    final existing = {
+      for (final entry in _collectCrudRepository.getAllCollectibles())
+        entry.bangumiItem.id: entry,
+    };
+    var changed = 0;
+    for (final item in items) {
+      final id = item.bangumiItem.id;
+      final current = existing[id];
+      if (current != null && !item.time.isAfter(current.time)) continue;
+      await _collectCrudRepository.addCollectible(item.bangumiItem, item.type);
+      // Record the change so WebDAV change-based sync also picks it up.
+      await GStorage.appendCollectChange(
+        bangumiId: id,
+        action: current == null ? 1 : 2,
+        type: item.type,
+        timestamp: item.time.millisecondsSinceEpoch ~/ 1000,
+      );
+      changed++;
+    }
+    if (changed > 0) {
+      loadCollectibles();
+      unawaited(BangumiOfflineSyncService.instance.syncIfOnline());
+    }
+    return changed;
+  }
+
   void _reportSyncError(
     String message,
     ValueChanged<String> onError, {
