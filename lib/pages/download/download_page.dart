@@ -5,6 +5,7 @@ import 'package:kazumi/bean/appbar/sys_app_bar.dart';
 import 'package:kazumi/bean/dialog/dialog_helper.dart';
 import 'package:kazumi/bean/widget/empty_state_widget.dart';
 import 'package:kazumi/modules/download/download_module.dart';
+import 'package:kazumi/modules/download/download_show_group.dart';
 import 'package:kazumi/pages/download/download_controller.dart';
 import 'package:kazumi/pages/download/download_widgets.dart';
 import 'package:kazumi/pages/video/video_playback_args.dart';
@@ -14,33 +15,6 @@ import 'package:kazumi/utils/format.dart';
 import 'package:kazumi/utils/media.dart';
 
 enum _DownloadFilter { downloading, completed }
-
-/// A show aggregated across sources: one card per bangumi, with each episode
-/// keeping its own source label.
-class _ShowGroup {
-  _ShowGroup({
-    required this.bangumiId,
-    required this.bangumiName,
-    required this.coverSource,
-    required this.records,
-    required this.entries,
-  });
-
-  final int bangumiId;
-  final String bangumiName;
-  final String coverSource;
-  final List<DownloadRecord> records;
-  final List<_EpisodeEntry> entries;
-
-  String get key => '$bangumiId';
-}
-
-class _EpisodeEntry {
-  _EpisodeEntry({required this.record, required this.episode});
-
-  final DownloadRecord record;
-  final DownloadEpisode episode;
-}
 
 class DownloadPage extends StatefulWidget {
   const DownloadPage({super.key, required this.controller});
@@ -65,7 +39,7 @@ class _DownloadPageState extends State<DownloadPage> {
     downloadController.refreshRecords();
   }
 
-  bool _isExpanded(_ShowGroup group) {
+  bool _isExpanded(ShowDownloads group) {
     return _expanded.putIfAbsent(
       group.key,
       () => group.entries.any(
@@ -76,7 +50,7 @@ class _DownloadPageState extends State<DownloadPage> {
 
   /// Episodes that belong to the currently selected filter, so a single show
   /// can appear in both tabs while each tab only lists its own episodes.
-  List<_EpisodeEntry> _filteredEntries(_ShowGroup group) {
+  List<DownloadEntry> _filteredEntries(ShowDownloads group) {
     return switch (_filter) {
       _DownloadFilter.downloading =>
         group.entries
@@ -89,45 +63,11 @@ class _DownloadPageState extends State<DownloadPage> {
     };
   }
 
-  bool _matchesFilter(_ShowGroup group) => _filteredEntries(group).isNotEmpty;
+  bool _matchesFilter(ShowDownloads group) =>
+      _filteredEntries(group).isNotEmpty;
 
-  List<_ShowGroup> _buildGroups() {
-    final byBangumi = <int, List<DownloadRecord>>{};
-    for (final record in downloadController.records) {
-      byBangumi.putIfAbsent(record.bangumiId, () => []).add(record);
-    }
-
-    final groups = <_ShowGroup>[];
-    byBangumi.forEach((bangumiId, records) {
-      final entries = <_EpisodeEntry>[];
-      for (final record in records) {
-        for (final episode in record.episodes.values) {
-          entries.add(_EpisodeEntry(record: record, episode: episode));
-        }
-      }
-      entries.sort((a, b) {
-        final byEpisode = a.episode.episodeNumber.compareTo(
-          b.episode.episodeNumber,
-        );
-        if (byEpisode != 0) return byEpisode;
-        return DownloadRecord.compareBySource(a.record, b.record);
-      });
-
-      // Same ordering rule as the repository, so the card's name and cover do
-      // not depend on how the records happened to be collected.
-      records.sort(DownloadRecord.compareBySource);
-      final first = records.first;
-      groups.add(
-        _ShowGroup(
-          bangumiId: bangumiId,
-          bangumiName: first.bangumiName,
-          coverSource: first.coverSource,
-          records: records,
-          entries: entries,
-        ),
-      );
-    });
-
+  List<ShowDownloads> _buildGroups() {
+    final groups = groupDownloadsByShow(downloadController.records);
     groups.sort((a, b) {
       final aActive = a.entries.any(
         (e) => e.episode.status != DownloadStatus.completed,
@@ -214,7 +154,7 @@ class _DownloadPageState extends State<DownloadPage> {
     );
   }
 
-  Widget _buildShowCard(_ShowGroup group) {
+  Widget _buildShowCard(ShowDownloads group) {
     return Observer(
       builder: (context) {
         // Refresh this show's titles on every rebuild so metadata that arrived
@@ -286,7 +226,7 @@ class _DownloadPageState extends State<DownloadPage> {
     );
   }
 
-  void _resumeAll(_ShowGroup group) {
+  void _resumeAll(ShowDownloads group) {
     for (final record in group.records) {
       downloadController.resumeAllDownloads(
         record.bangumiId,
@@ -296,14 +236,14 @@ class _DownloadPageState extends State<DownloadPage> {
     KazumiDialog.showToast(message: '已开始恢复下载');
   }
 
-  void _pauseAll(_ShowGroup group) {
+  void _pauseAll(ShowDownloads group) {
     for (final record in group.records) {
       downloadController.pauseDownloads(record.bangumiId, record.pluginName);
     }
     KazumiDialog.showToast(message: '已暂停下载');
   }
 
-  Widget _buildEpisodeTile(_EpisodeEntry entry) {
+  Widget _buildEpisodeTile(DownloadEntry entry) {
     final record = entry.record;
     final episode = entry.episode;
     return DownloadEpisodeTile(
@@ -358,7 +298,7 @@ class _DownloadPageState extends State<DownloadPage> {
     }
   }
 
-  List<Widget> _getActionButtons(_EpisodeEntry entry) {
+  List<Widget> _getActionButtons(DownloadEntry entry) {
     final record = entry.record;
     final episode = entry.episode;
     final colorScheme = Theme.of(context).colorScheme;
@@ -462,7 +402,7 @@ class _DownloadPageState extends State<DownloadPage> {
     return buttons;
   }
 
-  void _playEpisode(_EpisodeEntry entry) {
+  void _playEpisode(DownloadEntry entry) {
     final record = entry.record;
     final episode = entry.episode;
     final localPath = downloadController.getLocalVideoPath(
@@ -532,7 +472,7 @@ class _DownloadPageState extends State<DownloadPage> {
     );
   }
 
-  void _confirmDeleteCompleted(_ShowGroup group) {
+  void _confirmDeleteCompleted(ShowDownloads group) {
     KazumiDialog.show(
       builder: (context) => AlertDialog(
         title: const Text('删除已下载的内容'),
@@ -567,7 +507,7 @@ class _DownloadPageState extends State<DownloadPage> {
     );
   }
 
-  void _confirmDeleteIncomplete(_ShowGroup group) {
+  void _confirmDeleteIncomplete(ShowDownloads group) {
     KazumiDialog.show(
       builder: (context) => AlertDialog(
         title: const Text('删除未完成的下载'),

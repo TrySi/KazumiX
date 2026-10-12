@@ -15,6 +15,7 @@ import 'package:kazumi/modules/bangumi/episode_item.dart';
 import 'package:kazumi/modules/collect/collect_layout.dart';
 import 'package:kazumi/modules/collect/collect_type.dart';
 import 'package:kazumi/modules/download/download_module.dart';
+import 'package:kazumi/modules/download/download_show_group.dart';
 import 'package:kazumi/modules/history/history_module.dart';
 import 'package:kazumi/pages/collect/collect_controller.dart';
 import 'package:kazumi/pages/download/download_controller.dart';
@@ -49,19 +50,12 @@ enum _EpisodeWatchState {
 /// A show aggregated across download records (sources): one entry per bangumi,
 /// with its cover and every downloaded episode keeping its owning record.
 class _OfflineShow {
-  factory _OfflineShow({
-    required DownloadRecord primaryRecord,
-    required DateTime latestTime,
-    required List<_OfflineEpisode> episodes,
-    DateTime? lastWatchTime,
-  }) {
-    final derived = _deriveDownloads(episodes);
+  factory _OfflineShow(ShowDownloads downloads, {DateTime? lastWatchTime}) {
+    final derived = _deriveDownloads(downloads.entries);
     final downloaded = derived.completed.values.map((e) => e.episode).toList()
       ..sort((a, b) => a.episodeNumber.compareTo(b.episodeNumber));
     return _OfflineShow._(
-      primaryRecord: primaryRecord,
-      latestTime: latestTime,
-      episodes: episodes,
+      downloads: downloads,
       lastWatchTime: lastWatchTime,
       completedByNumber: derived.completed,
       downloadedEpisodes: downloaded,
@@ -70,32 +64,34 @@ class _OfflineShow {
   }
 
   _OfflineShow._({
-    required this.primaryRecord,
-    required this.latestTime,
-    required this.episodes,
+    required this.downloads,
     required this.completedByNumber,
     required this.downloadedEpisodes,
     required this.activeCount,
     this.lastWatchTime,
   });
 
+  /// The show's downloads, merged across sources.
+  final ShowDownloads downloads;
+
+  int get bangumiId => downloads.bangumiId;
+  String get bangumiName => downloads.bangumiName;
+  String get coverSource => downloads.coverSource;
+  DateTime get latestTime => downloads.latestTime;
+
+  /// Every downloaded episode of every source, keeping its owning record.
+  List<DownloadEntry> get episodes => downloads.entries;
+
   /// The record supplying the show's identity (name and cover) when several
   /// sources downloaded the same bangumi.
-  final DownloadRecord primaryRecord;
-
-  final DateTime latestTime;
-  final List<_OfflineEpisode> episodes;
-
-  int get bangumiId => primaryRecord.bangumiId;
-  String get bangumiName => primaryRecord.bangumiName;
-  String get coverSource => primaryRecord.coverSource;
+  DownloadRecord get primaryRecord => downloads.primaryRecord;
 
   /// Most recent watch time of this show across all history entries.
   final DateTime? lastWatchTime;
 
   /// Downloaded episodes by episode number, earliest source winning. Every
   /// derived count below comes from here, so a show is scanned exactly once.
-  final Map<int, _OfflineEpisode> completedByNumber;
+  final Map<int, DownloadEntry> completedByNumber;
 
   /// [completedByNumber] sorted by episode number, for playback.
   final List<DownloadEpisode> downloadedEpisodes;
@@ -115,9 +111,9 @@ class _OfflineShow {
       : '已下载 $completedCount 集';
 
   /// Splits [episodes] into the two states the cards report, in one pass.
-  static ({Map<int, _OfflineEpisode> completed, Set<int> active})
-  _deriveDownloads(List<_OfflineEpisode> episodes) {
-    final completed = <int, _OfflineEpisode>{};
+  static ({Map<int, DownloadEntry> completed, Set<int> active})
+  _deriveDownloads(List<DownloadEntry> episodes) {
+    final completed = <int, DownloadEntry>{};
     final active = <int>{};
     for (final entry in episodes) {
       final number = entry.episode.episodeNumber;
@@ -132,13 +128,6 @@ class _OfflineShow {
     }
     return (completed: completed, active: active);
   }
-}
-
-class _OfflineEpisode {
-  _OfflineEpisode({required this.record, required this.episode});
-
-  final DownloadRecord record;
-  final DownloadEpisode episode;
 }
 
 class OfflinePage extends StatefulWidget {
@@ -256,11 +245,6 @@ class _OfflinePageState extends State<OfflinePage>
   /// otherwise a minimal item built from the download record.
 
   List<_OfflineShow> _buildShows() {
-    final byBangumi = <int, List<DownloadRecord>>{};
-    for (final record in downloadController.records) {
-      byBangumi.putIfAbsent(record.bangumiId, () => []).add(record);
-    }
-
     // Latest watch time per bangumi, merged across online/offline histories.
     final watchTimes = <int, DateTime>{};
     for (final history in historyController.histories) {
@@ -271,39 +255,10 @@ class _OfflinePageState extends State<OfflinePage>
       }
     }
 
-    final shows = <_OfflineShow>[];
-    byBangumi.forEach((bangumiId, records) {
-      // Sorted so the show's name/cover and the winner of a duplicated episode
-      // do not depend on how the records happened to be collected.
-      records.sort(DownloadRecord.compareBySource);
-      final episodes = <_OfflineEpisode>[];
-      var latestTime = DateTime(0);
-      for (final record in records) {
-        if (record.createdAt.isAfter(latestTime)) latestTime = record.createdAt;
-        for (final episode in record.episodes.values) {
-          episodes.add(_OfflineEpisode(record: record, episode: episode));
-        }
-      }
-      episodes.sort((a, b) {
-        final byNumber = a.episode.episodeNumber.compareTo(
-          b.episode.episodeNumber,
-        );
-        if (byNumber != 0) return byNumber;
-        // Tie-break on the source: List.sort is not stable, and the first
-        // record to carry an episode wins in _deriveDownloads, so ordering by
-        // episode number alone could flip an episode's owner between rebuilds.
-        return DownloadRecord.compareBySource(a.record, b.record);
-      });
-      shows.add(
-        _OfflineShow(
-          primaryRecord: records.first,
-          latestTime: latestTime,
-          lastWatchTime: watchTimes[bangumiId],
-          episodes: episodes,
-        ),
-      );
-    });
-    return shows;
+    return [
+      for (final downloads in groupDownloadsByShow(downloadController.records))
+        _OfflineShow(downloads, lastWatchTime: watchTimes[downloads.bangumiId]),
+    ];
   }
 
   /// Orders [a] relative to [b] for the "recently watched" sort: shows with a
@@ -540,7 +495,7 @@ class _OfflinePageState extends State<OfflinePage>
     );
   }
 
-  void _playEpisode(_OfflineShow show, _OfflineEpisode entry) {
+  void _playEpisode(_OfflineShow show, DownloadEntry entry) {
     final record = entry.record;
     final episode = entry.episode;
     final localPath = downloadController.getLocalVideoPath(
@@ -1412,7 +1367,7 @@ class _WatchStateEditorSheet extends StatefulWidget {
 
   final String showName;
   final List<int> numbers;
-  final Map<int, _OfflineEpisode> episodes;
+  final Map<int, DownloadEntry> episodes;
   final Map<int, _EpisodeWatchState> states;
   final OfflineEpisodeTitles titles;
 
@@ -1553,7 +1508,7 @@ class _OfflineEpisodeChoice {
 
   final int number;
   final String title;
-  final _OfflineEpisode? entry;
+  final DownloadEntry? entry;
   final _EpisodeWatchState state;
 
   bool get downloaded => entry != null;
@@ -1568,7 +1523,7 @@ class _OfflineEpisodeSheet extends StatelessWidget {
 
   final _OfflineShow show;
   final Map<int, _EpisodeWatchState> watchStates;
-  final ValueChanged<_OfflineEpisode> onPlay;
+  final ValueChanged<DownloadEntry> onPlay;
 
   _EpisodeWatchState _stateFor(int number) =>
       watchStates[number] ?? _EpisodeWatchState.unwatched;
@@ -1577,7 +1532,7 @@ class _OfflineEpisodeSheet extends StatelessWidget {
     // Reuse the show's deduplicated map so an episode plays from the same
     // source here as it does from the card and the player.
     final downloadedByNumber = show.completedByNumber;
-    final downloadedByName = <String, _OfflineEpisode>{};
+    final downloadedByName = <String, DownloadEntry>{};
     for (final e in show.episodes) {
       if (e.episode.status != DownloadStatus.completed) continue;
       final name = e.episode.episodeName.trim();
@@ -1593,59 +1548,17 @@ class _OfflineEpisodeSheet extends StatelessWidget {
       );
     }
     if (cached != null && cached.isNotEmpty) {
-      final choices = <_OfflineEpisodeChoice>[];
-      final counters = <int, int>{};
-      for (final episode in cached) {
-        final nameCn = episode.nameCn.trim();
-        final name = episode.name.trim();
-        final label = nameCn.isNotEmpty ? nameCn : name;
-
-        if (episode.type == 0) {
-          // 正片：整数集号显示「第X集」，否则退回标题。
-          final n = episode.episode;
-          if (n == n.roundToDouble() && n > 0) {
-            final number = n.toInt();
-            choices.add(
-              _OfflineEpisodeChoice(
-                number: number,
-                title: '第$number话',
-                entry: downloadedByNumber[number],
-                state: _stateFor(number),
-              ),
-            );
-          } else if (label.isNotEmpty) {
-            choices.add(
-              _OfflineEpisodeChoice(
-                number: 0,
-                title: label,
-                entry: downloadedByName[nameCn] ?? downloadedByName[name],
-              ),
-            );
-          }
-          continue;
-        }
-
-        // 非正片：按类型各自顺序编号，格式「SPx nameCn/name」。
-        final prefix = switch (episode.type) {
-          1 => 'SP',
-          2 => 'OP',
-          3 => 'ED',
-          _ => null,
-        };
-        if (prefix == null) continue;
-        final index = (counters[episode.type] ?? 0) + 1;
-        counters[episode.type] = index;
-        final title = label.isNotEmpty
-            ? '$prefix$index $label'
-            : '$prefix$index';
-        choices.add(
+      final choices = <_OfflineEpisodeChoice>[
+        for (final slot in offlineEpisodeSlots(cached))
           _OfflineEpisodeChoice(
-            number: 0,
-            title: title,
-            entry: downloadedByName[nameCn] ?? downloadedByName[name],
+            number: slot.episodeNumber,
+            title: slot.title,
+            entry: slot.episodeNumber > 0
+                ? downloadedByNumber[slot.episodeNumber]
+                : downloadedByName[slot.nameCn] ?? downloadedByName[slot.name],
+            state: _stateFor(slot.episodeNumber),
           ),
-        );
-      }
+      ];
       if (choices.isNotEmpty) return choices;
     }
 

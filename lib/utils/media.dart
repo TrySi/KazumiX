@@ -55,6 +55,89 @@ String formatEpisodeLabel(String input) {
   return value.replaceAll('集', '话');
 }
 
+/// One cached episode rendered for display.
+///
+/// Main episodes carry their number; extras (SP/OP/ED) and unnumbered entries
+/// carry 0 and are matched by name instead.
+class OfflineEpisodeSlot {
+  const OfflineEpisodeSlot({
+    required this.episodeNumber,
+    required this.isExtra,
+    required this.title,
+    required this.nameCn,
+    required this.name,
+  });
+
+  final int episodeNumber;
+  final bool isExtra;
+  final String title;
+  final String nameCn;
+  final String name;
+}
+
+/// Turns cached Bangumi episodes into display slots, numbering extras per type
+/// (`SP1`, `OP1`, `ED1`, ...) in the order they appear.
+///
+/// This is the one place that decides how a cached episode is labelled, so the
+/// lookup maps behind [OfflineEpisodeTitles] and the offline episode picker
+/// cannot drift apart.
+List<OfflineEpisodeSlot> offlineEpisodeSlots(Iterable<EpisodeInfo>? cached) {
+  final slots = <OfflineEpisodeSlot>[];
+  final counters = <int, int>{};
+  for (final episode in cached ?? const <EpisodeInfo>[]) {
+    final nameCn = episode.nameCn.trim();
+    final name = episode.name.trim();
+    final label = nameCn.isNotEmpty ? nameCn : name;
+
+    if (episode.type == 0) {
+      final n = episode.episode;
+      if (n == n.roundToDouble() && n > 0) {
+        final number = n.toInt();
+        slots.add(
+          OfflineEpisodeSlot(
+            episodeNumber: number,
+            isExtra: false,
+            title: '第$number话',
+            nameCn: nameCn,
+            name: name,
+          ),
+        );
+      } else if (label.isNotEmpty) {
+        slots.add(
+          OfflineEpisodeSlot(
+            episodeNumber: 0,
+            isExtra: false,
+            title: label,
+            nameCn: nameCn,
+            name: name,
+          ),
+        );
+      }
+      continue;
+    }
+
+    final prefix = switch (episode.type) {
+      1 => 'SP',
+      2 => 'OP',
+      3 => 'ED',
+      _ => null,
+    };
+    if (prefix == null) continue;
+    final index = (counters[episode.type] ?? 0) + 1;
+    counters[episode.type] = index;
+    slots.add(
+      OfflineEpisodeSlot(
+        episodeNumber: 0,
+        isExtra: true,
+        title: label.isNotEmpty ? '$prefix$index $label' : '$prefix$index',
+        nameCn: nameCn,
+        name: name,
+      ),
+    );
+  }
+  return slots;
+}
+
 /// Builds display titles for downloaded / offline episodes from cached Bangumi
 /// metadata, so every screen reads the same: main episodes as `第X话`, extras
 /// (SP/OP/ED) as `<PREFIX><index> <title>`.
@@ -69,30 +152,15 @@ class OfflineEpisodeTitles {
   factory OfflineEpisodeTitles.fromCache(Iterable<EpisodeInfo>? cached) {
     final byNumber = <int, String>{};
     final byName = <String, String>{};
-    final counters = <int, int>{};
-    for (final episode in cached ?? const <EpisodeInfo>[]) {
-      final nameCn = episode.nameCn.trim();
-      final name = episode.name.trim();
-      final label = nameCn.isNotEmpty ? nameCn : name;
-      if (episode.type == 0) {
-        final n = episode.episode;
-        if (n == n.roundToDouble() && n > 0) {
-          byNumber[n.toInt()] = '第${n.toInt()}话';
-        }
-        continue;
+    for (final slot in offlineEpisodeSlots(cached)) {
+      // Extras are only identifiable by name; a main episode is looked up by
+      // its number, so its name never has to be indexed.
+      if (slot.isExtra) {
+        if (slot.nameCn.isNotEmpty) byName[slot.nameCn] = slot.title;
+        if (slot.name.isNotEmpty) byName[slot.name] = slot.title;
+      } else if (slot.episodeNumber > 0) {
+        byNumber[slot.episodeNumber] = slot.title;
       }
-      final prefix = switch (episode.type) {
-        1 => 'SP',
-        2 => 'OP',
-        3 => 'ED',
-        _ => null,
-      };
-      if (prefix == null) continue;
-      final index = (counters[episode.type] ?? 0) + 1;
-      counters[episode.type] = index;
-      final title = label.isNotEmpty ? '$prefix$index $label' : '$prefix$index';
-      if (nameCn.isNotEmpty) byName[nameCn] = title;
-      if (name.isNotEmpty) byName[name] = title;
     }
     return OfflineEpisodeTitles._(byNumber, byName);
   }
