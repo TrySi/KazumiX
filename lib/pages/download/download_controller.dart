@@ -530,6 +530,19 @@ abstract class _DownloadController with Store {
     return _repository.getCompletedEpisodes(bangumiId, pluginName);
   }
 
+  /// 跨来源合并某番剧已完成下载的集数（按集数去重升序）。
+  ///
+  /// [pluginByNumber] 非空时写入每集所属来源插件名，本地播放据此逐集定位文件。
+  List<DownloadEpisode> getCompletedEpisodesAcrossSources(
+    int bangumiId, {
+    Map<int, String>? pluginByNumber,
+  }) {
+    return _repository.getCompletedEpisodesAcrossSources(
+      bangumiId,
+      pluginByNumber: pluginByNumber,
+    );
+  }
+
   /// 弹幕文件路径
   String _danmakuFilePath(String downloadDirectory) {
     return '$downloadDirectory/danmaku.json';

@@ -37,6 +37,15 @@ abstract class IDownloadRepository {
   /// 返回所有已完成下载的集数
   List<DownloadEpisode> getCompletedEpisodes(int bangumiId, String pluginName);
 
+  /// 跨来源合并某番剧已完成下载的集数，按集数去重并升序排列。
+  ///
+  /// 本地播放的选集列表要覆盖所有下载来源，而不是只看当前来源。
+  /// [pluginByNumber] 非空时写入每集所属来源插件名，播放时据此定位文件。
+  List<DownloadEpisode> getCompletedEpisodesAcrossSources(
+    int bangumiId, {
+    Map<int, String>? pluginByNumber,
+  });
+
   /// 通过集数页面 URL 查找下载记录
   ///
   /// [bangumiId] 番剧 ID
@@ -238,6 +247,28 @@ class DownloadRepository implements IDownloadRepository {
     return record.episodes.values
         .where((e) => e.status == DownloadStatus.completed)
         .toList()
+      ..sort((a, b) => a.episodeNumber.compareTo(b.episodeNumber));
+  }
+
+  @override
+  List<DownloadEpisode> getCompletedEpisodesAcrossSources(
+    int bangumiId, {
+    Map<int, String>? pluginByNumber,
+  }) {
+    final byNumber = <int, DownloadEpisode>{};
+    for (final record in getAllRecords()) {
+      if (record.bangumiId != bangumiId) continue;
+      for (final episode in record.episodes.values) {
+        if (episode.status != DownloadStatus.completed) continue;
+        // The first source that has an episode wins, so a duplicate download
+        // never shows up twice.
+        final existing = byNumber[episode.episodeNumber];
+        if (existing != null) continue;
+        byNumber[episode.episodeNumber] = episode;
+        pluginByNumber?[episode.episodeNumber] = record.pluginName;
+      }
+    }
+    return byNumber.values.toList()
       ..sort((a, b) => a.episodeNumber.compareTo(b.episodeNumber));
   }
 

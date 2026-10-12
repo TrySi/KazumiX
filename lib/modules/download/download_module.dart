@@ -1,5 +1,7 @@
 import 'package:hive_ce/hive.dart';
 
+import 'package:kazumi/modules/bangumi/bangumi_item.dart';
+
 part 'download_module.g.dart';
 
 @HiveType(typeId: 7)
@@ -40,6 +42,27 @@ class DownloadRecord {
   String get coverSource => localCoverPath.isEmpty
       ? bangumiCover
       : Uri.file(localCoverPath).toString();
+
+  /// Minimal [BangumiItem] for offline playback, built from what a download
+  /// record stores. Offline playback only needs the id, the title and the
+  /// cover, so the remaining fields stay empty.
+  BangumiItem toBangumiItem() => BangumiItem(
+    id: bangumiId,
+    type: 2,
+    name: bangumiName,
+    nameCn: bangumiName,
+    summary: '',
+    airDate: '',
+    airWeekday: 0,
+    rank: 0,
+    images: {'large': coverSource},
+    tags: [],
+    alias: [],
+    ratingScore: 0.0,
+    votes: 0,
+    votesCount: [],
+    info: '',
+  );
 }
 
 @HiveType(typeId: 8)

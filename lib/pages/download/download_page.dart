@@ -5,7 +5,6 @@ import 'package:kazumi/bean/appbar/sys_app_bar.dart';
 import 'package:kazumi/bean/dialog/dialog_helper.dart';
 import 'package:kazumi/bean/widget/empty_state_widget.dart';
 import 'package:kazumi/modules/download/download_module.dart';
-import 'package:kazumi/modules/bangumi/bangumi_item.dart';
 import 'package:kazumi/pages/download/download_controller.dart';
 import 'package:kazumi/pages/download/download_widgets.dart';
 import 'package:kazumi/pages/video/video_playback_args.dart';
@@ -471,44 +470,16 @@ class _DownloadPageState extends State<DownloadPage> {
       return;
     }
 
-    final bangumiItem = BangumiItem(
-      id: record.bangumiId,
-      type: 2,
-      name: record.bangumiName,
-      nameCn: record.bangumiName,
-      summary: '',
-      airDate: '',
-      airWeekday: 0,
-      rank: 0,
-      images: {'large': record.coverSource},
-      tags: [],
-      alias: [],
-      ratingScore: 0.0,
-      votes: 0,
-      votesCount: [],
-      info: '',
-    );
+    final bangumiItem = record.toBangumiItem();
 
     // Mirror the 本地 tab: play the show's downloaded episodes merged across
     // every source, resolving each episode's file from its owning source.
-    final completedByNumber = <int, DownloadEpisode>{};
     final episodePlugins = <int, String>{};
-    for (final candidate in downloadController.records) {
-      if (candidate.bangumiId != record.bangumiId) continue;
-      for (final candidateEpisode in candidate.episodes.values) {
-        if (candidateEpisode.status != DownloadStatus.completed) continue;
-        completedByNumber.putIfAbsent(
-          candidateEpisode.episodeNumber,
-          () => candidateEpisode,
+    final downloadedEpisodes = downloadController
+        .getCompletedEpisodesAcrossSources(
+          record.bangumiId,
+          pluginByNumber: episodePlugins,
         );
-        episodePlugins.putIfAbsent(
-          candidateEpisode.episodeNumber,
-          () => candidate.pluginName,
-        );
-      }
-    }
-    final downloadedEpisodes = completedByNumber.values.toList()
-      ..sort((a, b) => a.episodeNumber.compareTo(b.episodeNumber));
 
     context.pushNamed(
       '/video/',
