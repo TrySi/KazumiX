@@ -58,10 +58,21 @@ class EpisodeSelectionPanel extends StatefulWidget {
 
 class EpisodeSelectionPanelState extends State<EpisodeSelectionPanel> {
   final _scrollController = ScrollController();
+  final _selectorController = MenuController();
   late final _observerController = ListObserverController(
     controller: _scrollController,
   )..cacheJumpIndexOffset = false;
   late int _visibleRoad = widget.selectedRoad;
+
+  /// Dismisses the line selector if it is open.
+  ///
+  /// The panel is reparented between the tab body and the side panel when the
+  /// layout flips (fullscreen, rotation, PiP). The menu lives in an overlay, so
+  /// it survives that move and would keep floating after the side panel is gone
+  /// unless it is closed first.
+  void closeSelector() {
+    if (_selectorController.isOpen) _selectorController.close();
+  }
 
   bool get _canLocate =>
       widget.selectedRoad >= 0 &&
@@ -188,6 +199,7 @@ class EpisodeSelectionPanelState extends State<EpisodeSelectionPanel> {
                         ),
                         const SizedBox(height: 16),
                         CompactSourceSelector<int>(
+                          controller: _selectorController,
                           label: widget.isOffline ? '离线观看' : '播放线路',
                           valueLabel: _roadLabel(_visibleRoad),
                           selectedValue: _visibleRoad,

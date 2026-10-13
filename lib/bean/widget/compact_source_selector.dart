@@ -26,6 +26,7 @@ class CompactSourceSelector<T> extends StatelessWidget {
     required this.enabled,
     required this.options,
     required this.onSelected,
+    this.controller,
   });
 
   final String label;
@@ -36,6 +37,14 @@ class CompactSourceSelector<T> extends StatelessWidget {
   final List<CompactSelectorOption<T>> options;
   final ValueChanged<T> onSelected;
 
+  /// Lets the owner dismiss the menu without a tap.
+  ///
+  /// Needed when the widget is about to be moved or hidden by something other
+  /// than the user: the menu is an overlay, so it outlives its anchor being
+  /// reparented and would otherwise stay on screen after the surrounding panel
+  /// is gone.
+  final MenuController? controller;
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -45,6 +54,7 @@ class CompactSourceSelector<T> extends StatelessWidget {
       builder: (context, constraints) {
         final width = constraints.maxWidth;
         return MenuAnchor(
+          controller: controller,
           crossAxisUnconstrained: false,
           consumeOutsideTap: true,
           alignmentOffset: const Offset(0, 6),

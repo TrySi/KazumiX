@@ -75,6 +75,16 @@ class _VideoPageState extends State<VideoPage>
 
   StreamSubscription<SyncPlayChatMessage>? _syncChatSubscription;
   late final mobx.ReactionDisposer _pipModeListener;
+
+  /// Closes the line selector when the layout is about to move or hide the
+  /// episode panel. The panel keeps its state across that move (it is the same
+  /// widget under the same key, shown either in the tab body or as the side
+  /// panel), so an open selector would outlive the panel it belongs to.
+  late final mobx.ReactionDisposer _fullscreenPanelListener;
+
+  /// Rotation and window resizing both flip the layout, and neither is an
+  /// observable on the controller.
+  Size? _lastLayoutSize;
   LocalHistoryEntry? _desktopPipEntry;
 
   static const Duration _offlinePlayerInitDelay = Duration(milliseconds: 400);
@@ -91,15 +101,35 @@ class _VideoPageState extends State<VideoPage>
     disableAnimations = GStorage.getSetting(
       SettingsKeys.playerDisableAnimations,
     );
-    _pipModeListener = mobx.reaction<bool>(
-      (_) => videoPageController.isPip,
-      _syncDesktopPipHistory,
+    _pipModeListener = mobx.reaction<bool>((_) => videoPageController.isPip, (
+      isPip,
+    ) {
+      // Entering PiP hides the side panel as well.
+      _dismissEpisodeSelector();
+      _syncDesktopPipHistory(isPip);
+    });
+    _fullscreenPanelListener = mobx.reaction<bool>(
+      (_) => videoPageController.isFullscreen,
+      (_) => _dismissEpisodeSelector(),
     );
+  }
+
+  /// Closes the line selector without touching the panel.
+  void _dismissEpisodeSelector() {
+    _episodePanelKey.currentState?.closeSelector();
   }
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
+    // Rotation (mobile) and resizing (desktop) both change which slot the
+    // episode panel is rendered in, so the selector has to be dismissed here,
+    // before the rebuild moves it.
+    final size = MediaQuery.sizeOf(context);
+    if (_lastLayoutSize != null && _lastLayoutSize != size) {
+      _dismissEpisodeSelector();
+    }
+    _lastLayoutSize = size;
     if (_didInitializePlayback) {
       return;
     }
@@ -226,6 +256,7 @@ class _VideoPageState extends State<VideoPage>
       _logSubscription?.cancel();
     } catch (_) {}
     _pipModeListener();
+    _fullscreenPanelListener();
     _desktopPipEntry?.remove();
     _desktopPipEntry = null;
     if (!isDesktop()) {
@@ -282,9 +313,16 @@ class _VideoPageState extends State<VideoPage>
     });
   }
 
-  void _toggleSidePanel() => _sidePanelKey.currentState?.toggle();
+  void _toggleSidePanel() {
+    // Closing the sidebar must not leave its selector floating.
+    _dismissEpisodeSelector();
+    _sidePanelKey.currentState?.toggle();
+  }
 
-  void _closeSidePanel() => _sidePanelKey.currentState?.close();
+  void _closeSidePanel() {
+    _dismissEpisodeSelector();
+    _sidePanelKey.currentState?.close();
+  }
 
   // Only desktop PiP participates in local navigation.
   void _syncDesktopPipHistory(bool isPip) {
