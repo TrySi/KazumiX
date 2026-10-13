@@ -16,6 +16,7 @@ import 'package:kazumi/bean/widget/empty_state_widget.dart';
 import 'package:kazumi/bean/widget/split_list_row.dart';
 import 'package:kazumi/bean/widget/state_presentation.dart';
 import 'package:kazumi/modules/search/plugin_search_module.dart';
+import 'package:kazumi/modules/search/search_name_match.dart';
 import 'package:kazumi/modules/bangumi/episode_item.dart';
 import 'package:kazumi/pages/collect/collect_controller.dart';
 import 'package:kazumi/pages/download/download_controller.dart';
@@ -97,6 +98,15 @@ class _SourceSheetState extends State<SourceSheet> {
   List<EpisodeInfo> _releasedEpisodes = [];
   String? _selectedSourceKey;
   _SourceSearchOption? _selectedSourceOption;
+
+  /// Set once the user picks a result by hand, so the sheet stops moving the
+  /// selection to its own idea of the best match.
+  bool _selectionIsManual = false;
+
+  /// Name-match scores keyed by source key. Cached because the sheet re-sorts
+  /// the list on every rebuild while the score only depends on the titles.
+  final Map<String, double> _nameMatchScores = {};
+
   List<Road> _selectedSourceRoads = [];
   List<_SourceRoadOption> _roadOptions = [];
   int? _selectedRoadIndex;
@@ -294,6 +304,59 @@ class _SourceSheetState extends State<SourceSheet> {
           ? roadOptions
           : roadOptions.sublist(0, _maxLinesPerSource),
     );
+  }
+
+  /// Orders the source list by how well each result matches the show, then by
+  /// how fast its chapter list came back.
+  ///
+  /// Relevance leads because one query returns a whole title family: a film and
+  /// its sequel share a prefix, so both results belong to the same plugin and
+  /// ranking on latency alone selected whichever happened to answer first, which
+  /// is how the wrong film got played under the right detail page.
+  int _compareSourceOptions(_SourceSearchOption a, _SourceSearchOption b) {
+    final byScore = _nameMatchScore(b).compareTo(_nameMatchScore(a));
+    if (byScore != 0) return byScore;
+    final aLatency = _sourceLatency[a.key];
+    final bLatency = _sourceLatency[b.key];
+    if (aLatency == null && bLatency == null) return 0;
+    if (aLatency == null) return 1;
+    if (bLatency == null) return -1;
+    return aLatency.compareTo(bLatency);
+  }
+
+  double _nameMatchScore(_SourceSearchOption option) =>
+      _nameMatchScores[option.key] ??= searchNameMatchScore(
+        _keyword,
+        option.item.name,
+      );
+
+  /// The result the sheet should move to, or null to leave the selection alone.
+  ///
+  /// The result that carries the whole title can land after a relative one,
+  /// because sources are scanned concurrently and the selection used to freeze
+  /// on the first answer. So while the scan is still running the sheet waits for
+  /// the entry scoring highest among *all* results, and lets the best of what
+  /// answered do once the scan is over. A result that already holds that score
+  /// is taken right away, which keeps the common single-match case as fast as
+  /// it was.
+  _SourceSearchOption? _autoSelectTarget(
+    List<_SourceSearchOption> options,
+    List<_SourceSearchOption> available,
+  ) {
+    if (_selectionIsManual || available.isEmpty) return null;
+    var bestScore = 0.0;
+    for (final option in options) {
+      final score = _nameMatchScore(option);
+      if (score > bestScore) bestScore = score;
+    }
+    final target = available.firstWhereOrNull(
+      (option) => _nameMatchScore(option) >= bestScore,
+    );
+    if (target != null) {
+      return target.key == _selectedSourceKey ? null : target;
+    }
+    if (_sourcePreflightScheduled) return null;
+    return available.first.key == _selectedSourceKey ? null : available.first;
   }
 
   void _scheduleSourcePreflight(List<_SourceSearchOption> options) {
@@ -1234,29 +1297,19 @@ class _SourceSheetState extends State<SourceSheet> {
       }
       final availableOptions =
           options.where((option) => _roadCache.containsKey(option.key)).toList()
-            ..sort((a, b) {
-              final aLatency = _sourceLatency[a.key];
-              final bLatency = _sourceLatency[b.key];
-              if (aLatency == null && bLatency == null) return 0;
-              if (aLatency == null) return 1;
-              if (bLatency == null) return -1;
-              return aLatency.compareTo(bLatency);
-            });
-      final selectedSource = availableOptions.firstWhereOrNull(
-        (option) => option.key == _selectedSourceKey,
-      );
-      if (availableOptions.isNotEmpty &&
-          selectedSource == null &&
-          !_roadsLoading) {
+            ..sort(_compareSourceOptions);
+      final autoSelectTarget = _autoSelectTarget(options, availableOptions);
+      if (autoSelectTarget != null) {
         WidgetsBinding.instance.addPostFrameCallback((_) {
           if (mounted && !_roadsLoading) {
-            unawaited(
-              _selectSource(availableOptions.first, showFailureToast: false),
-            );
+            unawaited(_selectSource(autoSelectTarget, showFailureToast: false));
           }
         });
       }
       final groups = groupsByName.values.toList();
+      final selectedSource = availableOptions.firstWhereOrNull(
+        (option) => option.key == _selectedSourceKey,
+      );
       final selectedRoad = _roadOptions.firstWhereOrNull(
         (option) => option.index == _selectedRoadIndex,
       );
@@ -1303,7 +1356,12 @@ class _SourceSheetState extends State<SourceSheet> {
             _episodesLoading ||
             _sourceOptionsLoading ||
             _sourcePreflightScheduled,
-        onCombinedSelected: (key) => unawaited(_selectCombined(key)),
+        onCombinedSelected: (key) {
+          // A hand-picked result outranks relevance; the sheet must not move the
+          // selection back to its own idea of the best match afterwards.
+          _selectionIsManual = true;
+          unawaited(_selectCombined(key));
+        },
         onEpisodeSelected: (episode, match) {
           final road = selectedRoad;
           if (selectedSource != null && road != null) {
