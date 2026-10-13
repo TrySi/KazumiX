@@ -74,6 +74,18 @@ class EpisodeSelectionPanelState extends State<EpisodeSelectionPanel> {
     if (_selectorController.isOpen) _selectorController.close();
   }
 
+  @override
+  void didUpdateWidget(covariant EpisodeSelectionPanel oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // The playback line can move without a tap on the selector, for instance
+    // when a history entry resumes on a different line. Follow it, but only
+    // when it actually moved: the parent rebuilds on every playback update and
+    // syncing then would wipe the line the user is browsing.
+    if (widget.selectedRoad != oldWidget.selectedRoad) {
+      _visibleRoad = widget.selectedRoad;
+    }
+  }
+
   bool get _canLocate =>
       widget.selectedRoad >= 0 &&
       widget.selectedRoad < widget.roads.length &&
