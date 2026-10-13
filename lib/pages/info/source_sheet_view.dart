@@ -642,9 +642,10 @@ class _EpisodeSourceSheetViewState extends State<_EpisodeSourceSheetView> {
                   ? null
                   : _combinedSubtitle(selected),
               selectedValue: widget.selectedCombinedKey,
-              enabled:
-                  widget.combinedOptions.isNotEmpty &&
-                  !widget.sourceOptionsLoading,
+              // Only the empty list disables the selector. Sources land one at a
+              // time, so locking it until the whole scan finishes would leave it
+              // dead while the grid below is already playable.
+              enabled: widget.combinedOptions.isNotEmpty,
               options: [
                 for (final option in widget.combinedOptions)
                   CompactSelectorOption(

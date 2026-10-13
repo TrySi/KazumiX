@@ -63,17 +63,31 @@ class _SourceSheetState extends State<SourceSheet> {
   static final Map<int, _SourceDiscovery> _discoveryCache = {};
   static const int _maxCachedShows = 12;
 
+  /// How many lines of one source count as usable. A source routinely exposes
+  /// several mirrors of the same playlist, and listing all of them buries every
+  /// other source, so the extra ones are treated as unplayable and never reach
+  /// the list.
+  static const int _maxLinesPerSource = 2;
+
   final CollectController _collectController = inject<CollectController>();
   final DownloadController _downloadController = inject<DownloadController>();
   final PluginsController _pluginsController = inject<PluginsController>();
   final Map<String, String> _sourceKeywords = {};
   final Map<String, _SourceRoadCache> _roadCache = {};
+
+  /// Sources that answered the chapter query but had no line matching an aired
+  /// episode. Cached across openings; a query that *failed* is not put here, so
+  /// it gets retried instead of being remembered as unusable.
   final Set<String> _emptySourceKeys = {};
+
+  /// Sources whose chapter query failed in this sheet. Kept out of the
+  /// discovery cache so reopening retries them, but remembered here so a plugin
+  /// that keeps failing is not queried again on every rebuild.
+  final Set<String> _failedSourceKeys = {};
   final Set<RuleCancelToken> _sourcePreflightTokens = {};
   final Map<String, Duration> _sourceLatency = {};
   final Map<String, String?> _roadFormats = {};
   final Map<String, String?> _roadQuality = {};
-  final Set<String> _sourceHasMp4 = {};
   WebViewVideoSourceService? _videoSourceService;
 
   late final String _keyword;
@@ -115,6 +129,9 @@ class _SourceSheetState extends State<SourceSheet> {
   bool _restoreDiscoveryCache(int bangumiId) {
     final cached = _discoveryCache[bangumiId];
     if (cached == null || cached.keyword != _keyword) return false;
+    // A round that ended with nothing usable is not worth restoring: reopening
+    // on it would show "no source available" and never search again.
+    if (cached.roadCache.isEmpty) return false;
     final controller = widget.infoController;
     controller.pluginSearchResponseList
       ..clear()
@@ -126,8 +143,16 @@ class _SourceSheetState extends State<SourceSheet> {
     _sourceLatency.addAll(cached.sourceLatency);
     _roadFormats.addAll(cached.roadFormats);
     _roadQuality.addAll(cached.roadQuality);
-    _sourceHasMp4.addAll(cached.sourceHasMp4);
+    _sourceKeywords.addAll(cached.sourceKeywords);
     _emptySourceKeys.addAll(cached.emptySourceKeys);
+    // A search cut short by dispose leaves its plugin pending, and restoring
+    // skips the full search, so nothing would ever resolve it: the sheet would
+    // stay on "filtering" and stop preflighting the sources still missing.
+    for (final plugin in _pluginsController.pluginList) {
+      final status = controller.pluginSearchStatus[plugin.name];
+      if (status != null && status != PluginSearchStatus.pending) continue;
+      _searchService.querySource(_keywordFor(plugin.name), plugin.name);
+    }
     return true;
   }
 
@@ -154,7 +179,7 @@ class _SourceSheetState extends State<SourceSheet> {
         sourceLatency: Map.of(_sourceLatency),
         roadFormats: Map.of(_roadFormats),
         roadQuality: Map.of(_roadQuality),
-        sourceHasMp4: Set.of(_sourceHasMp4),
+        sourceKeywords: Map.of(_sourceKeywords),
         emptySourceKeys: Set.of(_emptySourceKeys),
       );
       if (_discoveryCache.length > _maxCachedShows) {
@@ -260,7 +285,15 @@ class _SourceSheetState extends State<SourceSheet> {
           ),
     ].where((roadOption) => roadOption.matches.isNotEmpty).toList();
     if (roadOptions.isEmpty) return null;
-    return _SourceRoadCache(roads: roads, options: roadOptions);
+    // Lines past the cap are dropped here, in the filter, rather than when the
+    // list is rendered: downstream only ever sees the lines this source really
+    // offers, so a dropped line cannot be selected, counted or matched.
+    return _SourceRoadCache(
+      roads: roads,
+      options: roadOptions.length <= _maxLinesPerSource
+          ? roadOptions
+          : roadOptions.sublist(0, _maxLinesPerSource),
+    );
   }
 
   void _scheduleSourcePreflight(List<_SourceSearchOption> options) {
@@ -268,7 +301,8 @@ class _SourceSheetState extends State<SourceSheet> {
         .where(
           (option) =>
               !_roadCache.containsKey(option.key) &&
-              !_emptySourceKeys.contains(option.key),
+              !_emptySourceKeys.contains(option.key) &&
+              !_failedSourceKeys.contains(option.key),
         )
         .toList();
     if (_sourcePreflightScheduled || pendingOptions.isEmpty) return;
@@ -287,7 +321,8 @@ class _SourceSheetState extends State<SourceSheet> {
       while (nextIndex < options.length && mounted) {
         final option = options[nextIndex++];
         if (_roadCache.containsKey(option.key) ||
-            _emptySourceKeys.contains(option.key)) {
+            _emptySourceKeys.contains(option.key) ||
+            _failedSourceKeys.contains(option.key)) {
           continue;
         }
         final token = RuleCancelToken();
@@ -310,7 +345,10 @@ class _SourceSheetState extends State<SourceSheet> {
             _roadCache[option.key] = cache;
           }
         } catch (error) {
-          _emptySourceKeys.add(option.key);
+          // Not marked empty: the query can fail on a timeout or a captcha, and
+          // a marked source is never asked again. It is only skipped for the
+          // rest of this sheet, so reopening retries it.
+          _failedSourceKeys.add(option.key);
           KazumiLogger().w(
             'SourceSheet: failed to preflight source ${option.plugin.name}',
             error: error,
@@ -551,9 +589,6 @@ class _SourceSheetState extends State<SourceSheet> {
         setState(() {
           _roadFormats[formatKey] = format;
           _roadQuality[formatKey] = quality;
-          if (format == 'MP4') {
-            _sourceHasMp4.add(sourceKey);
-          }
         });
       }
     } catch (error) {
@@ -1344,7 +1379,7 @@ class _SourceDiscovery {
     required this.sourceLatency,
     required this.roadFormats,
     required this.roadQuality,
-    required this.sourceHasMp4,
+    required this.sourceKeywords,
     required this.emptySourceKeys,
   });
 
@@ -1355,7 +1390,10 @@ class _SourceDiscovery {
   final Map<String, Duration> sourceLatency;
   final Map<String, String?> roadFormats;
   final Map<String, String?> roadQuality;
-  final Set<String> sourceHasMp4;
+
+  /// Per-plugin search keyword, so a manual or alias search is not silently
+  /// reverted to the show's title when the sheet is reopened.
+  final Map<String, String> sourceKeywords;
   final Set<String> emptySourceKeys;
 }
 
